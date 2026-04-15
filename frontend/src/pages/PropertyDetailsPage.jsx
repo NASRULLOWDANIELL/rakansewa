@@ -158,15 +158,6 @@ const PropertyDetailsPage = () => {
                 </button>
               </div>
            </div>
-           
-           <div className="bg-primary/5 p-8 rounded-lg space-y-4 border-2 border-primary-fixed/20 shadow-sm text-center">
-              <span className="material-symbols-outlined text-primary text-4xl">psychology</span>
-              <h4 className="text-xl font-bold text-primary">Find Your Match</h4>
-              <p className="text-sm text-on-surface-variant">Answer a few questions to see your compatibility score with the current housemates.</p>
-              <Link to={`/properties/${id}/match`} className="inline-block w-full mt-4 bg-primary text-white font-bold py-3 rounded-full hover:bg-primary-container hover:scale-[1.02] transition-transform">
-                 Check Compatibility
-              </Link>
-           </div>
         </div>
 
       </div>

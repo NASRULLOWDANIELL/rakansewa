@@ -51,15 +51,52 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (googleUser) => {
+    try {
+      const users = await getAllUsers();
+      let user = users.find(u => u.email === googleUser.email);
+      
+      if (!user) {
+        // Create user if not exists, default to Student role
+        user = await createUser({ 
+          name: googleUser.name, 
+          email: googleUser.email, 
+          password: 'google_oauth_no_password', 
+          role: 'Student' 
+        });
+      }
+
+      if (user.email === 'admin@rakansewa.com') {
+        user.role = 'Admin';
+      }
+
+      setCurrentUser(user);
+      localStorage.setItem('rakansewa_user', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      console.error(error);
+      throw new Error("Google login failed");
+    }
+  };
+
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('rakansewa_user');
+  };
+
+  const updateProfile = (updatedData) => {
+    const updatedUser = { ...currentUser, ...updatedData };
+    setCurrentUser(updatedUser);
+    localStorage.setItem('rakansewa_user', JSON.stringify(updatedUser));
+    return updatedUser;
   };
 
   const value = {
     currentUser,
     login,
     register,
+    googleLogin,
+    updateProfile,
     logout,
     loading
   };

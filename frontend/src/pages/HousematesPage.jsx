@@ -29,6 +29,15 @@ const HousematesPage = () => {
       try {
         const data = await getAllHousemates();
         setHousemates(data || []);
+        
+        // Show by default without hard filtering if no manual calculate yet
+        const initialMatches = (data || []).map(hm => calculateCompatibility(defaultPreferences, hm) || {
+           housemateProfile: hm,
+           compatibilityScore: null,
+           matchLabel: 'Unmatched',
+           reasons: []
+        });
+        setCalculatedMatches(initialMatches);
       } catch (err) {
         console.error('Error fetching housemates:', err);
       } finally {
@@ -43,18 +52,24 @@ const HousematesPage = () => {
   };
 
   const handleCalculate = () => {
-    if (!preferences.gender) return;
     
     const matches = [];
     housemates.forEach(hm => {
-      const matchData = calculateCompatibility(preferences, hm);
-      if (matchData) {
-        matches.push(matchData);
-      }
+      const matchData = calculateCompatibility(preferences, hm) || {
+         housemateProfile: hm,
+         compatibilityScore: null,
+         matchLabel: 'Unmatched',
+         reasons: []
+      };
+      matches.push(matchData);
     });
     
-    // Sort automatically by compatibility score
-    matches.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+    // Sort automatically by compatibility score (nulls at bottom)
+    matches.sort((a, b) => {
+       const scoreA = a.compatibilityScore || 0;
+       const scoreB = b.compatibilityScore || 0;
+       return scoreB - scoreA;
+    });
     setCalculatedMatches(matches);
     setShowPreferences(false);
   };

@@ -1,31 +1,56 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
+
+  const handleRoleRedirect = (user) => {
+    if (user.role === 'Admin') navigate('/admin');
+    else if (user.role === 'Owner') navigate('/owner');
+    else navigate('/');
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       setError('');
       const user = await login(email, password);
-      if (user.role === 'Admin') navigate('/admin');
-      else if (user.role === 'Owner') navigate('/owner');
-      else navigate('/');
+      handleRoleRedirect(user);
     } catch (err) {
       setError(err.message);
     }
   };
 
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setError('');
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        const googleUser = await userInfoRes.json();
+        const user = await googleLogin(googleUser);
+        handleRoleRedirect(user);
+      } catch (err) {
+        setError('Failed to fetch Google profile or login.');
+        console.error(err);
+      }
+    },
+    onError: errorResponse => {
+      setError('Google Login Failed');
+      console.error(errorResponse);
+    },
+  });
+
   const handleGoogleLogin = (e) => {
     e.preventDefault();
-    // mock google login
-    setError('Google login mock not implemented. Use regular login.');
+    loginWithGoogle();
   };
 
   return (
@@ -75,7 +100,7 @@ const LoginPage = () => {
              <div className="flex-grow border-t border-outline-variant/30"></div>
           </div>
 
-          <button onClick={handleGoogleLogin} className="w-full bg-white border border-outline-variant/30 text-on-surface py-3.5 rounded-full font-bold hover:bg-surface-container-low transition-all flex items-center justify-center gap-2">
+          <button type="button" onClick={handleGoogleLogin} className="w-full bg-white border border-outline-variant/30 text-on-surface py-3.5 rounded-full font-bold hover:bg-surface-container-low transition-all flex items-center justify-center gap-2">
             <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Google" className="w-5 h-5"/>
             Sign In with Google
           </button>
