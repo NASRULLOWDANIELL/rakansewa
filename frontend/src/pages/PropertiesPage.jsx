@@ -37,6 +37,9 @@ const PropertiesPage = () => {
 
   const filteredProperties = useMemo(() => {
     return allProperties.filter((property) => {
+      // Only show Approved/Available properties to students/public
+      if (property.availabilityStatus !== 'Available') return false;
+
       if (filters.search) {
         const query = filters.search.toLowerCase();
         if (
