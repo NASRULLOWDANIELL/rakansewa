@@ -1,25 +1,35 @@
 import { useEffect, useState } from 'react';
 import { getProperties, deleteProperty, createProperty, updateProperty } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const OwnerDashboard = () => {
+  const { currentUser } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '', 
     monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', 
-    furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending'
+    furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
+    imageUrl: ''
   });
 
   useEffect(() => {
     fetchProperties();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProperties = async () => {
     try {
       const data = await getProperties();
-      setProperties(data || []);
+      // CRITICAL: Filter to only show THIS owner's properties
+      const ownerProperties = (data || []).filter(
+        p => p.ownerId === currentUser?.id || p.ownerId == currentUser?.id
+      );
+      setProperties(ownerProperties);
     } catch (err) {
       console.error(err);
     } finally {
@@ -33,7 +43,7 @@ const OwnerDashboard = () => {
   };
 
   const startEdit = (property) => {
-    setFormData(property);
+    setFormData({ ...property, imageUrl: property.imageUrl || '' });
     setEditingId(property.id);
     setShowForm(true);
   };
@@ -42,7 +52,8 @@ const OwnerDashboard = () => {
     setFormData({
       title: '', description: '', address: '', city: '', state: '', 
       monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', 
-      furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending'
+      furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
+      imageUrl: ''
     });
     setEditingId(null);
     setShowForm(false);
@@ -51,7 +62,11 @@ const OwnerDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...formData, monthlyRent: parseFloat(formData.monthlyRent) };
+      const payload = { 
+        ...formData, 
+        monthlyRent: parseFloat(formData.monthlyRent),
+        ownerId: currentUser.id  // Always attach the ownerId
+      };
       // Force status to "Pending" on create or update
       payload.availabilityStatus = 'Pending';
 
@@ -68,21 +83,29 @@ const OwnerDashboard = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this property?")) {
-      try {
-        await deleteProperty(id);
-        fetchProperties();
-      } catch (err) {
-        console.error(err);
-      }
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteProperty(deleteTarget);
+      fetchProperties();
+    } catch (err) {
+      console.error(err);
     }
+    setDeleteTarget(null);
   };
 
   if (loading) return <div className="text-center py-32 text-on-surface">Loading properties...</div>;
 
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto space-y-12">
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        title="Delete Property"
+        message="Are you sure you want to delete this property? This action cannot be undone and the listing will be permanently removed."
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       <div className="flex justify-between items-end">
         <div>
            <h1 className="text-4xl font-extrabold font-headline tracking-tight text-on-surface mb-2">My Properties</h1>
@@ -108,6 +131,13 @@ const OwnerDashboard = () => {
                   <input required name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
                 </div>
                 <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="Monthly Rent (RM)" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
+                <input 
+                  name="imageUrl" 
+                  value={formData.imageUrl} 
+                  onChange={handleInputChange} 
+                  placeholder="Image URL (optional)" 
+                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"
+                />
              </div>
              <div className="space-y-4">
                 <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
@@ -122,6 +152,19 @@ const OwnerDashboard = () => {
                 <textarea required name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" rows="3" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"></textarea>
              </div>
              
+             {/* Image preview */}
+             {formData.imageUrl && (
+               <div className="md:col-span-2">
+                 <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Image Preview</p>
+                 <img 
+                   src={formData.imageUrl} 
+                   alt="Preview" 
+                   className="w-48 h-32 object-cover rounded-xl border border-surface-container-high"
+                   onError={(e) => { e.target.style.display = 'none'; }}
+                 />
+               </div>
+             )}
+
              <div className="md:col-span-2 pt-4">
                 <button type="submit" className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
                   {editingId ? 'Update Listing' : 'Submit for Approval'}
@@ -132,32 +175,52 @@ const OwnerDashboard = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {properties.map(p => (
-           <div key={p.id} className="glass p-6 rounded-2xl shadow-sm border border-white/40 flex flex-col justify-between">
-              <div>
-                 <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${p.availabilityStatus === 'Pending' ? 'bg-orange-100 text-orange-700 border border-orange-200' : p.availabilityStatus === 'Available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {p.availabilityStatus}
-                    </span>
-                    <span className="text-xl font-bold text-primary">RM{p.monthlyRent}</span>
-                 </div>
-                 <h3 className="text-xl font-bold font-headline mb-1">{p.title}</h3>
-                 <p className="text-sm text-on-surface-variant flex items-center gap-1 mb-4">
-                    <span className="material-symbols-outlined text-sm">location_on</span> {p.city}, {p.state}
-                 </p>
-                 <div className="flex gap-2 flex-wrap mb-4">
-                    <span className="bg-surface-container-low text-xs px-2 py-1 rounded">{p.propertyType}</span>
-                    <span className="bg-surface-container-low text-xs px-2 py-1 rounded">{p.roomType}</span>
-                 </div>
-              </div>
-              <div className="flex gap-2 border-t border-surface-container-low pt-4">
-                 <button onClick={() => startEdit(p)} className="flex-1 text-primary bg-primary/10 py-2 rounded-lg font-bold hover:bg-primary/20 transition-colors">Edit</button>
-                 <button onClick={() => handleDelete(p.id)} className="text-error bg-error/10 px-4 py-2 rounded-lg hover:bg-error/20 transition-colors"><span className="material-symbols-outlined text-sm">delete</span></button>
-              </div>
-           </div>
-        ))}
-      </div>
+      {properties.length === 0 && !showForm ? (
+        <div className="text-center py-20 glass rounded-xl border border-white/40">
+          <span className="material-symbols-outlined text-6xl text-primary/30 mb-4 block">home_work</span>
+          <h3 className="text-xl font-bold text-on-surface mb-2">No Properties Yet</h3>
+          <p className="text-on-surface-variant mb-6">Start by adding your first property listing.</p>
+          <button 
+            onClick={() => setShowForm(true)} 
+            className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20"
+          >
+            + Add Property
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {properties.map(p => (
+             <div key={p.id} className="glass p-6 rounded-2xl shadow-sm border border-white/40 flex flex-col justify-between">
+                {/* Property image thumbnail */}
+                {p.imageUrl && (
+                  <div className="h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-2xl">
+                    <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div>
+                   <div className="flex justify-between items-start mb-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${p.availabilityStatus === 'Pending' ? 'bg-orange-100 text-orange-700 border border-orange-200' : p.availabilityStatus === 'Available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {p.availabilityStatus}
+                      </span>
+                      <span className="text-xl font-bold text-primary">RM{p.monthlyRent}</span>
+                   </div>
+                   <h3 className="text-xl font-bold font-headline mb-1">{p.title}</h3>
+                   <p className="text-sm text-on-surface-variant flex items-center gap-1 mb-4">
+                      <span className="material-symbols-outlined text-sm">location_on</span> {p.city}, {p.state}
+                   </p>
+                   <div className="flex gap-2 flex-wrap mb-4">
+                      <span className="bg-surface-container-low text-xs px-2 py-1 rounded">{p.propertyType}</span>
+                      <span className="bg-surface-container-low text-xs px-2 py-1 rounded">{p.roomType}</span>
+                   </div>
+                </div>
+                <div className="flex gap-2 border-t border-surface-container-low pt-4">
+                   <button onClick={() => startEdit(p)} className="flex-1 text-primary bg-primary/10 py-2 rounded-lg font-bold hover:bg-primary/20 transition-colors">Edit</button>
+                   <button onClick={() => setDeleteTarget(p.id)} className="text-error bg-error/10 px-4 py-2 rounded-lg hover:bg-error/20 transition-colors"><span className="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+             </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

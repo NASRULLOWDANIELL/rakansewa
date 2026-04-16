@@ -2,11 +2,12 @@ import { Link } from 'react-router-dom';
 
 const PropertyCard = ({ property }) => {
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fHByb3BlcnR5fGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60`;
+  const displayImage = property.imageUrl || placeholderImage;
 
   return (
     <article className="group relative bg-surface-container-lowest rounded-lg overflow-hidden shadow-[0_40px_60px_-10px_rgba(25,28,30,0.04)] hover:shadow-[0_40px_80px_-5px_rgba(0,88,190,0.08)] transition-all duration-500 transform hover:-translate-y-2 flex flex-col">
       <div className="h-64 overflow-hidden relative">
-        <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={property.title} src={placeholderImage}/>
+        <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={property.title} src={displayImage}/>
         <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1">
           <span className="material-symbols-outlined text-tertiary text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
           <span className="text-xs font-bold text-on-surface">4.8</span>

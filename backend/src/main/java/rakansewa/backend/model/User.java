@@ -25,4 +25,16 @@ public class User {
 
     @Column(nullable = false)
     private String role;
+
+    @Column
+    private Boolean isListedAsHousemate;
+
+    @Column
+    private Double budget;
+
+    @Column
+    private String lifestyle;
+
+    @Column
+    private String sleepSchedule;
 }

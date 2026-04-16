@@ -2,6 +2,8 @@ const MatchResultCard = ({ result }) => {
   if (!result || !result.housemateProfile) return null;
   const match = result.housemateProfile;
   const isBest = result.matchLabel === 'Best Match';
+  const isGood = result.matchLabel === 'Good Match';
+  const score = result.compatibilityScore;
 
   // Array of random placeholders since we don't have user images uploaded
   const placeholders = [
@@ -11,28 +13,71 @@ const MatchResultCard = ({ result }) => {
   ];
   const placeholderImage = placeholders[match.id % placeholders.length] || placeholders[0];
 
+  // Score color palette
+  const getScoreColor = () => {
+    if (score >= 85) return 'from-green-500 to-emerald-600';
+    if (score >= 65) return 'from-blue-500 to-indigo-600';
+    if (score >= 40) return 'from-amber-500 to-orange-600';
+    return 'from-gray-400 to-gray-500';
+  };
+
+  const getScoreBg = () => {
+    if (score >= 85) return 'bg-green-50 border-green-200';
+    if (score >= 65) return 'bg-blue-50 border-blue-200';
+    if (score >= 40) return 'bg-amber-50 border-amber-200';
+    return 'bg-gray-50 border-gray-200';
+  };
+
   return (
-    <div className={`group relative flex flex-col bg-surface-container-lowest rounded-lg overflow-hidden shadow-[0_40px_60px_-10px_rgba(25,28,30,0.04)] hover:shadow-[0_50px_80px_-15px_rgba(0,88,190,0.08)] transition-all duration-500 ${isBest ? 'ring-4 ring-primary-container' : ''}`}>
+    <div className={`group relative flex flex-col bg-surface-container-lowest rounded-2xl overflow-hidden shadow-[0_40px_60px_-10px_rgba(25,28,30,0.04)] hover:shadow-[0_50px_80px_-15px_rgba(0,88,190,0.08)] transition-all duration-500 hover:-translate-y-1 ${isBest ? 'ring-4 ring-primary/30 shadow-primary/10' : ''}`}>
+      
+      {/* Image section */}
       <div className="relative aspect-[4/3] overflow-hidden flex-shrink-0">
         <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={match.name} src={placeholderImage} />
         
-        {/* Adjusted badge for showing the compatibility score natively */}
-        {result.compatibilityScore !== undefined && result.compatibilityScore !== null && (
-          <div className="absolute top-4 right-4 bg-white/70 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 shadow-sm">
-            <span className="material-symbols-outlined text-tertiary text-sm" style={{fontVariationSettings: "'FILL' 1"}}>favorite</span>
-            <span className="font-headline font-bold text-on-surface text-sm">{result.compatibilityScore}%</span>
+        {/* ===== PROMINENT COMPATIBILITY SCORE BADGE ===== */}
+        {score !== undefined && score !== null && (
+          <div className="absolute top-4 right-4">
+            <div className={`relative bg-gradient-to-br ${getScoreColor()} text-white rounded-2xl px-5 py-3 shadow-xl flex flex-col items-center min-w-[80px]`}>
+              <span className="text-3xl font-black leading-none tracking-tight">{Math.round(score)}%</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest mt-1 opacity-90">Match</span>
+              {/* Glow effect */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${getScoreColor()} rounded-2xl blur-lg opacity-40 -z-10 scale-110`}></div>
+            </div>
           </div>
         )}
         
         {isBest && (
-          <div className="absolute top-4 left-4 bg-primary text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-sm">
+          <div className="absolute top-4 left-4 bg-primary text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
              <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
+             <span className="font-headline font-bold text-xs uppercase tracking-widest">{result.matchLabel}</span>
+          </div>
+        )}
+        
+        {isGood && !isBest && (
+          <div className="absolute top-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
+             <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>thumb_up</span>
              <span className="font-headline font-bold text-xs uppercase tracking-widest">{result.matchLabel}</span>
           </div>
         )}
       </div>
       
       <div className="p-6 flex flex-col flex-grow">
+        {/* Compatibility score highlight bar */}
+        {score !== undefined && score !== null && (
+          <div className={`mb-4 p-3 rounded-xl border ${getScoreBg()} flex items-center gap-3`}>
+            <div className="flex-1">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className={`h-full rounded-full bg-gradient-to-r ${getScoreColor()} transition-all duration-1000`}
+                  style={{ width: `${score}%` }}
+                ></div>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-on-surface whitespace-nowrap">{result.matchLabel}</span>
+          </div>
+        )}
+
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-headline font-bold text-on-surface mb-1 flex items-center gap-2">

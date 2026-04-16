@@ -57,4 +57,9 @@ export const getAllUsers = async () => {
   return response.data;
 };
 
+export const updateUser = async (id, user) => {
+  const response = await api.put(`/users/${id}`, user);
+  return response.data;
+};
+
 export default api;

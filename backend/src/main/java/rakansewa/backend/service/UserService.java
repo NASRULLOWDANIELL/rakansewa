@@ -23,4 +23,17 @@ public class UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    public User updateUser(Long id, User updatedUser) {
+        return userRepository.findById(id).map(user -> {
+            user.setName(updatedUser.getName());
+            user.setEmail(updatedUser.getEmail());
+            user.setRole(updatedUser.getRole());
+            user.setIsListedAsHousemate(updatedUser.getIsListedAsHousemate());
+            user.setBudget(updatedUser.getBudget());
+            user.setLifestyle(updatedUser.getLifestyle());
+            user.setSleepSchedule(updatedUser.getSleepSchedule());
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
 }

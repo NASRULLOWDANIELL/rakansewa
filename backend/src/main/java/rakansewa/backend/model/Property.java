@@ -43,4 +43,10 @@ public class Property {
 
     @Column(nullable = false)
     private String availabilityStatus; // e.g. "Available", "Occupied"
+
+    @Column
+    private Long ownerId;
+
+    @Column(columnDefinition = "TEXT")
+    private String imageUrl;
 }

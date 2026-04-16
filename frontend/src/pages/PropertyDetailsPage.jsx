@@ -38,10 +38,15 @@ const PropertyDetailsPage = () => {
   if (error || !property) return <div className="text-center py-32 text-error text-lg font-medium">{error || 'Property not found.'}</div>;
 
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fHByb3BlcnR5fGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=1200&q=80`;
+  const mainImage = property.imageUrl || placeholderImage;
 
   const whatsappNumber = "60123456789";
   const whatsappMessage = encodeURIComponent(`Hi, I'm interested in your property: ${property.title} in ${property.city}. Is it still available?`);
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
+  // Google Maps link using property address
+  const locationQuery = encodeURIComponent(`${property.address}, ${property.city}, ${property.state}`);
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${locationQuery}`;
 
   return (
     <div className="pt-24 pb-32">
@@ -56,7 +61,7 @@ const PropertyDetailsPage = () => {
       <section className="max-w-7xl mx-auto px-6 mb-12">
         <div className="grid grid-cols-12 grid-rows-2 gap-4 h-[300px] md:h-[500px]">
           <div className="col-span-12 md:col-span-8 md:row-span-2 relative overflow-hidden rounded-lg group">
-            <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={property.title} src={placeholderImage} />
+            <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={property.title} src={mainImage} />
             <div className="absolute top-4 left-4">
               <span className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase ${property.availabilityStatus === 'Available' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
                 {property.availabilityStatus}
@@ -153,9 +158,14 @@ const PropertyDetailsPage = () => {
            <div className="bg-surface-container-low rounded-lg overflow-hidden h-64 relative flex items-center justify-center text-on-surface-variant">
               <span className="material-symbols-outlined text-4xl mb-2 block text-center w-full">map</span>
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent flex items-end p-6">
-                <button className="w-full bg-white text-on-surface font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all shadow-lg">
+                <a 
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-white text-on-surface font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all shadow-lg"
+                >
                   <span className="material-symbols-outlined">map</span> View in Maps
-                </button>
+                </a>
               </div>
            </div>
         </div>

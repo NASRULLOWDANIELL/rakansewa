@@ -45,6 +45,8 @@ public class PropertyService {
         existing.setPropertyType(updatedProperty.getPropertyType());
         existing.setFurnishedStatus(updatedProperty.getFurnishedStatus());
         existing.setAvailabilityStatus(updatedProperty.getAvailabilityStatus());
+        existing.setOwnerId(updatedProperty.getOwnerId());
+        existing.setImageUrl(updatedProperty.getImageUrl());
 
         return propertyRepository.save(existing);
     }

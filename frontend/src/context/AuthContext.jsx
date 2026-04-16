@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAllUsers, createUser } from '../services/api';
+import { getAllUsers, createUser, updateUser } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -21,8 +21,19 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const users = await getAllUsers();
-      // Simple client-side mock check since backend doesn't have login endpoint
-      const user = users.find(u => u.email === email && u.password === password);
+      let user = users.find(u => u.email === email && u.password === password);
+      
+      // Admin mock creation / fallback
+      if (email === 'admin@rakansewa.com' && password === 'admin123' && !user) {
+        user = {
+          id: 999,
+          name: 'Admin',
+          email: 'admin@rakansewa.com',
+          role: 'Admin',
+          password: 'admin123' // fallback hardcoded admin
+        };
+      }
+
       if (user) {
         // Mock admin role since there is no admin role on backend model initially (or maybe there is)
         if (user.email === 'admin@rakansewa.com') {
@@ -84,11 +95,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('rakansewa_user');
   };
 
-  const updateProfile = (updatedData) => {
-    const updatedUser = { ...currentUser, ...updatedData };
-    setCurrentUser(updatedUser);
-    localStorage.setItem('rakansewa_user', JSON.stringify(updatedUser));
-    return updatedUser;
+  const updateProfile = async (updatedData) => {
+    try {
+      const updatedUser = { ...currentUser, ...updatedData };
+      
+      // Save properly to backend if it's a real user (not dummy admin)
+      if (currentUser.id && currentUser.id !== 999) {
+        await updateUser(currentUser.id, updatedUser);
+      }
+      
+      setCurrentUser(updatedUser);
+      localStorage.setItem('rakansewa_user', JSON.stringify(updatedUser));
+      return updatedUser;
+    } catch (error) {
+      console.error("Update profile failed:", error);
+      throw error;
+    }
   };
 
   const value = {

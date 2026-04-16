@@ -1,27 +1,58 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
+const SLEEP_OPTIONS = ['Early Bird', 'Night Owl', 'Flexible'];
+
 const ProfilePage = () => {
   const { currentUser, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
-    email: currentUser?.email || ''
+    email: currentUser?.email || '',
+    isListedAsHousemate: currentUser?.isListedAsHousemate || false,
+    budget: currentUser?.budget || '',
+    lifestyle: currentUser?.lifestyle || '',
+    sleepSchedule: currentUser?.sleepSchedule || '',
   });
 
   if (!currentUser) return null;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
-  const handleSave = () => {
-    updateProfile(formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setSaveSuccess(false);
+      await updateProfile({
+        ...formData,
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+      });
+      setIsEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto">
+      {saveSuccess && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800 animate-[fadeIn_0.3s_ease-out]">
+          <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
+          <span className="font-medium">Profile saved successfully!</span>
+        </div>
+      )}
+
       <div className="glass p-10 rounded-2xl shadow-xl border border-white/40">
         <div className="flex items-center gap-6 mb-10 pb-6 border-b border-surface-container-low">
           <div className="w-24 h-24 rounded-full bg-primary-fixed flex items-center justify-center text-4xl text-on-primary-fixed font-bold shadow-inner uppercase">
@@ -33,6 +64,12 @@ const ProfilePage = () => {
             <span className="inline-block mt-2 px-3 py-1 bg-secondary-container text-on-secondary-container text-xs font-bold rounded-full uppercase tracking-wider">
               {currentUser.role}
             </span>
+            {currentUser.isListedAsHousemate && (
+              <span className="inline-block mt-2 ml-2 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider">
+                <span className="material-symbols-outlined text-xs align-middle mr-1">groups</span>
+                Housemate
+              </span>
+            )}
           </div>
         </div>
 
@@ -40,7 +77,7 @@ const ProfilePage = () => {
           <h2 className="text-xl font-bold text-on-surface">Account Settings</h2>
           
           {isEditing ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div>
                     <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Full Name</label>
@@ -51,12 +88,91 @@ const ProfilePage = () => {
                     <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
                  </div>
               </div>
+
+              {/* Housemate Section */}
+              <div className="mt-8 p-6 bg-gradient-to-br from-primary/5 to-tertiary/5 rounded-2xl border border-primary/10">
+                <h3 className="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">groups</span>
+                  Housemate Profile
+                </h3>
+                
+                <label className="flex items-center gap-3 cursor-pointer p-3 bg-white/50 rounded-xl hover:bg-white/80 transition-colors mb-6">
+                  <input 
+                    type="checkbox" 
+                    name="isListedAsHousemate" 
+                    checked={formData.isListedAsHousemate} 
+                    onChange={handleChange}
+                    className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer accent-primary"
+                  />
+                  <div>
+                    <span className="font-bold text-on-surface">I want to be listed as a housemate</span>
+                    <p className="text-xs text-on-surface-variant mt-0.5">You'll appear on the housemate listing page for others to find</p>
+                  </div>
+                </label>
+
+                {formData.isListedAsHousemate && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-[fadeIn_0.3s_ease-out]">
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Monthly Budget (RM)</label>
+                      <input 
+                        type="number" 
+                        name="budget" 
+                        value={formData.budget} 
+                        onChange={handleChange} 
+                        placeholder="e.g. 500" 
+                        className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Sleep Pattern</label>
+                      <select 
+                        name="sleepSchedule" 
+                        value={formData.sleepSchedule} 
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface"
+                      >
+                        <option value="">Select...</option>
+                        {SLEEP_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Lifestyle</label>
+                      <div className="flex flex-wrap gap-2">
+                        {LIFESTYLE_OPTIONS.map(opt => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, lifestyle: opt })}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                              formData.lifestyle === opt 
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' 
+                                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="pt-4 flex justify-end gap-3">
-                 <button onClick={() => setIsEditing(false)} className="bg-surface-container hover:bg-surface-container-high text-on-surface px-6 py-2 rounded-lg font-bold transition-all">
+                 <button onClick={() => setIsEditing(false)} className="bg-surface-container hover:bg-surface-container-high text-on-surface px-6 py-2.5 rounded-full font-bold transition-all">
                     Cancel
                  </button>
-                 <button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 py-2 rounded-lg font-bold transition-all">
-                    Save Changes
+                 <button 
+                   onClick={handleSave} 
+                   disabled={saving} 
+                   className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-8 py-2.5 rounded-full font-bold transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center gap-2"
+                 >
+                    {saving ? (
+                      <>
+                        <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                        Saving...
+                      </>
+                    ) : 'Save Changes'}
                  </button>
               </div>
             </div>
@@ -72,8 +188,34 @@ const ProfilePage = () => {
                    <p className="text-on-surface font-medium">{currentUser.email}</p>
                 </div>
               </div>
+
+              {/* Housemate details in view mode */}
+              {currentUser.isListedAsHousemate && (
+                <div className="mt-6 p-6 bg-gradient-to-br from-primary/5 to-tertiary/5 rounded-2xl border border-primary/10">
+                  <h3 className="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">groups</span>
+                    Housemate Profile
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white/50 p-4 rounded-xl">
+                      <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Budget</label>
+                      <p className="text-on-surface font-bold text-lg">{currentUser.budget ? `RM ${currentUser.budget}` : 'Not set'}</p>
+                    </div>
+                    <div className="bg-white/50 p-4 rounded-xl">
+                      <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Lifestyle</label>
+                      <p className="text-on-surface font-medium">{currentUser.lifestyle || 'Not set'}</p>
+                    </div>
+                    <div className="bg-white/50 p-4 rounded-xl">
+                      <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Sleep Pattern</label>
+                      <p className="text-on-surface font-medium">{currentUser.sleepSchedule || 'Not set'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 flex justify-end">
-                 <button onClick={() => setIsEditing(true)} className="bg-surface-container hover:bg-surface-container-high text-on-surface px-6 py-2 rounded-lg font-bold transition-all">
+                 <button onClick={() => setIsEditing(true)} className="bg-surface-container hover:bg-surface-container-high text-on-surface px-6 py-2.5 rounded-full font-bold transition-all flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">edit</span>
                     Edit Profile
                  </button>
               </div>

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getProperties } from '../services/api';
 
 const Navbar = () => {
@@ -9,7 +9,14 @@ const Navbar = () => {
   const { currentUser, logout } = useAuth();
   
   const [notifications, setNotifications] = useState([]);
+  const [newCount, setNewCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // Generate a stable notification key for localStorage
+  const getStorageKey = useCallback(() => {
+    if (!currentUser) return null;
+    return `rakansewa_notif_seen_${currentUser.id}_${currentUser.role}`;
+  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -20,34 +27,73 @@ const Navbar = () => {
         let notifs = [];
         
         if (currentUser.role === 'Student') {
+          // Only notify about NEW properties (recently added)
           const available = props.filter(p => p.availabilityStatus === 'Available');
-          if (available.length > 0) {
-            notifs.push({ id: 1, text: `${available.length} rental properties are currently available to view!` });
-          }
+          available.forEach(p => {
+            notifs.push({ 
+              id: `prop_${p.id}`, 
+              text: `New rental available: "${p.title}" in ${p.city}`,
+              icon: 'apartment'
+            });
+          });
         } else if (currentUser.role === 'Owner') {
-          const approved = props.filter(p => p.availabilityStatus === 'Available');
-          const pending = props.filter(p => p.availabilityStatus === 'Pending');
-          if (pending.length > 0) {
-            notifs.push({ id: 1, text: `You have ${pending.length} properties waiting for admin approval.` });
-          }
-          if (approved.length > 0) {
-            notifs.push({ id: 2, text: `${approved.length} of your properties have been approved and are active!` });
-          }
+          const ownerProps = props.filter(p => p.ownerId === currentUser.id || p.ownerId == currentUser.id);
+          const approved = ownerProps.filter(p => p.availabilityStatus === 'Available');
+          const rejected = ownerProps.filter(p => p.availabilityStatus === 'Rejected');
+          approved.forEach(p => {
+            notifs.push({ 
+              id: `approved_${p.id}`, 
+              text: `"${p.title}" has been approved!`,
+              icon: 'check_circle'
+            });
+          });
+          rejected.forEach(p => {
+            notifs.push({ 
+              id: `rejected_${p.id}`, 
+              text: `"${p.title}" was rejected.`,
+              icon: 'cancel'
+            });
+          });
         } else if (currentUser.role === 'Admin') {
           const pending = props.filter(p => p.availabilityStatus === 'Pending');
-          if (pending.length > 0) {
-             notifs.push({ id: 1, text: `${pending.length} properties are pending your approval.` });
-          }
+          pending.forEach(p => {
+            notifs.push({ 
+              id: `pending_${p.id}`, 
+              text: `"${p.title}" needs approval`,
+              icon: 'pending_actions'
+            });
+          });
         }
         
         setNotifications(notifs);
+
+        // Calculate NEW count based on last seen
+        const storageKey = getStorageKey();
+        if (storageKey) {
+          const seenIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          const unseenCount = notifs.filter(n => !seenIds.includes(n.id)).length;
+          setNewCount(unseenCount);
+        }
       } catch (err) {
         console.error("Failed to load notifications", err);
       }
     };
 
     fetchNotifications();
-  }, [currentUser]);
+  }, [currentUser, getStorageKey]);
+
+  const handleBellClick = () => {
+    if (!showDropdown) {
+      // Mark all as seen when opening
+      const storageKey = getStorageKey();
+      if (storageKey) {
+        const allIds = notifications.map(n => n.id);
+        localStorage.setItem(storageKey, JSON.stringify(allIds));
+      }
+      setNewCount(0);
+    }
+    setShowDropdown(!showDropdown);
+  };
 
   const getLinkClass = (path) => {
     const isActive = location.pathname === path;
@@ -103,23 +149,29 @@ const Navbar = () => {
           <div className="flex items-center gap-4 relative">
             
             <div className="relative">
-              <button onClick={() => setShowDropdown(!showDropdown)} className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative">
+              <button onClick={handleBellClick} className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative">
                 notifications
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-2 w-2 h-2 bg-error rounded-full block"></span>
+                {newCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
+                    {newCount}
+                  </span>
                 )}
               </button>
               
               {showDropdown && (
-                <div className="absolute right-0 top-12 w-72 bg-surface-container-lowest glass rounded-xl shadow-xl border border-white/40 p-4 z-50">
-                   <h4 className="font-bold border-b border-surface-container-low pb-2 mb-2 text-on-surface">Notifications</h4>
+                <div className="absolute right-0 top-12 w-80 bg-surface-container-lowest glass rounded-xl shadow-2xl border border-white/40 p-4 z-50">
+                   <h4 className="font-bold border-b border-surface-container-low pb-2 mb-2 text-on-surface flex items-center justify-between">
+                     Notifications
+                     <span className="text-xs font-normal text-on-surface-variant">{notifications.length} total</span>
+                   </h4>
                    {notifications.length === 0 ? (
-                      <p className="text-sm text-on-surface-variant p-2">No new notifications.</p>
+                      <p className="text-sm text-on-surface-variant p-4 text-center">No notifications yet.</p>
                    ) : (
-                      <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                         {notifications.map(n => (
-                           <div key={n.id} className="text-sm bg-surface-container-low p-3 rounded-lg text-on-surface">
-                              {n.text}
+                           <div key={n.id} className="text-sm bg-surface-container-low p-3 rounded-lg text-on-surface flex items-start gap-3 hover:bg-surface-container transition-colors">
+                              <span className="material-symbols-outlined text-primary text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
+                              <span className="leading-snug">{n.text}</span>
                            </div>
                         ))}
                       </div>
