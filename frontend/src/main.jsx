@@ -5,14 +5,21 @@ import './index.css';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext';
 
-// Keep a dummy clientId but enough to initiate the script.
-// Note: Google login will not work properly without a real client ID, 
-// but it satisfies the requirement of initiating the frontend Google Auth flow.
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1041913165243-dummyclientid.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+if (!GOOGLE_CLIENT_ID) {
+  console.error(
+    '[RakanSewa] Missing VITE_GOOGLE_CLIENT_ID in .env file.\n' +
+    'Google login will NOT work.\n' +
+    'Create a frontend/.env file with:\n' +
+    '  VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com\n' +
+    'Then restart the dev server.'
+  );
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || ''}>
       <AuthProvider>
         <App />
       </AuthProvider>
