@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../services/api';
+import { MailCheck } from 'lucide-react';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -42,7 +43,7 @@ const ForgotPasswordPage = () => {
         {submitted ? (
           <div className="text-center space-y-6">
             <div className="p-4 bg-primary/10 text-on-surface rounded-xl text-sm leading-relaxed">
-              <span className="material-symbols-rounded text-primary text-3xl block mb-2">mark_email_read</span>
+              <MailCheck className="text-primary w-8 h-8 mx-auto mb-2" />
               If an account with that email exists, a password reset link has been sent. Please check your inbox.
             </div>
             <Link
