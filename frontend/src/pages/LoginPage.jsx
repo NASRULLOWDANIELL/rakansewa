@@ -90,6 +90,12 @@ const LoginPage = () => {
             />
           </div>
           
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-xs text-primary font-semibold hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
+          
           <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
             Sign In
           </button>
