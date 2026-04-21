@@ -17,12 +17,19 @@ public class PropertyService {
 
     // Create a new property listing
     public Property createProperty(Property property) {
+        property.setApprovalStatus("Pending");
+        property.setRejectionReason(null);
         return propertyRepository.save(property);
     }
 
     // Get all property listings
     public List<Property> getAllProperties() {
         return propertyRepository.findAll();
+    }
+
+    // Get properties by owner ID
+    public List<Property> getPropertiesByOwner(Long ownerId) {
+        return propertyRepository.findByOwnerId(ownerId);
     }
 
     // Get a single property by ID
@@ -47,6 +54,56 @@ public class PropertyService {
         existing.setAvailabilityStatus(updatedProperty.getAvailabilityStatus());
         existing.setOwnerId(updatedProperty.getOwnerId());
         existing.setImageUrl(updatedProperty.getImageUrl());
+
+        // Preserve approvalStatus and rejectionReason from the incoming payload
+        if (updatedProperty.getApprovalStatus() != null) {
+            existing.setApprovalStatus(updatedProperty.getApprovalStatus());
+        }
+        if (updatedProperty.getRejectionReason() != null) {
+            existing.setRejectionReason(updatedProperty.getRejectionReason());
+        }
+
+        return propertyRepository.save(existing);
+    }
+
+    // Admin approves a property
+    public Property approveProperty(Long id) {
+        Property existing = getPropertyById(id);
+        existing.setApprovalStatus("Approved");
+        existing.setAvailabilityStatus("Available");
+        existing.setRejectionReason(null);
+        return propertyRepository.save(existing);
+    }
+
+    // Admin rejects a property with a reason
+    public Property rejectProperty(Long id, String reason) {
+        Property existing = getPropertyById(id);
+        existing.setApprovalStatus("Rejected");
+        existing.setAvailabilityStatus("Rejected");
+        existing.setRejectionReason(reason);
+        return propertyRepository.save(existing);
+    }
+
+    // Owner resubmits a rejected property after editing
+    public Property resubmitProperty(Long id, Property updatedProperty) {
+        Property existing = getPropertyById(id);
+
+        existing.setTitle(updatedProperty.getTitle());
+        existing.setDescription(updatedProperty.getDescription());
+        existing.setAddress(updatedProperty.getAddress());
+        existing.setCity(updatedProperty.getCity());
+        existing.setState(updatedProperty.getState());
+        existing.setMonthlyRent(updatedProperty.getMonthlyRent());
+        existing.setRoomType(updatedProperty.getRoomType());
+        existing.setPropertyType(updatedProperty.getPropertyType());
+        existing.setFurnishedStatus(updatedProperty.getFurnishedStatus());
+        existing.setOwnerId(updatedProperty.getOwnerId());
+        existing.setImageUrl(updatedProperty.getImageUrl());
+
+        // Reset approval state
+        existing.setApprovalStatus("Pending");
+        existing.setAvailabilityStatus("Pending");
+        existing.setRejectionReason(null);
 
         return propertyRepository.save(existing);
     }

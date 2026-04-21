@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { getProperties, updateProperty, getAllUsers } from '../services/api';
+import { getProperties, approveProperty, rejectProperty, getAllUsers } from '../services/api';
+import RejectModal from '../components/RejectModal';
 
 const AdminDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('properties');
+  const [rejectTarget, setRejectTarget] = useState(null); // property being rejected
 
   useEffect(() => {
     fetchData();
@@ -25,28 +27,38 @@ const AdminDashboard = () => {
 
   const handleApprove = async (property) => {
     try {
-      await updateProperty(property.id, { ...property, availabilityStatus: 'Available' });
+      await approveProperty(property.id);
       fetchData();
     } catch (error) {
       console.error(error);
     }
   };
 
-  const handleReject = async (property) => {
+  const handleRejectConfirm = async (reason) => {
+    if (!rejectTarget) return;
     try {
-      await updateProperty(property.id, { ...property, availabilityStatus: 'Rejected' });
+      await rejectProperty(rejectTarget.id, reason);
       fetchData();
     } catch (error) {
       console.error(error);
     }
+    setRejectTarget(null);
   };
 
   if (loading) return <div className="text-center py-32 text-on-surface">Loading data...</div>;
 
-  const pendingApprovals = properties.filter(p => p.availabilityStatus === 'Pending');
+  const pendingApprovals = properties.filter(p => p.approvalStatus === 'Pending');
 
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto space-y-8">
+      {/* Rejection Modal */}
+      <RejectModal
+        isOpen={rejectTarget !== null}
+        propertyTitle={rejectTarget?.title || ''}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setRejectTarget(null)}
+      />
+
       <div>
          <h1 className="text-4xl font-extrabold font-headline tracking-tight text-on-surface mb-2">Admin Dashboard</h1>
          <p className="text-on-surface-variant">System overview and approval queue.</p>
@@ -83,14 +95,22 @@ const AdminDashboard = () => {
                {pendingApprovals.length === 0 && <p className="text-on-surface-variant">All caught up!</p>}
                {pendingApprovals.map(p => (
                   <div key={p.id} className="bg-surface-container-low p-6 rounded-2xl border border-surface-container-high">
+                     {/* Property image thumbnail */}
+                     {p.imageUrl && (
+                       <div className="h-36 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-2xl">
+                         <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
+                       </div>
+                     )}
                      <h3 className="text-xl font-bold mb-1">{p.title}</h3>
-                     <p className="text-sm text-on-surface-variant mb-4">{p.city}, {p.state}</p>
-                     <div className="bg-white p-3 rounded-lg mb-4 text-sm font-medium">
-                        RM {p.monthlyRent} | {p.propertyType}
+                     <p className="text-sm text-on-surface-variant mb-2">{p.city}, {p.state}</p>
+                     <p className="text-xs text-on-surface-variant mb-4 line-clamp-2">{p.description}</p>
+                     <div className="bg-white p-3 rounded-lg mb-4 text-sm font-medium flex justify-between items-center">
+                        <span>RM {p.monthlyRent}</span>
+                        <span className="text-on-surface-variant">{p.propertyType} · {p.roomType}</span>
                      </div>
                      <div className="flex gap-2">
-                        <button onClick={() => handleApprove(p)} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700">Approve</button>
-                        <button onClick={() => handleReject(p)} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700">Reject</button>
+                        <button onClick={() => handleApprove(p)} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition-colors">Approve</button>
+                        <button onClick={() => setRejectTarget(p)} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 transition-colors">Reject</button>
                      </div>
                   </div>
                ))}
@@ -105,6 +125,7 @@ const AdminDashboard = () => {
                         <th className="px-6 py-4">Location</th>
                         <th className="px-6 py-4">Rent</th>
                         <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4">Reason</th>
                      </tr>
                   </thead>
                   <tbody>
@@ -114,9 +135,16 @@ const AdminDashboard = () => {
                            <td className="px-6 py-4">{p.city}, {p.state}</td>
                            <td className="px-6 py-4 text-primary font-bold">RM{p.monthlyRent}</td>
                            <td className="px-6 py-4">
-                              <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${p.availabilityStatus === 'Pending' ? 'bg-orange-100 text-orange-700' : p.availabilityStatus === 'Available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                 {p.availabilityStatus}
+                              <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                                p.approvalStatus === 'Pending' ? 'bg-orange-100 text-orange-700' :
+                                p.approvalStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                 {p.approvalStatus}
                               </span>
+                           </td>
+                           <td className="px-6 py-4 text-on-surface-variant text-xs max-w-[200px] truncate">
+                              {p.rejectionReason || '—'}
                            </td>
                         </tr>
                      ))}

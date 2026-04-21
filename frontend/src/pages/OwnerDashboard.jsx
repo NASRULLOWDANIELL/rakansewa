@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProperties, deleteProperty, createProperty, updateProperty } from '../services/api';
+import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -9,6 +9,7 @@ const OwnerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingWasRejected, setEditingWasRejected] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '', 
@@ -18,20 +19,21 @@ const OwnerDashboard = () => {
   });
 
   useEffect(() => {
-    fetchProperties();
+    if (currentUser?.id) {
+      fetchProperties();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentUser?.id]);
 
   const fetchProperties = async () => {
+    if (!currentUser?.id) return;
+    setLoading(true);
     try {
-      const data = await getProperties();
-      // CRITICAL: Filter to only show THIS owner's properties
-      const ownerProperties = (data || []).filter(
-        p => p.ownerId === currentUser?.id || p.ownerId == currentUser?.id
-      );
-      setProperties(ownerProperties);
+      const data = await getPropertiesByOwner(currentUser.id);
+      setProperties(data || []);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching owner properties:', err);
+      setProperties([]);
     } finally {
       setLoading(false);
     }
@@ -43,8 +45,21 @@ const OwnerDashboard = () => {
   };
 
   const startEdit = (property) => {
-    setFormData({ ...property, imageUrl: property.imageUrl || '' });
+    setFormData({
+      title: property.title || '',
+      description: property.description || '',
+      address: property.address || '',
+      city: property.city || '',
+      state: property.state || '',
+      monthlyRent: property.monthlyRent || '',
+      roomType: property.roomType || 'Single',
+      propertyType: property.propertyType || 'Apartment',
+      furnishedStatus: property.furnishedStatus || 'Fully Furnished',
+      availabilityStatus: property.availabilityStatus || 'Pending',
+      imageUrl: property.imageUrl || ''
+    });
     setEditingId(property.id);
+    setEditingWasRejected(property.approvalStatus === 'Rejected');
     setShowForm(true);
   };
 
@@ -56,6 +71,7 @@ const OwnerDashboard = () => {
       imageUrl: ''
     });
     setEditingId(null);
+    setEditingWasRejected(false);
     setShowForm(false);
   };
 
@@ -65,18 +81,25 @@ const OwnerDashboard = () => {
       const payload = { 
         ...formData, 
         monthlyRent: parseFloat(formData.monthlyRent),
-        ownerId: currentUser.id  // Always attach the ownerId
+        ownerId: currentUser.id
       };
-      // Force status to "Pending" on create or update
-      payload.availabilityStatus = 'Pending';
 
       if (editingId) {
-        await updateProperty(editingId, payload);
+        // If the property was rejected, use the resubmit endpoint
+        // which resets approvalStatus to Pending and clears rejectionReason
+        if (editingWasRejected) {
+          await resubmitProperty(editingId, payload);
+        } else {
+          // Normal update (keep existing approval status)
+          await updateProperty(editingId, payload);
+        }
       } else {
+        // New property creation — always starts as Pending
+        payload.availabilityStatus = 'Pending';
         await createProperty(payload);
       }
       resetForm();
-      fetchProperties();
+      await fetchProperties();
     } catch (error) {
       console.error(error);
       alert('Error saving property');
@@ -87,11 +110,23 @@ const OwnerDashboard = () => {
     if (!deleteTarget) return;
     try {
       await deleteProperty(deleteTarget);
-      fetchProperties();
+      await fetchProperties();
     } catch (err) {
       console.error(err);
     }
     setDeleteTarget(null);
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Approved':
+        return 'bg-green-100 text-green-700 border border-green-200';
+      case 'Rejected':
+        return 'bg-red-100 text-red-700 border border-red-200';
+      case 'Pending':
+      default:
+        return 'bg-orange-100 text-orange-700 border border-orange-200';
+    }
   };
 
   if (loading) return <div className="text-center py-32 text-on-surface">Loading properties...</div>;
@@ -112,7 +147,7 @@ const OwnerDashboard = () => {
            <p className="text-on-surface-variant">Manage your property listings and see their approval status.</p>
         </div>
         <button 
-          onClick={() => setShowForm(!showForm)} 
+          onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }} 
           className="bg-primary text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
         >
           {showForm ? 'Cancel' : '+ Add Property'}
@@ -121,7 +156,15 @@ const OwnerDashboard = () => {
 
       {showForm && (
         <div className="glass p-8 rounded-2xl shadow-xl border border-white/40 mb-12">
-           <h2 className="text-2xl font-bold font-headline mb-6">{editingId ? 'Edit Property' : 'List New Property'}</h2>
+           <h2 className="text-2xl font-bold font-headline mb-2">
+             {editingId ? (editingWasRejected ? 'Edit & Resubmit Property' : 'Edit Property') : 'List New Property'}
+           </h2>
+           {editingWasRejected && (
+             <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg mb-6 flex items-center gap-2">
+               <span className="material-symbols-outlined text-sm">info</span>
+               Saving changes will resubmit this property for admin approval.
+             </p>
+           )}
            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-4">
                 <input required name="title" value={formData.title} onChange={handleInputChange} placeholder="Property Title" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
@@ -167,7 +210,7 @@ const OwnerDashboard = () => {
 
              <div className="md:col-span-2 pt-4">
                 <button type="submit" className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
-                  {editingId ? 'Update Listing' : 'Submit for Approval'}
+                  {editingId ? (editingWasRejected ? 'Resubmit for Approval' : 'Update Listing') : 'Submit for Approval'}
                 </button>
              </div>
            </form>
@@ -190,7 +233,7 @@ const OwnerDashboard = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map(p => (
-             <div key={p.id} className="glass p-6 rounded-2xl shadow-sm border border-white/40 flex flex-col justify-between">
+             <div key={`property-${p.id}`} className="glass p-6 rounded-2xl shadow-sm border border-white/40 flex flex-col justify-between">
                 {/* Property image thumbnail */}
                 {p.imageUrl && (
                   <div className="h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-2xl">
@@ -199,8 +242,8 @@ const OwnerDashboard = () => {
                 )}
                 <div>
                    <div className="flex justify-between items-start mb-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${p.availabilityStatus === 'Pending' ? 'bg-orange-100 text-orange-700 border border-orange-200' : p.availabilityStatus === 'Available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {p.availabilityStatus}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusBadge(p.approvalStatus)}`}>
+                        {p.approvalStatus}
                       </span>
                       <span className="text-xl font-bold text-primary">RM{p.monthlyRent}</span>
                    </div>
@@ -212,9 +255,22 @@ const OwnerDashboard = () => {
                       <span className="bg-surface-container-low text-xs px-2 py-1 rounded">{p.propertyType}</span>
                       <span className="bg-surface-container-low text-xs px-2 py-1 rounded">{p.roomType}</span>
                    </div>
+
+                   {/* Rejection reason banner */}
+                   {p.approvalStatus === 'Rejected' && p.rejectionReason && (
+                     <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+                       <div className="flex items-center gap-2 mb-1">
+                         <span className="material-symbols-outlined text-red-500 text-sm">error</span>
+                         <span className="text-xs font-bold uppercase tracking-widest text-red-600">Rejection Reason</span>
+                       </div>
+                       <p className="text-sm text-red-700 leading-relaxed">{p.rejectionReason}</p>
+                     </div>
+                   )}
                 </div>
                 <div className="flex gap-2 border-t border-surface-container-low pt-4">
-                   <button onClick={() => startEdit(p)} className="flex-1 text-primary bg-primary/10 py-2 rounded-lg font-bold hover:bg-primary/20 transition-colors">Edit</button>
+                   <button onClick={() => startEdit(p)} className="flex-1 text-primary bg-primary/10 py-2 rounded-lg font-bold hover:bg-primary/20 transition-colors">
+                     {p.approvalStatus === 'Rejected' ? 'Edit & Resubmit' : 'Edit'}
+                   </button>
                    <button onClick={() => setDeleteTarget(p.id)} className="text-error bg-error/10 px-4 py-2 rounded-lg hover:bg-error/20 transition-colors"><span className="material-symbols-outlined text-sm">delete</span></button>
                 </div>
              </div>

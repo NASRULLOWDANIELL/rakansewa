@@ -49,4 +49,10 @@ public class Property {
 
     @Column(columnDefinition = "TEXT")
     private String imageUrl;
+
+    @Column(nullable = false)
+    private String approvalStatus = "Pending"; // "Pending", "Approved", "Rejected"
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason; // reason provided by admin when rejecting
 }

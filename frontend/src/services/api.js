@@ -30,6 +30,26 @@ export const deleteProperty = async (id) => {
   return response.data;
 };
 
+export const getPropertiesByOwner = async (ownerId) => {
+  const response = await api.get(`/properties/owner/${ownerId}`);
+  return response.data;
+};
+
+export const approveProperty = async (id) => {
+  const response = await api.put(`/properties/${id}/approve`);
+  return response.data;
+};
+
+export const rejectProperty = async (id, reason) => {
+  const response = await api.put(`/properties/${id}/reject`, { reason });
+  return response.data;
+};
+
+export const resubmitProperty = async (id, property) => {
+  const response = await api.put(`/properties/${id}/resubmit`, property);
+  return response.data;
+};
+
 // Housemate & Matching endpoints
 export const getHousematesByPropertyId = async (propertyId) => {
   const response = await api.get(`/housemates/property/${propertyId}`);

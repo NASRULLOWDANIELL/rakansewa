@@ -6,6 +6,7 @@ import rakansewa.backend.model.Property;
 import rakansewa.backend.service.PropertyService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/properties")
@@ -31,6 +32,13 @@ public class PropertyController {
         return ResponseEntity.ok(properties);
     }
 
+    // GET /properties/owner/{ownerId} — Get all properties for a specific owner
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<Property>> getPropertiesByOwner(@PathVariable Long ownerId) {
+        List<Property> properties = propertyService.getPropertiesByOwner(ownerId);
+        return ResponseEntity.ok(properties);
+    }
+
     // GET /properties/{id} — Get a single property by ID
     @GetMapping("/{id}")
     public ResponseEntity<Property> getPropertyById(@PathVariable Long id) {
@@ -43,6 +51,28 @@ public class PropertyController {
     public ResponseEntity<Property> updateProperty(@PathVariable Long id, @RequestBody Property property) {
         Property updated = propertyService.updateProperty(id, property);
         return ResponseEntity.ok(updated);
+    }
+
+    // PUT /properties/{id}/approve — Admin approves a property
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<Property> approveProperty(@PathVariable Long id) {
+        Property approved = propertyService.approveProperty(id);
+        return ResponseEntity.ok(approved);
+    }
+
+    // PUT /properties/{id}/reject — Admin rejects a property with a reason
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<Property> rejectProperty(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String reason = body.getOrDefault("reason", "No reason provided");
+        Property rejected = propertyService.rejectProperty(id, reason);
+        return ResponseEntity.ok(rejected);
+    }
+
+    // PUT /properties/{id}/resubmit — Owner resubmits after editing a rejected property
+    @PutMapping("/{id}/resubmit")
+    public ResponseEntity<Property> resubmitProperty(@PathVariable Long id, @RequestBody Property property) {
+        Property resubmitted = propertyService.resubmitProperty(id, property);
+        return ResponseEntity.ok(resubmitted);
     }
 
     // DELETE /properties/{id} — Delete a property listing
