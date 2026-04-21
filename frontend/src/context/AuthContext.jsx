@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('rakansewa_user');
+    const storedUser = sessionStorage.getItem('rakansewa_user');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
           user.role = 'Admin';
         }
         setCurrentUser(user);
-        localStorage.setItem('rakansewa_user', JSON.stringify(user));
+        sessionStorage.setItem('rakansewa_user', JSON.stringify(user));
         return user;
       } else {
         throw new Error("Invalid email or password");
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       setCurrentUser(user);
-      localStorage.setItem('rakansewa_user', JSON.stringify(user));
+      sessionStorage.setItem('rakansewa_user', JSON.stringify(user));
       return user;
     } catch (error) {
       console.error(error);
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('rakansewa_user');
+    sessionStorage.removeItem('rakansewa_user');
   };
 
   const updateProfile = async (updatedData) => {
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
       }
       
       setCurrentUser(updatedUser);
-      localStorage.setItem('rakansewa_user', JSON.stringify(updatedUser));
+      sessionStorage.setItem('rakansewa_user', JSON.stringify(updatedUser));
       return updatedUser;
     } catch (error) {
       console.error("Update profile failed:", error);
