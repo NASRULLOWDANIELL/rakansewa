@@ -10,6 +10,7 @@ const OwnerDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingWasRejected, setEditingWasRejected] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '', 
@@ -102,7 +103,8 @@ const OwnerDashboard = () => {
       await fetchProperties();
     } catch (error) {
       console.error(error);
-      alert('Error saving property');
+      setSaveError('Failed to save property. Please try again.');
+      setTimeout(() => setSaveError(null), 4000);
     }
   };
 
@@ -140,6 +142,13 @@ const OwnerDashboard = () => {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {saveError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-800 animate-[fadeIn_0.3s_ease-out]">
+          <span className="material-symbols-outlined">error</span>
+          <span className="font-medium">{saveError}</span>
+        </div>
+      )}
 
       <div className="flex justify-between items-end">
         <div>
