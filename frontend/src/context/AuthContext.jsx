@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAllUsers, createUser, updateUser } from '../services/api';
+import { getAllUsers, createUser, updateUser, loginUser } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -20,18 +20,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const users = await getAllUsers();
-      let user = users.find(u => u.email === email && u.password === password);
+      let user;
       
       // Admin mock creation / fallback
-      if (email === 'admin@rakansewa.com' && password === 'admin123' && !user) {
+      if (email === 'admin@rakansewa.com' && password === 'admin123') {
         user = {
           id: 999,
           name: 'Admin',
           email: 'admin@rakansewa.com',
-          role: 'Admin',
-          password: 'admin123' // fallback hardcoded admin
+          role: 'Admin'
         };
+      } else {
+        // Use the backend authentication endpoint
+        user = await loginUser(email, password);
       }
 
       if (user) {
@@ -42,12 +43,10 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(user);
         sessionStorage.setItem('rakansewa_user', JSON.stringify(user));
         return user;
-      } else {
-        throw new Error("Invalid email or password");
       }
     } catch (error) {
       console.error(error);
-      throw new Error(error.message || "Failed to login");
+      throw new Error(error.response?.data?.message || "Failed to login");
     }
   };
 

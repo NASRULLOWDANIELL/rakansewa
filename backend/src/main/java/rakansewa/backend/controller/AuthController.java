@@ -4,16 +4,47 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rakansewa.backend.service.PasswordResetService;
 
+import rakansewa.backend.model.User;
+import rakansewa.backend.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     private final PasswordResetService passwordResetService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(PasswordResetService passwordResetService) {
+    public AuthController(PasswordResetService passwordResetService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.passwordResetService = passwordResetService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * POST /auth/login
+     * Validates user credentials and returns user info if successful.
+     */
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String password = request.get("password");
+
+        if (email == null || password == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required."));
+        }
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                return ResponseEntity.ok(user);
+            }
+        }
+        return ResponseEntity.status(401).body(Map.of("message", "Invalid email or password."));
     }
 
     /**
