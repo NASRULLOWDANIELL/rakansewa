@@ -155,6 +155,7 @@ const Navbar = () => {
         { path: '/', label: 'Home' },
         { path: '/properties', label: 'Properties' },
         { path: '/housemates', label: 'Housemates' },
+        { path: '/feedback', label: 'Feedback' },
         { path: '/about', label: 'About' },
         { path: '/profile', label: 'Profile' },
       ];
@@ -163,6 +164,7 @@ const Navbar = () => {
     if (currentUser.role === 'Owner') {
       return [
         { path: '/owner', label: 'Dashboard' },
+        { path: '/feedback', label: 'Feedback' },
         { path: '/about', label: 'About' },
       ];
     }
