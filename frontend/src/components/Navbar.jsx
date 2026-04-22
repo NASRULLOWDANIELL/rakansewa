@@ -157,7 +157,6 @@ const Navbar = () => {
         { path: '/housemates', label: 'Housemates' },
         { path: '/feedback', label: 'Feedback' },
         { path: '/about', label: 'About' },
-        { path: '/profile', label: 'Profile' },
       ];
     }
 
