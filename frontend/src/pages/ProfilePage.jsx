@@ -12,11 +12,29 @@ const ProfilePage = () => {
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
     email: currentUser?.email || '',
+    phoneNumber: currentUser?.phoneNumber || '',
+    matricNumber: currentUser?.matricNumber || '',
+    uitmEmail: currentUser?.uitmEmail || '',
     isListedAsHousemate: currentUser?.isListedAsHousemate || false,
     budget: currentUser?.budget || '',
     lifestyle: currentUser?.lifestyle || '', // comma-separated multi-select
     sleepSchedule: currentUser?.sleepSchedule || '',
   });
+
+  const calculateProgress = () => {
+    if (!currentUser) return 0;
+    let completed = 0;
+    if (currentUser.name) completed++;
+    if (currentUser.email) completed++;
+    if (currentUser.phoneNumber) completed++;
+    if (currentUser.matricNumber) completed++;
+    if (currentUser.uitmEmail) completed++;
+    return (completed / 5) * 100;
+  };
+  const progress = calculateProgress();
+  const missingStudentFields = [];
+  if (!currentUser?.matricNumber) missingStudentFields.push('Matric Number');
+  if (!currentUser?.uitmEmail) missingStudentFields.push('UiTM Email');
 
   if (!currentUser) return null;
 
@@ -86,9 +104,52 @@ const ProfilePage = () => {
                   Housemate
                 </span>
               )}
+              {currentUser.role === 'STUDENT' && (
+                currentUser.isStudentVerified ? (
+                  <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1 w-fit">
+                    <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
+                    Verified UiTM Student
+                  </span>
+                ) : (
+                  <span className="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1 w-fit">
+                    <span className="material-symbols-outlined text-sm">error</span>
+                    Not Verified
+                  </span>
+                )
+              )}
             </div>
           </div>
         </div>
+
+        {currentUser.role === 'STUDENT' && (
+          <div className="mb-10 bg-surface-container-low p-6 rounded-2xl border border-outline-variant">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold text-on-surface">Profile Completion: {progress}%</h3>
+              <span className="text-xs font-bold text-primary">{progress === 100 ? 'Complete' : 'Incomplete'}</span>
+            </div>
+            <div className="w-full bg-surface-container-high rounded-full h-2.5 mb-3">
+              <div className="bg-primary h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+            </div>
+            {progress < 100 ? (
+              <p className="text-sm text-on-surface-variant">
+                Complete your profile to improve trust and matching.
+              </p>
+            ) : null}
+            {!currentUser.isStudentVerified && (
+              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl text-orange-800">
+                <p className="font-medium text-sm flex items-center gap-2">
+                  <span className="material-symbols-outlined text-orange-600">info</span>
+                  Complete your student verification to unlock full trust features.
+                </p>
+                {missingStudentFields.length > 0 && (
+                  <p className="text-xs mt-1 ml-7">
+                    Missing fields: <span className="font-bold">{missingStudentFields.join(', ')}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-on-surface">Account Settings</h2>
@@ -104,6 +165,22 @@ const ProfilePage = () => {
                     <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Email Address</label>
                     <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
                  </div>
+                 <div>
+                    <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Phone Number</label>
+                    <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 0123456789" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
+                 </div>
+                 {currentUser.role === 'STUDENT' && (
+                   <>
+                     <div>
+                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Matric Number</label>
+                        <input type="text" name="matricNumber" value={formData.matricNumber} onChange={handleChange} placeholder="e.g. 2021123456" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
+                     </div>
+                     <div>
+                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">UiTM Email</label>
+                        <input type="email" name="uitmEmail" value={formData.uitmEmail} onChange={handleChange} placeholder="e.g. student@uitm.edu.my" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
+                     </div>
+                   </>
+                 )}
               </div>
 
               {/* Housemate Section */}
@@ -211,6 +288,22 @@ const ProfilePage = () => {
                    <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Email Address</label>
                    <p className="text-on-surface font-medium">{currentUser.email}</p>
                 </div>
+                <div className="bg-surface-container-low p-4 rounded-lg">
+                   <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Phone Number</label>
+                   <p className="text-on-surface font-medium">{currentUser.phoneNumber || 'Not provided'}</p>
+                </div>
+                {currentUser.role === 'STUDENT' && (
+                  <>
+                    <div className="bg-surface-container-low p-4 rounded-lg">
+                       <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Matric Number</label>
+                       <p className="text-on-surface font-medium">{currentUser.matricNumber || 'Not provided'}</p>
+                    </div>
+                    <div className="bg-surface-container-low p-4 rounded-lg">
+                       <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">UiTM Email</label>
+                       <p className="text-on-surface font-medium">{currentUser.uitmEmail || 'Not provided'}</p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Housemate details in view mode — always shown */}

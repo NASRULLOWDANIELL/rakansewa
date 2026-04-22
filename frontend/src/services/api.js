@@ -36,12 +36,12 @@ export const getPropertiesByOwner = async (ownerId) => {
 };
 
 export const approveProperty = async (id) => {
-  const response = await api.put(`/properties/${id}/approve`);
+  const response = await api.put(`/admin/properties/${id}/approve`);
   return response.data;
 };
 
 export const rejectProperty = async (id, reason) => {
-  const response = await api.put(`/properties/${id}/reject`, { reason });
+  const response = await api.put(`/admin/properties/${id}/reject`, { reason });
   return response.data;
 };
 

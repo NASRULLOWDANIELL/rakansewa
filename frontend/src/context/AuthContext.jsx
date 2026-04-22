@@ -50,10 +50,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, role) => {
+  const register = async (name, email, password, role, matricNumber, uitmEmail) => {
     try {
       // Create user using existing User API
-      const newUser = await createUser({ name, email, password, role });
+      const newUser = await createUser({ name, email, password, role, matricNumber, uitmEmail });
       return newUser;
     } catch (error) {
       console.error(error);

@@ -8,6 +8,20 @@ const PropertyDetailsPage = () => {
   const [housemates, setHousemates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [distance, setDistance] = useState(null);
+  const [distanceStatus, setDistanceStatus] = useState('calculating...');
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,6 +47,32 @@ const PropertyDetailsPage = () => {
 
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    if (!property) return;
+    if (!property.latitude || !property.longitude) {
+      setDistanceStatus('Location unavailable');
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setDistanceStatus('Distance unavailable');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLon = position.coords.longitude;
+        const dist = calculateDistance(userLat, userLon, property.latitude, property.longitude);
+        setDistance(dist.toFixed(1));
+        setDistanceStatus('');
+      },
+      (error) => {
+        setDistanceStatus('Distance unavailable');
+      }
+    );
+  }, [property]);
 
   if (loading) return <div className="text-center py-32 text-on-surface text-lg font-medium">Loading details...</div>;
   if (error || !property) return <div className="text-center py-32 text-error text-lg font-medium">{error || 'Property not found.'}</div>;
@@ -155,8 +195,14 @@ const PropertyDetailsPage = () => {
 
         {/* Right Column: Maps & Actions */}
         <div className="space-y-8">
-           <div className="bg-surface-container-low rounded-lg overflow-hidden h-64 relative flex items-center justify-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-4xl mb-2 block text-center w-full">map</span>
+           <div className="bg-surface-container-low rounded-lg overflow-hidden h-64 relative flex flex-col items-center justify-center text-on-surface-variant">
+              <span className="material-symbols-outlined text-4xl mb-2">map</span>
+              
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-outline-variant/30 text-sm font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-base">directions_walk</span>
+                {distance ? `${distance} km away` : distanceStatus}
+              </div>
+
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent flex items-end p-6">
                 <a 
                   href={googleMapsUrl}

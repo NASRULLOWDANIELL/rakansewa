@@ -7,6 +7,8 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Student');
+  const [matricNumber, setMatricNumber] = useState('');
+  const [uitmEmail, setUitmEmail] = useState('');
   const [error, setError] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -15,7 +17,7 @@ const RegisterPage = () => {
     e.preventDefault();
     try {
       setError('');
-      await register(name, email, password, role);
+      await register(name, email, password, role, matricNumber, uitmEmail);
       navigate('/login');
     } catch (err) {
       setError(err.message);
@@ -83,8 +85,33 @@ const RegisterPage = () => {
             </div>
           </div>
           
+          {role === 'Student' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-on-surface mb-1">Matric Number</label>
+                <input 
+                  type="text" 
+                  value={matricNumber}
+                  onChange={(e) => setMatricNumber(e.target.value)}
+                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-on-surface mb-1">UiTM Email</label>
+                <input 
+                  type="email" 
+                  value={uitmEmail}
+                  onChange={(e) => setUitmEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+          )}
+          
           <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform mt-6 flex items-center justify-center gap-2">
-            Register Options
+            Create Account
           </button>
         </form>
         

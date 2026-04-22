@@ -22,6 +22,7 @@ public class UserService {
         if (user.getPassword() != null && !user.getPassword().startsWith("$2a$")) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
+        updateVerificationStatus(user);
         return userRepository.save(user);
     }
 
@@ -38,7 +39,23 @@ public class UserService {
             user.setBudget(updatedUser.getBudget());
             user.setLifestyle(updatedUser.getLifestyle());
             user.setSleepSchedule(updatedUser.getSleepSchedule());
+            
+            user.setPhoneNumber(updatedUser.getPhoneNumber());
+            user.setMatricNumber(updatedUser.getMatricNumber());
+            user.setUitmEmail(updatedUser.getUitmEmail());
+            
+            updateVerificationStatus(user);
+
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private void updateVerificationStatus(User user) {
+        if (user.getMatricNumber() != null && !user.getMatricNumber().trim().isEmpty() &&
+            user.getUitmEmail() != null && user.getUitmEmail().toLowerCase().contains("uitm.edu.my")) {
+            user.setIsStudentVerified(true);
+        } else {
+            user.setIsStudentVerified(false);
+        }
     }
 }
