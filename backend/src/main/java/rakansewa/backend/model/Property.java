@@ -50,6 +50,20 @@ public class Property {
     @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
+    public enum VerificationStatus {
+        PENDING, APPROVED, REJECTED
+    }
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
+
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
     @Column(nullable = false)
     private String approvalStatus = "Pending"; // "Pending", "Approved", "Rejected"
 

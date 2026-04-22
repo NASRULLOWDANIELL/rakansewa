@@ -38,4 +38,16 @@ public class User {
 
     @Column
     private String sleepSchedule;
+
+    @Column
+    private String phoneNumber;
+
+    @Column
+    private String matricNumber;
+
+    @Column
+    private String uitmEmail;
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean isStudentVerified = false;
 }
