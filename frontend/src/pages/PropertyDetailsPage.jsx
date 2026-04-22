@@ -55,23 +55,11 @@ const PropertyDetailsPage = () => {
       return;
     }
 
-    if (!navigator.geolocation) {
-      setDistanceStatus('Distance unavailable');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLon = position.coords.longitude;
-        const dist = calculateDistance(userLat, userLon, property.latitude, property.longitude);
-        setDistance(dist.toFixed(1));
-        setDistanceStatus('');
-      },
-      (error) => {
-        setDistanceStatus('Distance unavailable');
-      }
-    );
+    const uitmJasinLat = 2.2646;
+    const uitmJasinLon = 102.2786;
+    const dist = calculateDistance(uitmJasinLat, uitmJasinLon, property.latitude, property.longitude);
+    setDistance(dist.toFixed(1));
+    setDistanceStatus('');
   }, [property]);
 
   if (loading) return <div className="text-center py-32 text-on-surface text-lg font-medium">Loading details...</div>;
@@ -200,7 +188,7 @@ const PropertyDetailsPage = () => {
               
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-outline-variant/30 text-sm font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-base">directions_walk</span>
-                {distance ? `${distance} km away` : distanceStatus}
+                {distance ? `${distance} km from UiTM Jasin` : distanceStatus}
               </div>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent flex items-end p-6">

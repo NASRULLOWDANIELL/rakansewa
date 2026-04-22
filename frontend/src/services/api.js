@@ -98,4 +98,20 @@ export const resetPassword = async (token, newPassword) => {
   return response.data;
 };
 
+// Feedback endpoints
+export const submitFeedback = async (feedback) => {
+  const response = await api.post('/feedbacks', feedback);
+  return response.data;
+};
+
+export const getAllFeedbacks = async () => {
+  const response = await api.get('/feedbacks');
+  return response.data;
+};
+
+export const resolveFeedback = async (id) => {
+  const response = await api.put(`/feedbacks/${id}/resolve`);
+  return response.data;
+};
+
 export default api;

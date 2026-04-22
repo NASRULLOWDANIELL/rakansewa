@@ -164,66 +164,74 @@ const OwnerDashboard = () => {
       </div>
 
       {showForm && (
-        <div className="glass p-8 rounded-2xl shadow-xl border border-white/40 mb-12">
-           <h2 className="text-2xl font-bold font-headline mb-2">
-             {editingId ? (editingWasRejected ? 'Edit & Resubmit Property' : 'Edit Property') : 'List New Property'}
-           </h2>
-           {editingWasRejected && (
-             <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg mb-6 flex items-center gap-2">
-               <span className="material-symbols-outlined text-sm">info</span>
-               Saving changes will resubmit this property for admin approval.
-             </p>
-           )}
-           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div className="space-y-4">
-                <input required name="title" value={formData.title} onChange={handleInputChange} placeholder="Property Title" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
-                <input required name="address" value={formData.address} onChange={handleInputChange} placeholder="Address" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
-                <div className="flex gap-4">
-                  <input required name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
-                  <input required name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
-                </div>
-                <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="Monthly Rent (RM)" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"/>
-                <input 
-                  name="imageUrl" 
-                  value={formData.imageUrl} 
-                  onChange={handleInputChange} 
-                  placeholder="Image URL (optional)" 
-                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"
-                />
-             </div>
-             <div className="space-y-4">
-                <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
-                   <option>Apartment</option><option>Terrace</option><option>Condo</option>
-                </select>
-                <select name="roomType" value={formData.roomType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
-                   <option>Single</option><option>Master</option><option>Middle</option>
-                </select>
-                <select name="furnishedStatus" value={formData.furnishedStatus} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
-                   <option>Fully Furnished</option><option>Partially Furnished</option><option>Unfurnished</option>
-                </select>
-                <textarea required name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" rows="3" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl"></textarea>
-             </div>
-             
-             {/* Image preview */}
-             {formData.imageUrl && (
-               <div className="md:col-span-2">
-                 <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Image Preview</p>
-                 <img 
-                   src={formData.imageUrl} 
-                   alt="Preview" 
-                   className="w-48 h-32 object-cover rounded-xl border border-surface-container-high"
-                   onError={(e) => { e.target.style.display = 'none'; }}
-                 />
-               </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-surface p-8 rounded-2xl shadow-2xl w-full max-w-3xl relative mt-auto mb-auto border border-white/20">
+             <button onClick={resetForm} className="absolute top-4 right-4 w-10 h-10 bg-surface-container hover:bg-surface-container-high rounded-full flex items-center justify-center text-on-surface transition-colors">
+                <span className="material-symbols-outlined">close</span>
+             </button>
+             <h2 className="text-2xl font-bold font-headline mb-2 text-on-surface">
+               {editingId ? (editingWasRejected ? 'Edit & Resubmit Property' : 'Edit Property') : 'List New Property'}
+             </h2>
+             {editingWasRejected && (
+               <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg mb-6 flex items-center gap-2">
+                 <span className="material-symbols-outlined text-sm">info</span>
+                 Saving changes will resubmit this property for admin approval.
+               </p>
              )}
+             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+               <div className="space-y-4">
+                  <input required name="title" value={formData.title} onChange={handleInputChange} placeholder="Property Title" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                  <input required name="address" value={formData.address} onChange={handleInputChange} placeholder="Address" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                  <div className="flex gap-4">
+                    <input required name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                    <input required name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                  </div>
+                  <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="Monthly Rent (RM)" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                  <input 
+                    name="imageUrl" 
+                    value={formData.imageUrl} 
+                    onChange={handleInputChange} 
+                    placeholder="Image URL (optional)" 
+                    className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"
+                  />
+               </div>
+               <div className="space-y-4">
+                  <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
+                     <option>Apartment</option><option>Terrace</option><option>Condo</option>
+                  </select>
+                  <select name="roomType" value={formData.roomType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
+                     <option>Single</option><option>Master</option><option>Middle</option>
+                  </select>
+                  <select name="furnishedStatus" value={formData.furnishedStatus} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
+                     <option>Fully Furnished</option><option>Partially Furnished</option><option>Unfurnished</option>
+                  </select>
+                  <textarea required name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" rows="3" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"></textarea>
+               </div>
+               
+               {/* Image preview */}
+               {formData.imageUrl && (
+                 <div className="md:col-span-2">
+                   <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Image Preview</p>
+                   <img 
+                     src={formData.imageUrl} 
+                     alt="Preview" 
+                     className="w-48 h-32 object-cover rounded-xl border border-surface-container-high"
+                     onError={(e) => { e.target.style.display = 'none'; }}
+                   />
+                 </div>
+               )}
 
-             <div className="md:col-span-2 pt-4">
-                <button type="submit" className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
-                  {editingId ? (editingWasRejected ? 'Resubmit for Approval' : 'Update Listing') : 'Submit for Approval'}
-                </button>
-             </div>
-           </form>
-           <p className="text-xs text-on-surface-variant mt-4">* New properties require admin approval before becoming visible to students.</p>
+               <div className="md:col-span-2 pt-4 flex gap-4 justify-end border-t border-surface-container-low mt-4 pt-6">
+                  <button type="button" onClick={resetForm} className="bg-surface-container text-on-surface font-bold py-3 px-8 rounded-full hover:bg-surface-container-high transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
+                    {editingId ? (editingWasRejected ? 'Resubmit for Approval' : 'Update Listing') : 'Submit for Approval'}
+                  </button>
+               </div>
+             </form>
+             <p className="text-xs text-on-surface-variant mt-4 text-center">* New properties require admin approval before becoming visible to students.</p>
+          </div>
         </div>
       )}
 

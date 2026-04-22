@@ -146,6 +146,7 @@ const Navbar = () => {
             {!currentUser && (
               <>
                 <Link className={getLinkClass('/')} to="/">Home</Link>
+                <Link className={getLinkClass('/about')} to="/about">About</Link>
                 <Link className={getLinkClass('/login')} to="/login">Login</Link>
                 <Link className={getLinkClass('/register')} to="/register">Register</Link>
               </>
@@ -156,18 +157,24 @@ const Navbar = () => {
                 <Link className={getLinkClass('/')} to="/">Home</Link>
                 <Link className={getLinkClass('/properties')} to="/properties">Properties</Link>
                 <Link className={getLinkClass('/housemates')} to="/housemates">Housemates</Link>
+                <Link className={getLinkClass('/about')} to="/about">About</Link>
+                <Link className={getLinkClass('/feedback')} to="/feedback">Feedback</Link>
               </>
             )}
 
             {currentUser?.role === 'Owner' && (
                <>
                  <Link className={getLinkClass('/owner')} to="/owner">Dashboard</Link>
+                 <Link className={getLinkClass('/about')} to="/about">About</Link>
+                 <Link className={getLinkClass('/feedback')} to="/feedback">Feedback</Link>
                </>
             )}
 
             {currentUser?.role === 'Admin' && (
                <>
                  <Link className={getLinkClass('/admin')} to="/admin">Dashboard</Link>
+                 <Link className={getLinkClass('/about')} to="/about">About</Link>
+                 <Link className={getLinkClass('/feedback')} to="/feedback">Feedback</Link>
                </>
             )}
           </div>

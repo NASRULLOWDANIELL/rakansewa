@@ -13,6 +13,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
 import HousematesPage from './pages/HousematesPage';
 import ProfilePage from './pages/ProfilePage';
+import AboutPage from './pages/AboutPage';
+import FeedbackPage from './pages/FeedbackPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { currentUser, loading } = useAuth();
@@ -41,6 +43,8 @@ function App() {
             <Route path="/properties/:id" element={<PropertyDetailsPage />} />
             <Route path="/properties/:id/match" element={<PropertyMatchPage />} />
             <Route path="/housemates" element={<HousematesPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
 
             <Route path="/profile" element={
               <ProtectedRoute><ProfilePage /></ProtectedRoute>
