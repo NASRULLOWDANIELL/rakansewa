@@ -16,8 +16,8 @@ const AboutPage = () => {
             <span className="material-symbols-outlined">school</span> Project Information
           </h2>
           <div className="bg-surface-container-low p-6 rounded-xl space-y-3">
-            <p><span className="font-bold w-32 inline-block">Project Name:</span> RakanSewa</p>
-            <p><span className="font-bold w-32 inline-block">Developer:</span> Nasrulloh Daniell</p>
+            <p><span className="font-bold w-32 inline-block">Project Name:</span> RakanSewa: Housemate Matching and Rental House Information Finder System</p>
+            <p><span className="font-bold w-32 inline-block">Developer:</span> Nasrul Low Daniell Bin Mohamad Amirul Asri Low</p>
             <p><span className="font-bold w-32 inline-block">University:</span> Universiti Teknologi MARA (UiTM) Cawangan Melaka, Kampus Jasin</p>
           </div>
         </section>
