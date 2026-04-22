@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getPropertyById, getHousematesByPropertyId } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const PropertyDetailsPage = () => {
   const { id } = useParams();
+  const { currentUser } = useAuth();
   const [property, setProperty] = useState(null);
   const [housemates, setHousemates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -214,9 +216,15 @@ const PropertyDetailsPage = () => {
               <span className="text-lg font-bold text-on-surface">{property.title}</span>
            </div>
            <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-              <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
-                 <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>chat_bubble</span> Contact Landlord
-              </a>
+              {currentUser ? (
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
+                   <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>chat_bubble</span> Contact Landlord
+                </a>
+              ) : (
+                <Link to="/login" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/5">
+                   <span className="material-symbols-outlined">lock</span> Login to Contact
+                </Link>
+              )}
            </div>
         </div>
       </div>

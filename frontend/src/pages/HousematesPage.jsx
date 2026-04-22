@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { getAllUsers } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 /**
  * Compute a simple compatibility score between the current user and a housemate.
@@ -218,10 +219,17 @@ const HousematesPage = () => {
                     </div>
                   )}
 
-                  <button className="mt-auto w-full py-3 bg-surface-container-high hover:bg-primary hover:text-white text-on-surface rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-sm">chat</span>
-                    Contact
-                  </button>
+                  {currentUser ? (
+                    <button className="mt-auto w-full py-3 bg-surface-container-high hover:bg-primary hover:text-white text-on-surface rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-sm">chat</span>
+                      Contact
+                    </button>
+                  ) : (
+                    <Link to="/login" className="mt-auto w-full py-3 bg-surface-container-lowest border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/30 rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-sm">lock</span>
+                      Login to Contact
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

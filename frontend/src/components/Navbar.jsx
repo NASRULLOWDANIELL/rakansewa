@@ -12,6 +12,7 @@ const Navbar = () => {
   const [newCount, setNewCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // Generate a stable notification key for localStorage
@@ -135,52 +136,73 @@ const Navbar = () => {
 
   const currentFirstName = currentUser ? currentUser.name.split(' ')[0] : '';
 
+  // Build nav links based on role
+  const getNavLinks = () => {
+    if (!currentUser) {
+      // Guest navigation
+      return [
+        { path: '/', label: 'Home' },
+        { path: '/properties', label: 'Properties' },
+        { path: '/housemates', label: 'Housemates' },
+        { path: '/about', label: 'About' },
+        { path: '/login', label: 'Login' },
+        { path: '/register', label: 'Register' },
+      ];
+    }
+
+    if (currentUser.role === 'Student') {
+      return [
+        { path: '/', label: 'Home' },
+        { path: '/properties', label: 'Properties' },
+        { path: '/housemates', label: 'Housemates' },
+        { path: '/about', label: 'About' },
+        { path: '/profile', label: 'Profile' },
+      ];
+    }
+
+    if (currentUser.role === 'Owner') {
+      return [
+        { path: '/owner', label: 'Dashboard' },
+        { path: '/about', label: 'About' },
+      ];
+    }
+
+    if (currentUser.role === 'Admin') {
+      return [
+        { path: '/admin', label: 'Dashboard' },
+      ];
+    }
+
+    return [];
+  };
+
+  const navLinks = getNavLinks();
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl shadow-[0_40px_60px_-10px_rgba(25,28,30,0.04)]">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-8 py-4">
-          <Link to="/" className="text-2xl font-bold tracking-tighter text-primary dark:text-primary-container font-headline border-none">
+          <Link to={currentUser?.role === 'Admin' ? '/admin' : currentUser?.role === 'Owner' ? '/owner' : '/'} className="text-2xl font-bold tracking-tighter text-primary dark:text-primary-container font-headline border-none">
             RakanSewa
           </Link>
+
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans'] font-medium tracking-tight">
-            {!currentUser && (
-              <>
-                <Link className={getLinkClass('/')} to="/">Home</Link>
-                <Link className={getLinkClass('/about')} to="/about">About</Link>
-                <Link className={getLinkClass('/login')} to="/login">Login</Link>
-                <Link className={getLinkClass('/register')} to="/register">Register</Link>
-              </>
-            )}
-
-            {currentUser?.role === 'Student' && (
-              <>
-                <Link className={getLinkClass('/')} to="/">Home</Link>
-                <Link className={getLinkClass('/properties')} to="/properties">Properties</Link>
-                <Link className={getLinkClass('/housemates')} to="/housemates">Housemates</Link>
-                <Link className={getLinkClass('/about')} to="/about">About</Link>
-                <Link className={getLinkClass('/feedback')} to="/feedback">Feedback</Link>
-              </>
-            )}
-
-            {currentUser?.role === 'Owner' && (
-               <>
-                 <Link className={getLinkClass('/owner')} to="/owner">Dashboard</Link>
-                 <Link className={getLinkClass('/about')} to="/about">About</Link>
-                 <Link className={getLinkClass('/feedback')} to="/feedback">Feedback</Link>
-               </>
-            )}
-
-            {currentUser?.role === 'Admin' && (
-               <>
-                 <Link className={getLinkClass('/admin')} to="/admin">Dashboard</Link>
-                 <Link className={getLinkClass('/about')} to="/about">About</Link>
-                 <Link className={getLinkClass('/feedback')} to="/feedback">Feedback</Link>
-               </>
-            )}
+            {navLinks.map(link => (
+              <Link key={link.path} className={getLinkClass(link.path)} to={link.path}>{link.label}</Link>
+            ))}
           </div>
+
+          {/* Mobile menu toggle */}
+          <button 
+            className="md:hidden p-2 text-on-surface-variant hover:text-primary transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
+          </button>
           
           {currentUser && (
-            <div className="flex items-center gap-4 relative">
+            <div className="hidden md:flex items-center gap-4 relative">
               
               <div className="relative" ref={dropdownRef}>
                 <button onClick={handleBellClick} className="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative">
@@ -226,6 +248,34 @@ const Navbar = () => {
             </div>
           )}
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-surface-container-low px-6 py-4 space-y-1 animate-[fadeIn_0.2s_ease-out]">
+            {navLinks.map(link => (
+              <Link 
+                key={link.path} 
+                to={link.path} 
+                className={`block py-3 px-4 rounded-xl font-medium transition-all ${
+                  location.pathname === link.path 
+                    ? 'bg-primary/10 text-primary font-bold' 
+                    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {currentUser && (
+              <button 
+                onClick={() => { setMobileMenuOpen(false); handleLogoutClick(); }}
+                className="w-full text-left py-3 px-4 rounded-xl font-medium text-error hover:bg-error-container transition-all"
+              >
+                Logout
+              </button>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Logout Confirmation Modal */}
