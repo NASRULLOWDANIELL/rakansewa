@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rakansewa-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: rakansewa
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: rakansewa_user
+      MYSQL_PASSWORD: rakansewa_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: rakansewa-backend
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rakansewa
+      SPRING_DATASOURCE_USERNAME: rakansewa_user
+      SPRING_DATASOURCE_PASSWORD: rakansewa_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: rakansewa-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mysql_data:

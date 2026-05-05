@@ -1,0 +1,20 @@
+[33m28f8a8a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mrefine-ui-fixes[m[33m)[m Clean student navbar and add password visibility toggles to login and register
+[33m7092f7d[m Add feedback navbar access for students and landlords with protected feedback route
+[33m75a0fdc[m Refine guest navigation, role-based navbar, student CTA hover states, and dynamic homepage housemate card
+[33md8cf6fc[m Backup before student homepage CTA and guest navbar refinement
+[33m13f4c79[m Refine RakanSewa student verification UX, landlord restrictions, property modal, homepage, about page, and feedback system
+[33m30b6e1c[m feat: add student verification, profile completion progress, property verification system, and distance calculation
+[33m6bfcdc8[m Backup before student verification, property verification, distance, and profile completion update
+[33me8a2885[m[33m ([m[1;31morigin/refine-ui-fixes[m[33m)[m feat: final UI polish, housemate matching improvements, profile enhancements, notifications cleanup, logout modal
+[33m1cbe046[m feat: fix owner property listing display and add admin rejection reason with resubmission workflow
+[33mb2c32b8[m fix: move login verification to backend and support bcrypt hashed passwords
+[33m73dbcbe[m fix: switch gmail smtp to ssl on port 465 for forgot password email delivery
+[33m6ddacbf[m chore: save state before switching gmail smtp from 587 starttls to 465 ssl
+[33m954f4aa[m feat: implement forgot password flow with email reset and frontend pages
+[33m42f2a8f[m fix: change auth persistence from localStorage to sessionStorage
+[33m9cd101d[m fix: configure google oauth client id and ensure proper environment setup
+[33m0221683[m feat: housemate profile system, notifications logic, owner filtering, property images, google login, backend updates
+[33m2abb87d[m feat: refine ui, google login, bell, profiel update, matching cards
+[33m1fa62d4[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/backup-before-force[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m, [m[1;32mcheckout[m[33m, [m[1;32mbackup-before-force[m[33m)[m auth, account, 3 dashboards, revamp ui
+[33m7d974c1[m add backend into project structure
+[33m37f27d1[m initial commit - rakansewa project
