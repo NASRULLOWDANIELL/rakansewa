@@ -88,6 +88,11 @@ export const loginUser = async (email, password) => {
   return response.data;
 };
 
+export const googleLoginUser = async (name, email) => {
+  const response = await api.post('/auth/google-login', { name, email });
+  return response.data;
+};
+
 export const forgotPassword = async (email) => {
   const response = await api.post('/auth/forgot-password', { email });
   return response.data;
@@ -95,6 +100,11 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, newPassword) => {
   const response = await api.post('/auth/reset-password', { token, newPassword });
+  return response.data;
+};
+
+export const resendVerificationEmail = async (email) => {
+  const response = await api.post('/auth/resend-verification', { email });
   return response.data;
 };
 

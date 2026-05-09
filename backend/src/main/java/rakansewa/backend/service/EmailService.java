@@ -21,6 +21,9 @@ public class EmailService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.backend-url:http://localhost:8080}")
+    private String backendUrl;
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -47,6 +50,34 @@ public class EmailService {
         } catch (MailException e) {
             logger.error("Failed to send password reset email to: {}. Error details: {}", toEmail, e.getMessage(), e);
             throw e; // Rethrow to maintain existing flow
+        }
+    }
+
+    /**
+     * Sends a verification email to the user after manual registration.
+     */
+    public void sendVerificationEmail(String toEmail, String token) {
+        String verifyLink = backendUrl + "/auth/verify-email?token=" + token;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(toEmail);
+        message.setSubject("RakanSewa - Verify Your Email Address");
+        message.setText(
+            "Welcome to RakanSewa!\n\n" +
+            "Please verify your email address by clicking the link below:\n" +
+            verifyLink + "\n\n" +
+            "This link will expire in 24 hours.\n\n" +
+            "If you did not create a RakanSewa account, please ignore this email."
+        );
+
+        try {
+            logger.info("Attempting to send verification email to: {}", toEmail);
+            mailSender.send(message);
+            logger.info("Successfully sent verification email to: {}", toEmail);
+        } catch (MailException e) {
+            logger.error("Failed to send verification email to: {}. Error details: {}", toEmail, e.getMessage(), e);
+            throw e;
         }
     }
 }

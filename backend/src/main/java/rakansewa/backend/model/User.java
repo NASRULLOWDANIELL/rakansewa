@@ -3,6 +3,8 @@ package rakansewa.backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -20,7 +22,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private String password;
 
@@ -50,4 +52,17 @@ public class User {
 
     @Column(columnDefinition = "boolean default false")
     private Boolean isStudentVerified = false;
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean emailVerified = false;
+
+    @Column
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
+    private String emailVerificationToken;
+
+    @Column
+    private LocalDateTime emailVerificationTokenExpiry;
+
+    @Column
+    private String authProvider;
 }

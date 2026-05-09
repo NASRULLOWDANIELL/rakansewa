@@ -11,17 +11,29 @@ const RegisterPage = () => {
   const [uitmEmail, setUitmEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // Auto-detect UiTM student email and auto-fill
+  const isUitmEmail = email.toLowerCase().endsWith('@student.uitm.edu.my');
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
       setError('');
-      await register(name, email, password, role, matricNumber, uitmEmail);
-      navigate('/login');
+      setIsSubmitting(true);
+      
+      // If primary email is a UiTM student email, auto-fill uitmEmail
+      const finalUitmEmail = isUitmEmail ? email : uitmEmail;
+      
+      await register(name, email, password, role, matricNumber, finalUitmEmail);
+      // Redirect to login with verification message
+      navigate('/login?registered=true');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -60,6 +72,12 @@ const RegisterPage = () => {
               placeholder="Enter your email"
               required
             />
+            {isUitmEmail && role === 'Student' && (
+              <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
+                UiTM student email detected — auto-verification will apply!
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-on-surface mb-1">Password</label>
@@ -110,21 +128,39 @@ const RegisterPage = () => {
                   placeholder="Optional"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-on-surface mb-1">UiTM Email</label>
-                <input 
-                  type="email" 
-                  value={uitmEmail}
-                  onChange={(e) => setUitmEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
-                  placeholder="Optional"
-                />
-              </div>
+              {!isUitmEmail && (
+                <div>
+                  <label className="block text-sm font-semibold text-on-surface mb-1">UiTM Email</label>
+                  <input 
+                    type="email" 
+                    value={uitmEmail}
+                    onChange={(e) => setUitmEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
+                    placeholder="Optional"
+                  />
+                </div>
+              )}
             </div>
           )}
+
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-start gap-2">
+            <span className="material-symbols-outlined text-blue-500 text-sm mt-0.5">info</span>
+            <span>A verification email will be sent to confirm your email address. You can still browse after signing in, but some features require verification.</span>
+          </div>
           
-          <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform mt-6 flex items-center justify-center gap-2">
-            Create Account
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform mt-6 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                Creating Account...
+              </>
+            ) : (
+              'Create Account'
+            )}
           </button>
         </form>
         

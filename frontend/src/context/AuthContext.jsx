@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAllUsers, createUser, updateUser, loginUser } from '../services/api';
+import { createUser, updateUser, loginUser, googleLoginUser, resendVerificationEmail } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -28,7 +28,8 @@ export const AuthProvider = ({ children }) => {
           id: 999,
           name: 'Admin',
           email: 'admin@rakansewa.com',
-          role: 'Admin'
+          role: 'Admin',
+          emailVerified: true
         };
       } else {
         // Use the backend authentication endpoint
@@ -57,24 +58,18 @@ export const AuthProvider = ({ children }) => {
       return newUser;
     } catch (error) {
       console.error(error);
-      throw new Error("Registration failed");
+      throw new Error(error.response?.data?.message || "Registration failed");
     }
   };
 
   const googleLogin = async (googleUser) => {
     try {
-      const users = await getAllUsers();
-      let user = users.find(u => u.email === googleUser.email);
+      // Use the new backend endpoint for Google login with auto-registration
+      const response = await googleLoginUser(googleUser.name, googleUser.email);
       
-      if (!user) {
-        // Create user if not exists, default to Student role
-        user = await createUser({ 
-          name: googleUser.name, 
-          email: googleUser.email, 
-          password: 'google_oauth_no_password', 
-          role: 'Student' 
-        });
-      }
+      const user = response.user;
+      const isNewUser = response.isNewUser;
+      const message = response.message;
 
       if (user.email === 'admin@rakansewa.com') {
         user.role = 'Admin';
@@ -82,10 +77,11 @@ export const AuthProvider = ({ children }) => {
 
       setCurrentUser(user);
       sessionStorage.setItem('rakansewa_user', JSON.stringify(user));
-      return user;
+      
+      return { user, isNewUser, message };
     } catch (error) {
       console.error(error);
-      throw new Error("Google login failed");
+      throw new Error(error.response?.data?.message || "Google login failed");
     }
   };
 
@@ -112,6 +108,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resendVerification = async () => {
+    if (!currentUser?.email) throw new Error("No user email found.");
+    return await resendVerificationEmail(currentUser.email);
+  };
+
+  /**
+   * Check if the current user's email is verified.
+   * Google users and the mock admin are always considered verified.
+   */
+  const isEmailVerified = () => {
+    if (!currentUser) return false;
+    if (currentUser.id === 999) return true; // mock admin
+    if (currentUser.authProvider === 'GOOGLE') return true;
+    return currentUser.emailVerified === true;
+  };
+
   const value = {
     currentUser,
     login,
@@ -119,7 +131,9 @@ export const AuthProvider = ({ children }) => {
     googleLogin,
     updateProfile,
     logout,
-    loading
+    loading,
+    resendVerification,
+    isEmailVerified
   };
 
   return (

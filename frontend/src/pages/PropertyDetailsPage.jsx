@@ -3,15 +3,17 @@ import { useParams, Link } from 'react-router-dom';
 import { getPropertyById, getHousematesByPropertyId } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+
 const PropertyDetailsPage = () => {
   const { id } = useParams();
-  const { currentUser } = useAuth();
+  const { currentUser, isEmailVerified } = useAuth();
   const [property, setProperty] = useState(null);
   const [housemates, setHousemates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [distance, setDistance] = useState(null);
   const [distanceStatus, setDistanceStatus] = useState('calculating...');
+  const [showVerifyWarning, setShowVerifyWarning] = useState(false);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; // km
@@ -215,16 +217,33 @@ const PropertyDetailsPage = () => {
               <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Selected Property</span>
               <span className="text-lg font-bold text-on-surface">{property.title}</span>
            </div>
-           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-              {currentUser ? (
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
-                   <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>chat_bubble</span> Contact Landlord
-                </a>
-              ) : (
-                <Link to="/login" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/5">
-                   <span className="material-symbols-outlined">lock</span> Login to Contact
-                </Link>
-              )}
+           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto relative">
+               {currentUser ? (
+                 isEmailVerified() ? (
+                   <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
+                      <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>chat_bubble</span> Contact Landlord
+                   </a>
+                 ) : (
+                   <div className="relative flex-1 md:flex-none">
+                     <button
+                       onClick={() => setShowVerifyWarning(!showVerifyWarning)}
+                       className="w-full px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/5 cursor-not-allowed opacity-75"
+                     >
+                       <span className="material-symbols-outlined text-amber-500">warning</span> Contact Landlord
+                     </button>
+                     {showVerifyWarning && (
+                       <div className="absolute bottom-full mb-2 right-0 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800 text-xs shadow-lg w-72 animate-[fadeIn_0.2s_ease-out]">
+                         <span className="font-bold block mb-1">Email verification required</span>
+                         Please verify your email address to contact landlords. Check your inbox or visit your Profile to resend the verification link.
+                       </div>
+                     )}
+                   </div>
+                 )
+               ) : (
+                 <Link to="/login" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/5">
+                    <span className="material-symbols-outlined">lock</span> Login to Contact
+                 </Link>
+               )}
            </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 
 const OwnerDashboard = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isEmailVerified } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -150,17 +150,38 @@ const OwnerDashboard = () => {
         </div>
       )}
 
+      {/* Email verification warning for owners */}
+      {!isEmailVerified() && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
+          <span className="material-symbols-outlined text-amber-600 mt-0.5">warning</span>
+          <div>
+            <span className="font-bold block">Email verification required</span>
+            <span className="text-sm">Please verify your email address to add and manage property listings. Check your inbox or visit your Profile to resend the verification email.</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-end">
         <div>
            <h1 className="text-4xl font-extrabold font-headline tracking-tight text-on-surface mb-2">My Properties</h1>
            <p className="text-on-surface-variant">Manage your property listings and see their approval status.</p>
         </div>
-        <button 
-          onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }} 
-          className="bg-primary text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
-        >
-          {showForm ? 'Cancel' : '+ Add Property'}
-        </button>
+        {isEmailVerified() ? (
+          <button 
+            onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }} 
+            className="bg-primary text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
+          >
+            {showForm ? 'Cancel' : '+ Add Property'}
+          </button>
+        ) : (
+          <button 
+            disabled
+            className="bg-surface-container-high text-on-surface-variant font-bold py-3 px-6 rounded-full cursor-not-allowed opacity-60"
+            title="Verify your email to add properties"
+          >
+            + Add Property
+          </button>
+        )}
       </div>
 
       {showForm && (

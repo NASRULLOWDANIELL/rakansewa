@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 
@@ -7,9 +7,27 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Handle email verification redirect
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setSuccessMsg('Email verified successfully! You can now sign in.');
+    } else if (verified === 'false') {
+      const errorMsg = searchParams.get('error') || 'Verification failed.';
+      setError(errorMsg);
+    }
+
+    const registered = searchParams.get('registered');
+    if (registered === 'true') {
+      setSuccessMsg('Registration successful! Please check your email to verify your account.');
+    }
+  }, [searchParams]);
 
   const handleRoleRedirect = (user) => {
     if (user.role === 'Admin') navigate('/admin');
@@ -21,6 +39,7 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       setError('');
+      setSuccessMsg('');
       const user = await login(email, password);
       handleRoleRedirect(user);
     } catch (err) {
@@ -32,14 +51,21 @@ const LoginPage = () => {
     onSuccess: async (tokenResponse) => {
       try {
         setError('');
+        setSuccessMsg('');
         const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
         });
         const googleUser = await userInfoRes.json();
-        const user = await googleLogin(googleUser);
-        handleRoleRedirect(user);
+        const result = await googleLogin(googleUser);
+        
+        if (result.isNewUser) {
+          // New Google user — redirect to profile completion
+          navigate('/profile?newGoogleUser=true');
+        } else {
+          handleRoleRedirect(result.user);
+        }
       } catch (err) {
-        setError('Failed to fetch Google profile or login.');
+        setError(err.message || 'Failed to fetch Google profile or login.');
         console.error(err);
       }
     },
@@ -65,6 +91,13 @@ const LoginPage = () => {
           <p className="text-on-surface-variant text-sm">Please enter your details to sign in.</p>
         </div>
         
+        {successMsg && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-green-600 text-lg" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
+            {successMsg}
+          </div>
+        )}
+
         {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-lg text-sm">{error}</div>}
         
         <form onSubmit={handleLogin} className="space-y-5">

@@ -70,7 +70,7 @@ const getScoreLabel = (score) => {
 };
 
 const HousematesPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isEmailVerified } = useAuth();
   const [housemates, setHousemates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -220,10 +220,23 @@ const HousematesPage = () => {
                   )}
 
                   {currentUser ? (
-                    <button className="mt-auto w-full py-3 bg-surface-container-high hover:bg-primary hover:text-white text-on-surface rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined text-sm">chat</span>
-                      Contact
-                    </button>
+                    isEmailVerified() ? (
+                      <button className="mt-auto w-full py-3 bg-surface-container-high hover:bg-primary hover:text-white text-on-surface rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-sm">chat</span>
+                        Contact
+                      </button>
+                    ) : (
+                      <button
+                        className="mt-auto w-full py-3 bg-surface-container-low text-on-surface-variant rounded-full font-bold transition-all duration-200 flex flex-col items-center justify-center gap-1 cursor-not-allowed opacity-70"
+                        title="Please verify your email to contact housemates"
+                        disabled
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm text-amber-500">warning</span>
+                          Verify Email to Contact
+                        </span>
+                      </button>
+                    )
                   ) : (
                     <Link to="/login" className="mt-auto w-full py-3 bg-surface-container-lowest border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/30 rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
                       <span className="material-symbols-outlined text-sm">lock</span>

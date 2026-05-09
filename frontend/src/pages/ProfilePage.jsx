@@ -1,13 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
 const SLEEP_OPTIONS = ['Early Bird', 'Night Owl', 'Flexible'];
 
 const ProfilePage = () => {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, resendVerification, isEmailVerified } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [showGoogleWelcome, setShowGoogleWelcome] = useState(false);
+  const [resendStatus, setResendStatus] = useState('');
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('newGoogleUser') === 'true') {
+      setShowGoogleWelcome(true);
+      setIsEditing(true); // Auto-open edit mode
+    }
+  }, [searchParams]);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
@@ -78,8 +90,58 @@ const ProfilePage = () => {
 
   const displayLifestyles = getLifestyleArray(currentUser.lifestyle);
 
+  const handleResendVerification = async () => {
+    try {
+      setResending(true);
+      setResendStatus('');
+      await resendVerification();
+      setResendStatus('Verification email sent! Check your inbox.');
+    } catch (err) {
+      setResendStatus(err.response?.data?.message || err.message || 'Failed to resend.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto">
+      {/* Google welcome message */}
+      {showGoogleWelcome && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3 text-blue-800 animate-[fadeIn_0.3s_ease-out]">
+          <span className="material-symbols-outlined text-blue-600 mt-0.5" style={{fontVariationSettings: "'FILL' 1"}}>celebration</span>
+          <div>
+            <span className="font-bold block">Google account created successfully!</span>
+            <span className="text-sm">Please complete your profile — add your phone number, matric number, and lifestyle preferences.</span>
+          </div>
+          <button onClick={() => setShowGoogleWelcome(false)} className="ml-auto text-blue-400 hover:text-blue-600">
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* Email verification warning */}
+      {currentUser && !isEmailVerified() && currentUser.id !== 999 && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 animate-[fadeIn_0.3s_ease-out]">
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-amber-600 mt-0.5">warning</span>
+            <div className="flex-1">
+              <span className="font-bold block">Please verify your email to unlock all features.</span>
+              <span className="text-sm">Some actions like contacting landlords, listing as housemate, and posting properties require a verified email.</span>
+              <div className="mt-2 flex items-center gap-3">
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                  className="text-sm font-bold text-amber-700 hover:text-amber-900 underline disabled:opacity-50"
+                >
+                  {resending ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+                {resendStatus && <span className="text-xs text-amber-600">{resendStatus}</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {saveSuccess && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800 animate-[fadeIn_0.3s_ease-out]">
           <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
@@ -193,17 +255,24 @@ const ProfilePage = () => {
                     Housemate Profile
                   </h3>
                   
-                  <label className="flex items-center gap-3 cursor-pointer p-3 bg-white/50 rounded-xl hover:bg-white/80 transition-colors mb-6">
+                  <label className={`flex items-center gap-3 p-3 bg-white/50 rounded-xl transition-colors mb-6 ${isEmailVerified() ? 'cursor-pointer hover:bg-white/80' : 'cursor-not-allowed opacity-70'}`}>
                     <input 
                       type="checkbox" 
                       name="isListedAsHousemate" 
                       checked={formData.isListedAsHousemate} 
                       onChange={handleChange}
-                      className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer accent-primary"
+                      disabled={!isEmailVerified()}
+                      className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer accent-primary disabled:cursor-not-allowed"
                     />
                     <div>
                       <span className="font-bold text-on-surface">I want to be listed as a housemate</span>
                       <p className="text-xs text-on-surface-variant mt-0.5">You'll appear on the housemate listing page for others to find</p>
+                      {!isEmailVerified() && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">warning</span>
+                          Verify your email first to list as a housemate
+                        </p>
+                      )}
                     </div>
                   </label>
 
