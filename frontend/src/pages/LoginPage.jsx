@@ -13,19 +13,11 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Handle email verification redirect
+  // Handle redirect messages
   useEffect(() => {
-    const verified = searchParams.get('verified');
-    if (verified === 'true') {
-      setSuccessMsg('Email verified successfully! You can now sign in.');
-    } else if (verified === 'false') {
-      const errorMsg = searchParams.get('error') || 'Verification failed.';
-      setError(errorMsg);
-    }
-
     const registered = searchParams.get('registered');
     if (registered === 'true') {
-      setSuccessMsg('Registration successful! Please check your email to verify your account.');
+      setSuccessMsg('Registration successful! Sign in and complete your UiTM student verification in your profile.');
     }
   }, [searchParams]);
 

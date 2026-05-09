@@ -75,6 +75,15 @@ public class PropertyController {
         return ResponseEntity.ok(resubmitted);
     }
 
+    // GET /properties/approved — Get only approved properties (for dropdown selection)
+    @GetMapping("/approved")
+    public ResponseEntity<List<Property>> getApprovedProperties() {
+        List<Property> approved = propertyService.getAllProperties().stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getApprovalStatus()))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(approved);
+    }
+
     // DELETE /properties/{id} — Delete a property listing
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {

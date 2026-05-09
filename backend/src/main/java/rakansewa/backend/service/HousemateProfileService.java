@@ -7,6 +7,7 @@ import rakansewa.backend.repository.HousemateProfileRepository;
 import rakansewa.backend.repository.PropertyRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class HousemateProfileService {
@@ -37,5 +38,40 @@ public class HousemateProfileService {
     // Get all profiles for a specific property
     public List<HousemateProfile> getProfilesByPropertyId(Long propertyId) {
         return housemateProfileRepository.findByPropertyId(propertyId);
+    }
+
+    // Get a housemate profile by userId
+    public Optional<HousemateProfile> getProfileByUserId(Long userId) {
+        return housemateProfileRepository.findByUserId(userId);
+    }
+
+    /**
+     * Link or unlink a user's housemate profile to a property.
+     * Creates a minimal HousemateProfile if one doesn't exist for this user.
+     */
+    public HousemateProfile linkPropertyToUser(Long userId, Long propertyId) {
+        HousemateProfile profile = housemateProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    HousemateProfile newProfile = new HousemateProfile();
+                    newProfile.setUserId(userId);
+                    return newProfile;
+                });
+
+        if (propertyId != null) {
+            Property property = propertyRepository.findById(propertyId)
+                    .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
+            profile.setProperty(property);
+        } else {
+            profile.setProperty(null);
+        }
+
+        return housemateProfileRepository.save(profile);
+    }
+
+    /**
+     * Unlink a user's housemate profile from any property.
+     */
+    public HousemateProfile unlinkProperty(Long userId) {
+        return linkPropertyToUser(userId, null);
     }
 }

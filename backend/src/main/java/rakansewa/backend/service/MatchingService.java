@@ -393,13 +393,76 @@ public class MatchingService {
 
     /**
      * Determine a human-readable compatibility label.
-     *   85–100 → "Best Match"
+     *   85–100 → "Great Match"
      *   65–84  → "Good Match"
-     *   below 65 → "Fair Match"
+     *   50–64  → "Fair Match"
+     *   below 50 → "Low Match"
      */
     private String determineLabel(double score) {
-        if (score >= 85) return "Best Match";
+        if (score >= 85) return "Great Match";
         if (score >= 65) return "Good Match";
-        return "Fair Match";
+        if (score >= 50) return "Fair Match";
+        return "Low Match";
+    }
+
+    // ==================== PROFILE-BASED MATCHING ====================
+
+    /**
+     * Match a user's housemate profile against ALL other listed housemates.
+     * This powers the housemate-first flow on the Housemates page.
+     *
+     * @param userId The current user's ID
+     * @return Sorted list of matching results (best matches first), 
+     *         excluding the user themselves
+     */
+    public List<MatchingResponseDTO> matchAllHousemates(Long userId) {
+        Optional<HousemateProfile> currentProfileOpt = housemateProfileRepository.findByUserId(userId);
+        if (currentProfileOpt.isEmpty()) {
+            // User has no housemate profile — return all housemates with 0 score
+            List<HousemateProfile> allProfiles = housemateProfileRepository.findAll();
+            return allProfiles.stream()
+                    .filter(hp -> !userId.equals(hp.getUserId()))
+                    .map(hp -> MatchingResponseDTO.fromEntity(hp, 0, "Low Match", List.of()))
+                    .collect(Collectors.toList());
+        }
+
+        HousemateProfile currentProfile = currentProfileOpt.get();
+
+        // Build a MatchingRequestDTO from the current user's housemate profile
+        MatchingRequestDTO request = buildRequestFromProfile(currentProfile);
+
+        List<HousemateProfile> allProfiles = housemateProfileRepository.findAll();
+
+        return allProfiles.stream()
+                .filter(hp -> !userId.equals(hp.getUserId())) // Exclude self
+                .map(hp -> scoreAndBuildResponse(request, hp))
+                .sorted(Comparator.comparingDouble(MatchingResponseDTO::getCompatibilityScore).reversed())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Build a MatchingRequestDTO from an existing HousemateProfile.
+     * This converts the profile's fields into the request format for scoring.
+     */
+    private MatchingRequestDTO buildRequestFromProfile(HousemateProfile profile) {
+        MatchingRequestDTO dto = new MatchingRequestDTO();
+        dto.setGender(profile.getGender());
+        dto.setPreferredGender(profile.getPreferredGender());
+        dto.setMaxBudget(profile.getBudget());
+        dto.setSmokingPreference(profile.getSmokingPreference());
+        dto.setSleepSchedule(profile.getSleepSchedule());
+        dto.setSocialLevel(profile.getSocialLevel());
+        dto.setOccupationType(profile.getOccupationType());
+        dto.setGuestTolerance(profile.getGuestTolerance());
+        dto.setStudyNoisePreference(profile.getStudyNoisePreference());
+
+        // Map cleanliness level string to integer
+        if (profile.getCleanlinessLevel() != null) {
+            dto.setCleanlinessLevel(
+                CLEANLINESS_MAP.getOrDefault(profile.getCleanlinessLevel().toLowerCase(), 3)
+            );
+        }
+
+        return dto;
     }
 }

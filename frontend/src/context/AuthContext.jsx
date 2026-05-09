@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { createUser, updateUser, loginUser, googleLoginUser, resendVerificationEmail } from '../services/api';
+import { createUser, updateUser, loginUser, googleLoginUser } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -29,7 +29,8 @@ export const AuthProvider = ({ children }) => {
           name: 'Admin',
           email: 'admin@rakansewa.com',
           role: 'Admin',
-          emailVerified: true
+          emailVerified: true,
+          isStudentVerified: true
         };
       } else {
         // Use the backend authentication endpoint
@@ -94,34 +95,31 @@ export const AuthProvider = ({ children }) => {
     try {
       const updatedUser = { ...currentUser, ...updatedData };
       
+      let savedUser = updatedUser;
       // Save properly to backend if it's a real user (not dummy admin)
       if (currentUser.id && currentUser.id !== 999) {
-        await updateUser(currentUser.id, updatedUser);
+        savedUser = await updateUser(currentUser.id, updatedUser);
       }
       
-      setCurrentUser(updatedUser);
-      sessionStorage.setItem('rakansewa_user', JSON.stringify(updatedUser));
-      return updatedUser;
+      setCurrentUser(savedUser);
+      sessionStorage.setItem('rakansewa_user', JSON.stringify(savedUser));
+      return savedUser;
     } catch (error) {
       console.error("Update profile failed:", error);
       throw error;
     }
   };
 
-  const resendVerification = async () => {
-    if (!currentUser?.email) throw new Error("No user email found.");
-    return await resendVerificationEmail(currentUser.email);
-  };
-
   /**
-   * Check if the current user's email is verified.
-   * Google users and the mock admin are always considered verified.
+   * Check if the current user is UiTM verified.
+   * Admin and Google users with UiTM emails are considered verified.
+   * For students: matricNumber must match UiTM email username.
    */
-  const isEmailVerified = () => {
+  const isUitmVerified = () => {
     if (!currentUser) return false;
     if (currentUser.id === 999) return true; // mock admin
-    if (currentUser.authProvider === 'GOOGLE') return true;
-    return currentUser.emailVerified === true;
+    if (currentUser.role === 'Owner' || currentUser.role === 'Admin') return true;
+    return currentUser.isStudentVerified === true;
   };
 
   const value = {
@@ -132,8 +130,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     logout,
     loading,
-    resendVerification,
-    isEmailVerified
+    isUitmVerified
   };
 
   return (

@@ -2,6 +2,7 @@ package rakansewa.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "housemate_profiles")
@@ -14,31 +15,34 @@ public class HousemateProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(unique = true)
+    private Long userId;
+
+    @Column
     private String name;
 
-    @Column(nullable = false)
+    @Column
     private String gender;
 
-    @Column(nullable = false)
+    @Column
     private Integer age;
 
-    @Column(nullable = false)
+    @Column
     private Double budget;
 
-    @Column(nullable = false)
+    @Column
     private String occupationType; // e.g. "Student", "Working Professional"
 
-    @Column(nullable = false)
+    @Column
     private String cleanlinessLevel; // e.g. "Very Strict", "Strict", "Moderate", "Flexible", "Very Flexible"
 
-    @Column(nullable = false)
+    @Column
     private String sleepSchedule; // e.g. "Early Bird", "Night Owl", "Flexible"
 
-    @Column(nullable = false)
+    @Column
     private String preferredGender; // e.g. "Any", "Male Only", "Female Only"
 
-    @Column(nullable = false)
+    @Column
     private String smokingPreference; // e.g. "Non-Smoker", "Smoker", "No Preference"
 
     @Column
@@ -53,8 +57,9 @@ public class HousemateProfile {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Many profiles can belong to one property
+    // Many profiles can belong to one property (now nullable for housemates without a linked property)
     @ManyToOne
-    @JoinColumn(name = "property_id", nullable = false)
+    @JoinColumn(name = "property_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Property property;
 }

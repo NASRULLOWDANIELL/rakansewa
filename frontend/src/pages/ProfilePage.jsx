@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getApprovedProperties, getHousemateProfileByUserId, linkHousemateToProperty } from '../services/api';
 
 const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
 const SLEEP_OPTIONS = ['Early Bird', 'Night Owl', 'Flexible'];
 
 const ProfilePage = () => {
-  const { currentUser, updateProfile, resendVerification, isEmailVerified } = useAuth();
+  const { currentUser, updateProfile, isUitmVerified } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchParams] = useSearchParams();
   const [showGoogleWelcome, setShowGoogleWelcome] = useState(false);
-  const [resendStatus, setResendStatus] = useState('');
-  const [resending, setResending] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  // Property linking state
+  const [approvedProperties, setApprovedProperties] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [linkedProperty, setLinkedProperty] = useState(null);
+  const [propertyLinkLoading, setPropertyLinkLoading] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('newGoogleUser') === 'true') {
@@ -20,6 +26,28 @@ const ProfilePage = () => {
       setIsEditing(true); // Auto-open edit mode
     }
   }, [searchParams]);
+
+  // Fetch approved properties and user's housemate profile
+  useEffect(() => {
+    const fetchPropertyData = async () => {
+      if (!currentUser || currentUser.id === 999) return;
+      try {
+        const [props, hmProfile] = await Promise.all([
+          getApprovedProperties(),
+          getHousemateProfileByUserId(currentUser.id)
+        ]);
+        setApprovedProperties(props || []);
+        if (hmProfile && hmProfile.property) {
+          setLinkedProperty(hmProfile.property);
+          setSelectedPropertyId(hmProfile.property.id.toString());
+        }
+      } catch (err) {
+        console.error('Error fetching property data:', err);
+      }
+    };
+    fetchPropertyData();
+  }, [currentUser]);
+
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
@@ -74,34 +102,41 @@ const ProfilePage = () => {
     try {
       setSaving(true);
       setSaveSuccess(false);
+      setSaveError('');
       await updateProfile({
         ...formData,
         budget: formData.budget ? parseFloat(formData.budget) : null,
       });
+
+      // Link property if user is listed as housemate
+      if (formData.isListedAsHousemate && currentUser.id !== 999) {
+        try {
+          const propId = selectedPropertyId ? parseInt(selectedPropertyId) : null;
+          const result = await linkHousemateToProperty(currentUser.id, propId);
+          if (result && result.property) {
+            setLinkedProperty(result.property);
+          } else {
+            setLinkedProperty(null);
+          }
+        } catch (linkErr) {
+          console.error('Error linking property:', linkErr);
+        }
+      }
+
       setIsEditing(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
+      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to save profile.';
+      setSaveError(errorMsg);
     } finally {
       setSaving(false);
     }
   };
 
   const displayLifestyles = getLifestyleArray(currentUser.lifestyle);
-
-  const handleResendVerification = async () => {
-    try {
-      setResending(true);
-      setResendStatus('');
-      await resendVerification();
-      setResendStatus('Verification email sent! Check your inbox.');
-    } catch (err) {
-      setResendStatus(err.response?.data?.message || err.message || 'Failed to resend.');
-    } finally {
-      setResending(false);
-    }
-  };
+  const isStudent = currentUser.role === 'STUDENT' || currentUser.role === 'Student';
 
   return (
     <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto">
@@ -119,24 +154,15 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* Email verification warning */}
-      {currentUser && !isEmailVerified() && currentUser.id !== 999 && (
+      {/* UiTM Verification Status Banner */}
+      {isStudent && !isUitmVerified() && currentUser.id !== 999 && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 animate-[fadeIn_0.3s_ease-out]">
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-amber-600 mt-0.5">warning</span>
             <div className="flex-1">
-              <span className="font-bold block">Please verify your email to unlock all features.</span>
-              <span className="text-sm">Some actions like contacting landlords, listing as housemate, and posting properties require a verified email.</span>
-              <div className="mt-2 flex items-center gap-3">
-                <button
-                  onClick={handleResendVerification}
-                  disabled={resending}
-                  className="text-sm font-bold text-amber-700 hover:text-amber-900 underline disabled:opacity-50"
-                >
-                  {resending ? 'Sending...' : 'Resend Verification Email'}
-                </button>
-                {resendStatus && <span className="text-xs text-amber-600">{resendStatus}</span>}
-              </div>
+              <span className="font-bold block">Not Verified — Complete UiTM Student Verification</span>
+              <span className="text-sm">Your matric number must match your UiTM student email, for example <strong>2022456146@student.uitm.edu.my</strong>.</span>
+              <p className="text-sm mt-1">Fill in your matric number and UiTM email in your profile to get verified automatically.</p>
             </div>
           </div>
         </div>
@@ -146,6 +172,16 @@ const ProfilePage = () => {
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800 animate-[fadeIn_0.3s_ease-out]">
           <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
           <span className="font-medium">Profile saved successfully!</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-800 animate-[fadeIn_0.3s_ease-out]">
+          <span className="material-symbols-outlined">error</span>
+          <span className="font-medium">{saveError}</span>
+          <button onClick={() => setSaveError('')} className="ml-auto text-red-400 hover:text-red-600">
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
         </div>
       )}
 
@@ -167,7 +203,7 @@ const ProfilePage = () => {
                   Housemate
                 </span>
               )}
-              {currentUser.role === 'STUDENT' || currentUser.role === 'Student' ? (
+              {isStudent ? (
                 currentUser.isStudentVerified ? (
                   <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1 w-fit">
                     <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
@@ -181,13 +217,17 @@ const ProfilePage = () => {
                 )
               ) : null}
             </div>
-            {(currentUser.role === 'STUDENT' || currentUser.role === 'Student') && (
-              <p className="text-xs text-on-surface-variant mt-2 italic">Verification helps improve trust between users</p>
+            {isStudent && (
+              <p className="text-xs text-on-surface-variant mt-2 italic">
+                {currentUser.isStudentVerified 
+                  ? 'Your UiTM student identity is verified.' 
+                  : 'Your matric number must match your UiTM student email to be verified.'}
+              </p>
             )}
           </div>
         </div>
 
-        {(currentUser.role === 'STUDENT' || currentUser.role === 'Student') && (
+        {isStudent && (
           <div className="mb-10 bg-surface-container-low p-6 rounded-2xl border border-outline-variant">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-bold text-on-surface">Profile Completion: {progress}%</h3>
@@ -233,46 +273,40 @@ const ProfilePage = () => {
                     <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Phone Number</label>
                     <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 0123456789" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
                  </div>
-                 {(currentUser.role === 'STUDENT' || currentUser.role === 'Student') && (
+                 {isStudent && (
                    <>
                      <div>
                         <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Matric Number</label>
-                        <input type="text" name="matricNumber" value={formData.matricNumber} onChange={handleChange} placeholder="e.g. 2021123456" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
+                        <input type="text" name="matricNumber" value={formData.matricNumber} onChange={handleChange} placeholder="e.g. 2022456146" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
                      </div>
                      <div>
                         <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">UiTM Email</label>
-                        <input type="email" name="uitmEmail" value={formData.uitmEmail} onChange={handleChange} placeholder="e.g. student@uitm.edu.my" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
+                        <input type="email" name="uitmEmail" value={formData.uitmEmail} onChange={handleChange} placeholder="e.g. 2022456146@student.uitm.edu.my" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" />
+                        <p className="text-xs text-on-surface-variant mt-1">Must match your matric number, e.g. 2022456146@student.uitm.edu.my</p>
                      </div>
                    </>
                  )}
               </div>
 
               {/* Housemate Section - Only for students */}
-              {(currentUser.role === 'STUDENT' || currentUser.role === 'Student') && (
+              {isStudent && (
                 <div className="mt-8 p-6 bg-gradient-to-br from-primary/5 to-tertiary/5 rounded-2xl border border-primary/10">
                   <h3 className="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">groups</span>
                     Housemate Profile
                   </h3>
                   
-                  <label className={`flex items-center gap-3 p-3 bg-white/50 rounded-xl transition-colors mb-6 ${isEmailVerified() ? 'cursor-pointer hover:bg-white/80' : 'cursor-not-allowed opacity-70'}`}>
+                  <label className="flex items-center gap-3 p-3 bg-white/50 rounded-xl transition-colors mb-6 cursor-pointer hover:bg-white/80">
                     <input 
                       type="checkbox" 
                       name="isListedAsHousemate" 
                       checked={formData.isListedAsHousemate} 
                       onChange={handleChange}
-                      disabled={!isEmailVerified()}
-                      className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer accent-primary disabled:cursor-not-allowed"
+                      className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer accent-primary"
                     />
                     <div>
                       <span className="font-bold text-on-surface">I want to be listed as a housemate</span>
                       <p className="text-xs text-on-surface-variant mt-0.5">You'll appear on the housemate listing page for others to find</p>
-                      {!isEmailVerified() && (
-                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">warning</span>
-                          Verify your email first to list as a housemate
-                        </p>
-                      )}
                     </div>
                   </label>
 
@@ -327,13 +361,36 @@ const ProfilePage = () => {
                           <p className="text-xs text-on-surface-variant mt-2">Select one or more lifestyle tags</p>
                         )}
                       </div>
+
+                      {/* Property Linking */}
+                      <div className="md:col-span-2">
+                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">
+                          <span className="material-symbols-outlined text-[12px] align-middle mr-1">home</span>
+                          Link to Rental Property
+                        </label>
+                        <select
+                          value={selectedPropertyId}
+                          onChange={(e) => setSelectedPropertyId(e.target.value)}
+                          className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface"
+                        >
+                          <option value="">No linked property</option>
+                          {approvedProperties.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.title} — {p.city}, {p.state} (RM {p.monthlyRent}/mo)
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-on-surface-variant mt-1">
+                          Select the rental property where you are staying or looking for housemates.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
               )}
 
               <div className="pt-4 flex justify-end gap-3">
-                 <button onClick={() => setIsEditing(false)} className="bg-surface-container hover:bg-surface-container-high text-on-surface px-6 py-2.5 rounded-full font-bold transition-all">
+                 <button onClick={() => { setIsEditing(false); setSaveError(''); }} className="bg-surface-container hover:bg-surface-container-high text-on-surface px-6 py-2.5 rounded-full font-bold transition-all">
                     Cancel
                  </button>
                  <button 
@@ -365,7 +422,7 @@ const ProfilePage = () => {
                    <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Phone Number</label>
                    <p className="text-on-surface font-medium">{currentUser.phoneNumber || 'Not provided'}</p>
                 </div>
-                {(currentUser.role === 'STUDENT' || currentUser.role === 'Student') && (
+                {isStudent && (
                   <>
                     <div className="bg-surface-container-low p-4 rounded-lg">
                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">Matric Number</label>
@@ -380,7 +437,7 @@ const ProfilePage = () => {
               </div>
 
               {/* Housemate details in view mode — always shown if student */}
-              {(currentUser.role === 'STUDENT' || currentUser.role === 'Student') && (
+              {isStudent && (
                 <div className="mt-6 p-6 bg-gradient-to-br from-primary/5 to-tertiary/5 rounded-2xl border border-primary/10">
                   <h3 className="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">groups</span>
@@ -414,6 +471,24 @@ const ProfilePage = () => {
                             <p className="text-on-surface font-medium">Not set</p>
                           )}
                         </div>
+                      </div>
+
+                      {/* Linked Property Display */}
+                      <div className="bg-white/50 p-4 rounded-xl mt-4">
+                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">
+                          <span className="material-symbols-outlined text-[12px] align-middle mr-1">home</span>
+                          Linked Rental Property
+                        </label>
+                        {linkedProperty ? (
+                          <div>
+                            <p className="text-on-surface font-bold">{linkedProperty.title}</p>
+                            <p className="text-sm text-on-surface-variant">
+                              {linkedProperty.address}, {linkedProperty.city}, {linkedProperty.state}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-on-surface-variant text-sm italic">No linked property selected.</p>
+                        )}
                       </div>
                     </div>
                   ) : (

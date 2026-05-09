@@ -32,27 +32,19 @@ public class UserService {
         if (user.getPassword() != null && !user.getPassword().startsWith("$2a$")) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
+
+        // Validate uniqueness of matric number and UiTM email
+        validateUniqueness(user, null);
+
         updateVerificationStatus(user);
 
-        // For manual registration: set emailVerified=false and generate token
+        // For manual registration: set emailVerified=true by default (no longer using email verification flow)
         if (user.getAuthProvider() == null || !"GOOGLE".equalsIgnoreCase(user.getAuthProvider())) {
             user.setAuthProvider("LOCAL");
-            user.setEmailVerified(false);
-            generateAndSetVerificationToken(user);
+            user.setEmailVerified(true); // No longer requiring email verification
         }
 
         User savedUser = userRepository.save(user);
-
-        // Send verification email for manual registrations
-        if ("LOCAL".equalsIgnoreCase(savedUser.getAuthProvider())) {
-            try {
-                emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getEmailVerificationToken());
-            } catch (Exception e) {
-                // Log but don't fail registration
-                System.err.println("Failed to send verification email: " + e.getMessage());
-            }
-        }
-
         return savedUser;
     }
 
@@ -75,6 +67,9 @@ public class UserService {
         // Auto-fill UiTM email and verify if it's a UiTM student email
         if (email.toLowerCase().endsWith(UITM_STUDENT_DOMAIN)) {
             user.setUitmEmail(email);
+            // Extract matric number from email
+            String emailUsername = email.substring(0, email.toLowerCase().indexOf(UITM_STUDENT_DOMAIN));
+            user.setMatricNumber(emailUsername);
             user.setIsStudentVerified(true);
         } else {
             user.setIsStudentVerified(false);
@@ -89,6 +84,9 @@ public class UserService {
 
     public User updateUser(Long id, User updatedUser) {
         return userRepository.findById(id).map(user -> {
+            // Validate uniqueness (exclude current user)
+            validateUniqueness(updatedUser, id);
+
             user.setName(updatedUser.getName());
             user.setEmail(updatedUser.getEmail());
             user.setRole(updatedUser.getRole());
@@ -154,11 +152,12 @@ public class UserService {
     }
 
     /**
-     * Updated verification logic:
-     * - If user's primary email ends with @student.uitm.edu.my, auto-verify as UiTM student
-     * - Also auto-fill uitmEmail from primary email when applicable
-     * - Backward compatible: still checks uitmEmail field if set separately
-     * - Only applies to Student role users
+     * UiTM Student Verification Logic:
+     * A student is verified if their matricNumber equals the email username 
+     * before @student.uitm.edu.my.
+     * 
+     * Example verified: matricNumber=2022456146, uitmEmail=2022456146@student.uitm.edu.my
+     * Example not verified: matricNumber=2022456146, uitmEmail=nasrul@student.uitm.edu.my
      */
     private void updateVerificationStatus(User user) {
         if (!"Student".equalsIgnoreCase(user.getRole())) {
@@ -168,22 +167,54 @@ public class UserService {
 
         boolean verified = false;
 
-        // Check primary email domain
-        if (user.getEmail() != null && user.getEmail().toLowerCase().endsWith(UITM_STUDENT_DOMAIN)) {
-            verified = true;
-            // Auto-fill uitmEmail from primary email if not already set
-            if (user.getUitmEmail() == null || user.getUitmEmail().trim().isEmpty()) {
-                user.setUitmEmail(user.getEmail());
+        String matricNumber = user.getMatricNumber();
+        String uitmEmail = user.getUitmEmail();
+
+        if (matricNumber != null && !matricNumber.trim().isEmpty()
+                && uitmEmail != null && !uitmEmail.trim().isEmpty()) {
+            
+            String emailLower = uitmEmail.trim().toLowerCase();
+            
+            // Check that the email ends with the UiTM student domain
+            if (emailLower.endsWith(UITM_STUDENT_DOMAIN)) {
+                // Extract the username part before @student.uitm.edu.my
+                String emailUsername = emailLower.substring(0, emailLower.indexOf(UITM_STUDENT_DOMAIN));
+                
+                // Verify: matric number must exactly match the email username
+                if (matricNumber.trim().equalsIgnoreCase(emailUsername)) {
+                    verified = true;
+                }
             }
         }
 
-        // Backward compatibility: also check separate uitmEmail field
-        if (!verified && user.getUitmEmail() != null
-                && user.getUitmEmail().toLowerCase().endsWith(UITM_STUDENT_DOMAIN)
-                && user.getMatricNumber() != null && !user.getMatricNumber().trim().isEmpty()) {
-            verified = true;
+        user.setIsStudentVerified(verified);
+    }
+
+    /**
+     * Validate uniqueness of matric number and UiTM email.
+     * During profile update, excludes the current user from duplicate checks.
+     */
+    private void validateUniqueness(User user, Long currentUserId) {
+        // Check matric number uniqueness
+        if (user.getMatricNumber() != null && !user.getMatricNumber().trim().isEmpty()) {
+            Optional<User> existingByMatric = userRepository.findByMatricNumber(user.getMatricNumber().trim());
+            if (existingByMatric.isPresent()) {
+                Long existingId = existingByMatric.get().getId();
+                if (currentUserId == null || !existingId.equals(currentUserId)) {
+                    throw new RuntimeException("This matric number is already registered by another user.");
+                }
+            }
         }
 
-        user.setIsStudentVerified(verified);
+        // Check UiTM email uniqueness
+        if (user.getUitmEmail() != null && !user.getUitmEmail().trim().isEmpty()) {
+            Optional<User> existingByUitmEmail = userRepository.findByUitmEmail(user.getUitmEmail().trim());
+            if (existingByUitmEmail.isPresent()) {
+                Long existingId = existingByUitmEmail.get().getId();
+                if (currentUserId == null || !existingId.equals(currentUserId)) {
+                    throw new RuntimeException("This UiTM email is already registered by another user.");
+                }
+            }
+        }
     }
 }

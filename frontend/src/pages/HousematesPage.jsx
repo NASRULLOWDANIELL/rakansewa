@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getAllUsers } from '../services/api';
+import { getAllUsers, getAllHousemates, getMatchesForUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
 /**
- * Compute a simple compatibility score between the current user and a housemate.
- * Criteria: lifestyle overlap, sleep schedule match, budget proximity.
+ * Client-side fallback scoring when backend matching isn't available.
+ * Used for guests or users without housemate profiles.
  */
 const computeScore = (currentUser, housemate) => {
   if (!currentUser) return { score: 0, reasons: [] };
@@ -70,21 +70,38 @@ const getScoreLabel = (score) => {
 };
 
 const HousematesPage = () => {
-  const { currentUser, isEmailVerified } = useAuth();
+  const { currentUser, isUitmVerified } = useAuth();
   const [housemates, setHousemates] = useState([]);
+  const [housemateProfiles, setHousemateProfiles] = useState([]);
+  const [backendMatches, setBackendMatches] = useState(null); // null = not loaded, [] = loaded but empty
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     const fetchHousemates = async () => {
       try {
-        const users = await getAllUsers();
+        const [users, profiles] = await Promise.all([
+          getAllUsers(),
+          getAllHousemates()
+        ]);
         // Only show users who opted in as housemates
         const listed = (users || []).filter(u => 
           u.isListedAsHousemate === true && 
           u.id !== currentUser?.id
         );
         setHousemates(listed);
+        setHousemateProfiles(profiles || []);
+
+        // Try to get backend-computed matching scores if user is logged in and has a profile
+        if (currentUser?.id && currentUser.id !== 999 && currentUser.isListedAsHousemate) {
+          try {
+            const matches = await getMatchesForUser(currentUser.id);
+            setBackendMatches(matches || []);
+          } catch (matchErr) {
+            console.warn('Backend matching not available, using client-side scoring:', matchErr);
+            setBackendMatches(null);
+          }
+        }
       } catch (err) {
         console.error('Error fetching housemates:', err);
       } finally {
@@ -94,13 +111,53 @@ const HousematesPage = () => {
     fetchHousemates();
   }, [currentUser]);
 
+  // Build a map of userId -> housemate profile (with property info)
+  const profileMap = useMemo(() => {
+    const map = {};
+    (housemateProfiles || []).forEach(p => {
+      if (p.userId) {
+        map[p.userId] = p;
+      }
+    });
+    return map;
+  }, [housemateProfiles]);
+
+  // Build a map of userId -> backend match result
+  const backendMatchMap = useMemo(() => {
+    if (!backendMatches) return {};
+    const map = {};
+    backendMatches.forEach(m => {
+      if (m.userId) {
+        map[m.userId] = m;
+      }
+    });
+    return map;
+  }, [backendMatches]);
+
   // Compute scores and sort by best match first
   const scoredHousemates = useMemo(() => {
     return housemates.map(hm => {
-      const { score, reasons } = computeScore(currentUser, hm);
-      return { ...hm, matchScore: score, matchReasons: reasons };
+      const hmProfile = profileMap[hm.id];
+      const linkedProperty = hmProfile?.property || null;
+      
+      // Use backend matching scores if available, otherwise fall back to client-side
+      const backendMatch = backendMatchMap[hm.id];
+      let matchScore, matchReasons, matchLabel;
+      
+      if (backendMatch) {
+        matchScore = Math.round(backendMatch.compatibilityScore);
+        matchReasons = backendMatch.matchedReasons || [];
+        matchLabel = backendMatch.compatibilityLabel;
+      } else {
+        const { score, reasons } = computeScore(currentUser, hm);
+        matchScore = score;
+        matchReasons = reasons;
+        matchLabel = getScoreLabel(score);
+      }
+
+      return { ...hm, matchScore, matchReasons, matchLabel, linkedProperty };
     }).sort((a, b) => b.matchScore - a.matchScore);
-  }, [housemates, currentUser]);
+  }, [housemates, currentUser, profileMap, backendMatchMap]);
 
   const filteredHousemates = scoredHousemates.filter(hm => {
     if (filter === 'all') return true;
@@ -114,8 +171,8 @@ const HousematesPage = () => {
   return (
     <div className="pt-24 pb-32 px-6 max-w-7xl mx-auto">
       <div className="mb-12">
-        <h1 className="text-4xl font-extrabold font-headline tracking-tight text-on-surface mb-4">Find Housemates</h1>
-        <p className="text-on-surface-variant text-lg">Browse users who are looking for housemates. Update your own profile to appear here.</p>
+        <h1 className="text-4xl font-extrabold font-headline tracking-tight text-on-surface mb-4">Find Your Compatible Housemate</h1>
+        <p className="text-on-surface-variant text-lg">Browse compatible students and view where they are staying.</p>
       </div>
 
       {/* Filter pills */}
@@ -180,7 +237,7 @@ const HousematesPage = () => {
                         hm.matchScore >= 25 ? 'bg-amber-100 text-amber-700' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {getScoreLabel(hm.matchScore)}
+                        {hm.matchLabel || getScoreLabel(hm.matchScore)}
                       </span>
                     )}
                   </div>
@@ -208,6 +265,30 @@ const HousematesPage = () => {
                     </div>
                   )}
 
+                  {/* Linked Property */}
+                  <div className="bg-surface-container-low rounded-xl p-3 mb-4">
+                    <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold block mb-1">
+                      <span className="material-symbols-outlined text-[12px] align-middle mr-1">home</span>
+                      Linked Rental Property
+                    </span>
+                    {hm.linkedProperty ? (
+                      <Link 
+                        to={`/properties/${hm.linkedProperty.id}`} 
+                        className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                        {hm.linkedProperty.title}
+                        {hm.linkedProperty.city && (
+                          <span className="text-on-surface-variant font-normal ml-1">
+                            — {hm.linkedProperty.city}, {hm.linkedProperty.state}
+                          </span>
+                        )}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-on-surface-variant italic">No linked property yet</span>
+                    )}
+                  </div>
+
                   {/* Match reasons */}
                   {currentUser?.isListedAsHousemate && hm.matchReasons && hm.matchReasons.length > 0 && (
                     <div className="mb-4 space-y-1 border-t border-surface-container-low pt-3">
@@ -220,20 +301,20 @@ const HousematesPage = () => {
                   )}
 
                   {currentUser ? (
-                    isEmailVerified() ? (
+                    isUitmVerified() ? (
                       <button className="mt-auto w-full py-3 bg-surface-container-high hover:bg-primary hover:text-white text-on-surface rounded-full font-bold transition-all duration-200 flex items-center justify-center gap-2">
                         <span className="material-symbols-outlined text-sm">chat</span>
-                        Contact
+                        Contact Housemate
                       </button>
                     ) : (
                       <button
                         className="mt-auto w-full py-3 bg-surface-container-low text-on-surface-variant rounded-full font-bold transition-all duration-200 flex flex-col items-center justify-center gap-1 cursor-not-allowed opacity-70"
-                        title="Please verify your email to contact housemates"
+                        title="Complete UiTM verification to contact housemates"
                         disabled
                       >
                         <span className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-sm text-amber-500">warning</span>
-                          Verify Email to Contact
+                          Complete UiTM Verification to Contact
                         </span>
                       </button>
                     )

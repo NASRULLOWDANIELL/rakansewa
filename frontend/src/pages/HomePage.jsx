@@ -11,23 +11,23 @@ const HomePage = () => {
       <section className="relative px-6 pt-16 pb-24 max-w-7xl mx-auto text-center">
         <div className="space-y-8 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-extrabold font-headline leading-[1.1] tracking-tighter text-on-surface">
-            Find <span className="text-transparent bg-clip-text bg-gradient-to-br from-primary to-primary-container">Verified Rentals</span> and Housemates Near UiTM Jasin
+            Find <span className="text-transparent bg-clip-text bg-gradient-to-br from-primary to-primary-container">Compatible Housemates</span> Near UiTM Jasin
           </h1>
           <p className="text-lg md:text-xl text-on-surface-variant leading-relaxed max-w-2xl mx-auto">
-            A centralized platform for UiTM students to discover trusted rental listings and compatible housemates.
+            Browse compatible students, discover where they are staying, and find your ideal living arrangement.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
              <Link 
-               to="/properties" 
+               to="/housemates" 
                className="bg-primary text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-primary/20 transition-all duration-300 ease-out flex items-center justify-center gap-2 hover:bg-primary/85 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.04] active:scale-[0.98] cursor-pointer"
              >
-                <span className="material-symbols-outlined text-sm">search</span> Browse Properties
+                <span className="material-symbols-outlined text-sm">group</span> Find Housemates
              </Link>
              <Link 
-               to="/housemates" 
+               to="/properties" 
                className="bg-surface-container-high text-on-surface px-8 py-4 rounded-full font-bold border-2 border-transparent transition-all duration-300 ease-out flex items-center justify-center gap-2 hover:bg-surface-container-highest hover:border-primary/20 hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.04] active:scale-[0.98] cursor-pointer"
              >
-                <span className="material-symbols-outlined text-sm">group</span> Find Housemates
+                <span className="material-symbols-outlined text-sm">search</span> Browse Properties
              </Link>
              {!currentUser && (
                <Link to="/register" className="bg-white border-2 border-outline-variant/30 text-on-surface px-8 py-4 rounded-full font-bold transition-all duration-300 ease-out flex items-center justify-center gap-2 hover:bg-surface-container-low hover:border-primary/30 hover:shadow-md hover:scale-[1.04] active:scale-[0.98] cursor-pointer">

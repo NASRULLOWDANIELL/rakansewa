@@ -145,7 +145,7 @@ const RegisterPage = () => {
 
           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-start gap-2">
             <span className="material-symbols-outlined text-blue-500 text-sm mt-0.5">info</span>
-            <span>A verification email will be sent to confirm your email address. You can still browse after signing in, but some features require verification.</span>
+            <span>After registering, complete your UiTM student verification by ensuring your matric number matches your UiTM email (e.g. <strong>2022456146</strong> and <strong>2022456146@student.uitm.edu.my</strong>). Some features require verification.</span>
           </div>
           
           <button 

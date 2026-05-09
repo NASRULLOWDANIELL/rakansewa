@@ -142,8 +142,8 @@ const Navbar = () => {
       // Guest navigation
       return [
         { path: '/', label: 'Home' },
-        { path: '/properties', label: 'Properties' },
         { path: '/housemates', label: 'Housemates' },
+        { path: '/properties', label: 'Properties' },
         { path: '/about', label: 'About' },
         { path: '/login', label: 'Login' },
         { path: '/register', label: 'Register' },
@@ -153,8 +153,8 @@ const Navbar = () => {
     if (currentUser.role === 'Student') {
       return [
         { path: '/', label: 'Home' },
-        { path: '/properties', label: 'Properties' },
         { path: '/housemates', label: 'Housemates' },
+        { path: '/properties', label: 'Properties' },
         { path: '/feedback', label: 'Feedback' },
         { path: '/about', label: 'About' },
       ];

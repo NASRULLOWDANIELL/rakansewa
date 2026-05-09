@@ -17,6 +17,7 @@ import java.util.List;
 public class MatchingResponseDTO {
 
     private Long housemateId;
+    private Long userId;
     private String housemateName;
     private String gender;
     private Integer age;
@@ -30,9 +31,12 @@ public class MatchingResponseDTO {
     private String studyNoisePreference;
     private String description;
 
-    // Property info
+    // Property info (nullable — housemate may not be linked to any property)
     private Long propertyId;
     private String propertyTitle;
+    private String propertyAddress;
+    private String propertyCity;
+    private String propertyState;
 
     // Matching results
     private double compatibilityScore;  // 0–100
@@ -41,13 +45,15 @@ public class MatchingResponseDTO {
 
     /**
      * Factory method to build a response from a HousemateProfile entity and scoring results.
+     * Safely handles null property (housemate not linked to any property).
      */
     public static MatchingResponseDTO fromEntity(HousemateProfile housemate,
                                                   double score,
                                                   String label,
                                                   List<String> reasons) {
-        return MatchingResponseDTO.builder()
+        MatchingResponseDTOBuilder builder = MatchingResponseDTO.builder()
                 .housemateId(housemate.getId())
+                .userId(housemate.getUserId())
                 .housemateName(housemate.getName())
                 .gender(housemate.getGender())
                 .age(housemate.getAge())
@@ -60,11 +66,19 @@ public class MatchingResponseDTO {
                 .guestTolerance(housemate.getGuestTolerance())
                 .studyNoisePreference(housemate.getStudyNoisePreference())
                 .description(housemate.getDescription())
-                .propertyId(housemate.getProperty().getId())
-                .propertyTitle(housemate.getProperty().getTitle())
                 .compatibilityScore(score)
                 .compatibilityLabel(label)
-                .matchedReasons(reasons)
-                .build();
+                .matchedReasons(reasons);
+
+        // Safely set property fields only if property exists
+        if (housemate.getProperty() != null) {
+            builder.propertyId(housemate.getProperty().getId())
+                   .propertyTitle(housemate.getProperty().getTitle())
+                   .propertyAddress(housemate.getProperty().getAddress())
+                   .propertyCity(housemate.getProperty().getCity())
+                   .propertyState(housemate.getProperty().getState());
+        }
+
+        return builder.build();
     }
 }

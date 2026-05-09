@@ -1,14 +1,98 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getPropertyById, getHousematesByPropertyId } from '../services/api';
+import { getPropertyById, getHousematesByPropertyId, getAllUsers } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Compute compatibility between logged-in user and a housemate profile.
+ */
+const computeMatchScore = (currentUser, housemate) => {
+  if (!currentUser) return { score: 0, reasons: [] };
+  let score = 0;
+  const reasons = [];
+
+  // Sleep schedule
+  const userSleep = currentUser.sleepSchedule;
+  const mateSleep = housemate.sleepSchedule;
+  if (userSleep && mateSleep) {
+    if (userSleep === mateSleep) {
+      score += 30;
+      reasons.push(`Same sleep pattern: ${mateSleep}`);
+    } else if (userSleep === 'Flexible' || mateSleep === 'Flexible') {
+      score += 15;
+      reasons.push('Flexible sleep schedule');
+    }
+  }
+
+  // Budget proximity
+  const userBudget = currentUser.budget;
+  const mateBudget = housemate.budget;
+  if (userBudget && mateBudget) {
+    const diff = Math.abs(userBudget - mateBudget);
+    const avg = (userBudget + mateBudget) / 2;
+    const pctDiff = avg > 0 ? diff / avg : 1;
+    if (pctDiff <= 0.1) {
+      score += 30;
+      reasons.push('Very similar budget');
+    } else if (pctDiff <= 0.3) {
+      score += 20;
+      reasons.push('Compatible budget');
+    } else if (pctDiff <= 0.5) {
+      score += 10;
+      reasons.push('Somewhat similar budget');
+    }
+  }
+
+  // Lifestyle overlap (from user data if available)
+  const myLifestyles = (currentUser.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
+  // For housemate profiles, try to map cleanlinessLevel/occupationType to lifestyle tags
+  const hmTags = [];
+  if (housemate.cleanlinessLevel) hmTags.push(housemate.cleanlinessLevel);
+  if (housemate.occupationType) hmTags.push(housemate.occupationType);
+
+  // Gender match
+  if (housemate.gender && currentUser.gender) {
+    if (housemate.gender === currentUser.gender) {
+      score += 10;
+      reasons.push('Same gender');
+    }
+  }
+
+  // Smoking match
+  if (housemate.smokingPreference === 'Non-Smoker') {
+    score += 10;
+    reasons.push('Non-smoker');
+  }
+
+  // Social level proximity
+  if (housemate.socialLevel) {
+    score += 10;
+    reasons.push('Social preference available');
+  }
+
+  return { score: Math.min(100, Math.round(score)), reasons };
+};
+
+const getScoreColor = (score) => {
+  if (score >= 75) return 'from-green-500 to-emerald-600';
+  if (score >= 50) return 'from-blue-500 to-indigo-600';
+  if (score >= 25) return 'from-amber-500 to-orange-600';
+  return 'from-gray-400 to-gray-500';
+};
+
+const getScoreLabel = (score) => {
+  if (score >= 75) return 'Great Match';
+  if (score >= 50) return 'Good Match';
+  if (score >= 25) return 'Fair Match';
+  return 'Low Match';
+};
 
 const PropertyDetailsPage = () => {
   const { id } = useParams();
-  const { currentUser, isEmailVerified } = useAuth();
+  const { currentUser, isUitmVerified } = useAuth();
   const [property, setProperty] = useState(null);
   const [housemates, setHousemates] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [distance, setDistance] = useState(null);
@@ -33,13 +117,13 @@ const PropertyDetailsPage = () => {
         const propertyData = await getPropertyById(id);
         setProperty(propertyData);
 
-        try {
-          const housematesData = await getHousematesByPropertyId(id);
-          setHousemates(housematesData || []);
-        } catch (err) {
-          console.error('Error fetching housemates:', err);
-          setHousemates([]);
-        }
+        // Fetch housemates linked to this property AND users for enrichment
+        const [housematesData, usersData] = await Promise.all([
+          getHousematesByPropertyId(id).catch(() => []),
+          getAllUsers().catch(() => [])
+        ]);
+        setHousemates(housematesData || []);
+        setAllUsers(usersData || []);
 
         setLoading(false);
       } catch (err) {
@@ -65,6 +149,40 @@ const PropertyDetailsPage = () => {
     setDistance(dist.toFixed(1));
     setDistanceStatus('');
   }, [property]);
+
+  // Build user map and also find users linked to this property via isListedAsHousemate
+  const userMap = useMemo(() => {
+    const map = {};
+    allUsers.forEach(u => { map[u.id] = u; });
+    return map;
+  }, [allUsers]);
+
+  // Merge housemate profiles with user data and compute match scores
+  const enrichedHousemates = useMemo(() => {
+    // Start with housemate profiles linked to this property
+    const profileHousemates = housemates.map(hm => {
+      const user = hm.userId ? userMap[hm.userId] : null;
+      const isCurrentUser = currentUser && user && user.id === currentUser.id;
+      const { score, reasons } = isCurrentUser 
+        ? { score: 0, reasons: [] } 
+        : computeMatchScore(currentUser, hm);
+      return {
+        ...hm,
+        userName: user?.name || hm.name || 'Unknown',
+        userEmail: user?.email || null,
+        isCurrentUser,
+        matchScore: score,
+        matchReasons: reasons,
+        source: 'profile'
+      };
+    });
+
+    // Also find users who are listed as housemates AND linked to this property via their housemate profile
+    // (already covered above via housemate profiles with userId)
+    // Additionally, show users who have isListedAsHousemate but link found via housemate_profiles
+    
+    return profileHousemates;
+  }, [housemates, userMap, currentUser]);
 
   if (loading) return <div className="text-center py-32 text-on-surface text-lg font-medium">Loading details...</div>;
   if (error || !property) return <div className="text-center py-32 text-error text-lg font-medium">{error || 'Property not found.'}</div>;
@@ -150,32 +268,76 @@ const PropertyDetailsPage = () => {
             </div>
           </div>
 
+          {/* Current Housemates Section */}
           <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-bold">Current Housemates</h3>
+              <h3 className="text-2xl font-bold">Current Housemates at This Property</h3>
               <span className="bg-tertiary-container/10 text-tertiary text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                 <span className="material-symbols-outlined text-sm">groups</span> {housemates.length} Profile{housemates.length !== 1 && 's'}
+                 <span className="material-symbols-outlined text-sm">groups</span> {enrichedHousemates.length} Profile{enrichedHousemates.length !== 1 && 's'}
               </span>
             </div>
-            {housemates.length === 0 ? (
-               <p className="text-on-surface-variant">No housemate profiles listed for this property yet.</p>
+            {enrichedHousemates.length === 0 ? (
+              <div className="text-center py-8 bg-surface-container-low rounded-2xl">
+                <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">group_off</span>
+                <p className="text-on-surface-variant font-medium">No housemates linked to this property yet.</p>
+                <p className="text-xs text-on-surface-variant/70 mt-1">Students can link their profiles to this property from their profile page.</p>
+              </div>
             ) : (
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {housemates.map((hw) => (
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {enrichedHousemates.map((hw) => (
                     <div key={hw.id} className="bg-surface-container-lowest p-6 rounded-lg border-2 border-transparent hover:border-primary-fixed transition-all group">
                        <div className="flex flex-col items-center text-center space-y-4">
                           <div className="w-20 h-20 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border-4 border-surface-container-high text-primary">
                              <span className="material-symbols-outlined text-4xl">person</span>
                           </div>
                           <div>
-                             <h4 className="font-bold text-on-surface">{hw.name}</h4>
-                             <p className="text-xs text-primary font-medium">{hw.occupationType}, {hw.age} y/o</p>
+                             <h4 className="font-bold text-on-surface">{hw.userName}</h4>
+                             <p className="text-xs text-primary font-medium">
+                               {hw.occupationType && `${hw.occupationType}`}
+                               {hw.age && `, ${hw.age} y/o`}
+                             </p>
                           </div>
+
+                          {/* Match score */}
+                          {hw.isCurrentUser ? (
+                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">Your Profile</span>
+                          ) : hw.matchScore > 0 && currentUser ? (
+                            <div className="space-y-1">
+                              <div className={`bg-gradient-to-br ${getScoreColor(hw.matchScore)} text-white rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2`}>
+                                <span className="text-lg font-black">{hw.matchScore}%</span>
+                                <span className="text-[10px] font-bold uppercase">{getScoreLabel(hw.matchScore)}</span>
+                              </div>
+                            </div>
+                          ) : null}
+
                           <div className="flex flex-wrap justify-center gap-1.5">
-                             <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.gender}</span>
-                             <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">Clean: {hw.cleanlinessLevel}</span>
-                             <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.sleepSchedule}</span>
+                             {hw.gender && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.gender}</span>
+                             )}
+                             {hw.budget && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.budget}</span>
+                             )}
+                             {hw.cleanlinessLevel && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">Clean: {hw.cleanlinessLevel}</span>
+                             )}
+                             {hw.sleepSchedule && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.sleepSchedule}</span>
+                             )}
+                             {hw.smokingPreference && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.smokingPreference}</span>
+                             )}
                           </div>
+
+                          {/* Match reasons */}
+                          {!hw.isCurrentUser && hw.matchReasons && hw.matchReasons.length > 0 && (
+                            <div className="space-y-0.5 w-full text-left">
+                              {hw.matchReasons.slice(0, 3).map((reason, idx) => (
+                                <span key={idx} className="flex items-center gap-1 text-[10px] text-primary">
+                                  <span className="material-symbols-outlined text-[10px]">check_circle</span> {reason}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                        </div>
                     </div>
                  ))}
@@ -219,7 +381,7 @@ const PropertyDetailsPage = () => {
            </div>
            <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto relative">
                {currentUser ? (
-                 isEmailVerified() ? (
+                 isUitmVerified() ? (
                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
                       <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>chat_bubble</span> Contact Landlord
                    </a>
@@ -229,12 +391,12 @@ const PropertyDetailsPage = () => {
                        onClick={() => setShowVerifyWarning(!showVerifyWarning)}
                        className="w-full px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/5 cursor-not-allowed opacity-75"
                      >
-                       <span className="material-symbols-outlined text-amber-500">warning</span> Contact Landlord
+                       <span className="material-symbols-outlined text-amber-500">warning</span> Complete UiTM Verification to Contact
                      </button>
                      {showVerifyWarning && (
                        <div className="absolute bottom-full mb-2 right-0 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800 text-xs shadow-lg w-72 animate-[fadeIn_0.2s_ease-out]">
-                         <span className="font-bold block mb-1">Email verification required</span>
-                         Please verify your email address to contact landlords. Check your inbox or visit your Profile to resend the verification link.
+                         <span className="font-bold block mb-1">UiTM verification required</span>
+                         Please complete your UiTM student verification (matric number + UiTM email) in your Profile page to contact landlords.
                        </div>
                      )}
                    </div>

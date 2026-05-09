@@ -9,6 +9,7 @@ const AdminDashboard = () => {
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState('properties');
    const [rejectTarget, setRejectTarget] = useState(null); // property being rejected
+   const [expandedFeedbacks, setExpandedFeedbacks] = useState({}); // track expanded feedback messages
 
    useEffect(() => {
       fetchData();
@@ -54,6 +55,13 @@ const AdminDashboard = () => {
       } catch (err) {
          console.error(err);
       }
+   };
+
+   const toggleFeedbackExpand = (id) => {
+      setExpandedFeedbacks(prev => ({
+         ...prev,
+         [id]: !prev[id]
+      }));
    };
 
    if (loading) return <div className="text-center py-32 text-on-surface">Loading data...</div>;
@@ -198,64 +206,98 @@ const AdminDashboard = () => {
          )}
 
          {activeTab === 'feedbacks' && (
-            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden text-sm">
-               <table className="w-full text-left">
-                  <thead className="bg-surface-container-low text-on-surface-variant uppercase text-xs font-bold tracking-widest border-b border-outline-variant/20">
-                     <tr>
-                        <th className="px-6 py-4">Date</th>
-                        <th className="px-6 py-4">User</th>
-                        <th className="px-6 py-4">Category</th>
-                        <th className="px-6 py-4">Message</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Action</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {feedbacks.length === 0 && (
-                        <tr>
-                           <td colSpan="6" className="px-6 py-8 text-center text-on-surface-variant">No feedback submitted yet.</td>
-                        </tr>
-                     )}
-                     {feedbacks.map(f => (
-                        <tr key={f.id} className="border-b border-outline-variant/10 hover:bg-surface-container-lowest">
-                           <td className="px-6 py-4 whitespace-nowrap text-xs text-on-surface-variant">
-                              {new Date(f.createdAt).toLocaleDateString()}
-                           </td>
-                           <td className="px-6 py-4 font-bold whitespace-nowrap">{f.userName || `User ${f.userId}`}</td>
-                           <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${f.category === 'Report' ? 'bg-red-100 text-red-700' :
-                                    f.category === 'Suggestion' ? 'bg-blue-100 text-blue-700' :
+            <div className="space-y-4">
+               {feedbacks.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-xl border border-outline-variant/20">
+                     <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">feedback</span>
+                     <p className="text-on-surface-variant">No feedback submitted yet.</p>
+                  </div>
+               ) : (
+                  feedbacks.map(f => {
+                     const isExpanded = expandedFeedbacks[f.id] || false;
+                     const isLongMessage = f.message && f.message.length > 150;
+                     
+                     return (
+                        <div key={f.id} className="bg-white rounded-xl shadow-sm border border-outline-variant/20 p-6">
+                           <div className="flex flex-col md:flex-row md:items-start gap-4">
+                              {/* Left: Feedback info */}
+                              <div className="flex-1 min-w-0">
+                                 <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                       f.category === 'Report' ? 'bg-red-100 text-red-700' :
+                                       f.category === 'Suggestion' ? 'bg-blue-100 text-blue-700' :
                                        'bg-surface-container-high text-on-surface'
-                                 }`}>
-                                 {f.category}
-                              </span>
-                           </td>
-                           <td className="px-6 py-4 max-w-xs">
-                              <div className="font-bold mb-1">{f.subject}</div>
-                              <div className="text-on-surface-variant line-clamp-2">{f.message}</div>
-                           </td>
-                           <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`flex items-center gap-1 text-xs font-bold ${f.isResolved ? 'text-green-600' : 'text-orange-600'}`}>
-                                 <span className="material-symbols-outlined text-[14px]">
-                                    {f.isResolved ? 'check_circle' : 'pending'}
-                                 </span>
-                                 {f.isResolved ? 'Resolved' : 'Pending'}
-                              </span>
-                           </td>
-                           <td className="px-6 py-4 text-right whitespace-nowrap">
-                              {!f.isResolved && (
-                                 <button
-                                    onClick={() => handleResolveFeedback(f.id)}
-                                    className="text-xs bg-surface-container hover:bg-surface-container-high px-3 py-1.5 rounded-lg font-bold transition-colors"
+                                    }`}>
+                                       {f.category}
+                                    </span>
+                                    <span className={`flex items-center gap-1 text-xs font-bold ${f.isResolved ? 'text-green-600' : 'text-orange-600'}`}>
+                                       <span className="material-symbols-outlined text-[14px]">
+                                          {f.isResolved ? 'check_circle' : 'pending'}
+                                       </span>
+                                       {f.isResolved ? 'Resolved' : 'Pending'}
+                                    </span>
+                                    <span className="text-xs text-on-surface-variant">
+                                       {new Date(f.createdAt).toLocaleDateString()} {new Date(f.createdAt).toLocaleTimeString()}
+                                    </span>
+                                 </div>
+
+                                 <div className="mb-1">
+                                    <span className="text-sm font-bold text-on-surface">{f.userName || `User ${f.userId}`}</span>
+                                 </div>
+
+                                 <h4 className="font-bold text-on-surface mb-2">{f.subject}</h4>
+
+                                 {/* Feedback message with Read More / Show Less */}
+                                 <div 
+                                    className="text-sm text-on-surface-variant"
+                                    style={{
+                                       whiteSpace: 'normal',
+                                       wordBreak: 'break-word',
+                                       overflowWrap: 'anywhere'
+                                    }}
                                  >
-                                    Mark Resolved
-                                 </button>
-                              )}
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
+                                    {isLongMessage && !isExpanded ? (
+                                       <>
+                                          {f.message.substring(0, 150)}...
+                                          <button
+                                             onClick={() => toggleFeedbackExpand(f.id)}
+                                             className="ml-1 text-primary font-bold hover:underline text-xs"
+                                          >
+                                             Read More
+                                          </button>
+                                       </>
+                                    ) : (
+                                       <>
+                                          {f.message}
+                                          {isLongMessage && (
+                                             <button
+                                                onClick={() => toggleFeedbackExpand(f.id)}
+                                                className="ml-1 text-primary font-bold hover:underline text-xs"
+                                             >
+                                                Show Less
+                                             </button>
+                                          )}
+                                       </>
+                                    )}
+                                 </div>
+                              </div>
+
+                              {/* Right: Action */}
+                              <div className="flex-shrink-0">
+                                 {!f.isResolved && (
+                                    <button
+                                       onClick={() => handleResolveFeedback(f.id)}
+                                       className="text-xs bg-surface-container hover:bg-surface-container-high px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap"
+                                    >
+                                       Mark Resolved
+                                    </button>
+                                 )}
+                              </div>
+                           </div>
+                        </div>
+                     );
+                  })
+               )}
             </div>
          )}
       </div>

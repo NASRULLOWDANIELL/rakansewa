@@ -35,6 +35,11 @@ export const getPropertiesByOwner = async (ownerId) => {
   return response.data;
 };
 
+export const getApprovedProperties = async () => {
+  const response = await api.get('/properties/approved');
+  return response.data;
+};
+
 export const approveProperty = async (id) => {
   const response = await api.put(`/admin/properties/${id}/approve`);
   return response.data;
@@ -63,6 +68,21 @@ export const findHousemateMatches = async (propertyId, preferences) => {
 
 export const getAllHousemates = async () => {
   const response = await api.get('/housemates');
+  return response.data;
+};
+
+export const getMatchesForUser = async (userId) => {
+  const response = await api.get(`/matching/user/${userId}`);
+  return response.data;
+};
+
+export const getHousemateProfileByUserId = async (userId) => {
+  const response = await api.get(`/housemates/user/${userId}`);
+  return response.data;
+};
+
+export const linkHousemateToProperty = async (userId, propertyId) => {
+  const response = await api.put(`/housemates/user/${userId}/link-property`, { propertyId });
   return response.data;
 };
 
@@ -100,11 +120,6 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, newPassword) => {
   const response = await api.post('/auth/reset-password', { token, newPassword });
-  return response.data;
-};
-
-export const resendVerificationEmail = async (email) => {
-  const response = await api.post('/auth/resend-verification', { email });
   return response.data;
 };
 

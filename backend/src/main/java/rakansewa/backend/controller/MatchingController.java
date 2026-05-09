@@ -52,4 +52,18 @@ public class MatchingController {
         List<MatchingResponseDTO> results = matchingService.findMatches(request, propertyId);
         return ResponseEntity.ok(results);
     }
+
+    /**
+     * GET /matching/user/{userId}
+     *
+     * Matches a user's housemate profile against ALL other listed housemates.
+     * Powers the housemate-first page with compatibility scores.
+     *
+     * Returns a sorted list of MatchingResponseDTO (best matches first).
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<MatchingResponseDTO>> matchAllForUser(@PathVariable Long userId) {
+        List<MatchingResponseDTO> results = matchingService.matchAllHousemates(userId);
+        return ResponseEntity.ok(results);
+    }
 }
