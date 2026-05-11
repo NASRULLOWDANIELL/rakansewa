@@ -64,6 +64,10 @@ const AdminDashboard = () => {
       }));
    };
 
+   // Build user map for feedback enrichment
+   const userMap = {};
+   users.forEach(u => { userMap[u.id] = u; });
+
    if (loading) return <div className="text-center py-32 text-on-surface">Loading data...</div>;
 
    const pendingApprovals = properties.filter(p => p.approvalStatus === 'Pending');
@@ -123,7 +127,7 @@ const AdminDashboard = () => {
                         {/* Property image thumbnail */}
                         {p.imageUrl && (
                            <div className="h-36 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-2xl">
-                              <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
+                              <img src={p.imageUrl.startsWith('/uploads') ? `http://localhost:8080${p.imageUrl}` : p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
                            </div>
                         )}
                         <h3 className="text-xl font-bold mb-1">{p.title}</h3>
@@ -215,82 +219,114 @@ const AdminDashboard = () => {
                ) : (
                   feedbacks.map(f => {
                      const isExpanded = expandedFeedbacks[f.id] || false;
-                     const isLongMessage = f.message && f.message.length > 150;
+                     const isLongMessage = f.message && f.message.length > 200;
+                     const feedbackUser = f.userId ? userMap[f.userId] : null;
                      
                      return (
-                        <div key={f.id} className="bg-white rounded-xl shadow-sm border border-outline-variant/20 p-6">
-                           <div className="flex flex-col md:flex-row md:items-start gap-4">
-                              {/* Left: Feedback info */}
-                              <div className="flex-1 min-w-0">
-                                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                       f.category === 'Report' ? 'bg-red-100 text-red-700' :
-                                       f.category === 'Suggestion' ? 'bg-blue-100 text-blue-700' :
-                                       'bg-surface-container-high text-on-surface'
-                                    }`}>
-                                       {f.category}
-                                    </span>
-                                    <span className={`flex items-center gap-1 text-xs font-bold ${f.isResolved ? 'text-green-600' : 'text-orange-600'}`}>
-                                       <span className="material-symbols-outlined text-[14px]">
-                                          {f.isResolved ? 'check_circle' : 'pending'}
-                                       </span>
-                                       {f.isResolved ? 'Resolved' : 'Pending'}
-                                    </span>
-                                    <span className="text-xs text-on-surface-variant">
-                                       {new Date(f.createdAt).toLocaleDateString()} {new Date(f.createdAt).toLocaleTimeString()}
-                                    </span>
+                        <div 
+                           key={f.id} 
+                           className={`rounded-xl shadow-sm border overflow-hidden transition-all ${
+                              f.isResolved 
+                                 ? 'bg-surface-container-lowest border-outline-variant/10 opacity-75' 
+                                 : 'bg-white border-outline-variant/20'
+                           }`}
+                        >
+                           {/* Top row: category, status, date, action */}
+                           <div className={`px-6 py-3 flex flex-wrap items-center gap-3 border-b ${
+                              f.isResolved ? 'bg-green-50/50 border-green-100' : 'bg-surface-container-lowest border-outline-variant/10'
+                           }`}>
+                              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                 f.category === 'Report' ? 'bg-red-100 text-red-700' :
+                                 f.category === 'Suggestion' ? 'bg-blue-100 text-blue-700' :
+                                 'bg-surface-container-high text-on-surface'
+                              }`}>
+                                 {f.category}
+                              </span>
+
+                              <span className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md ${
+                                 f.isResolved 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-orange-100 text-orange-700'
+                              }`}>
+                                 <span className="material-symbols-outlined text-[14px]">
+                                    {f.isResolved ? 'check_circle' : 'pending'}
+                                 </span>
+                                 {f.isResolved ? 'Resolved' : 'Pending'}
+                              </span>
+
+                              <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                                 <span className="material-symbols-outlined text-[14px]">schedule</span>
+                                 {new Date(f.createdAt).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                 {' '}
+                                 {new Date(f.createdAt).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+
+                              <div className="ml-auto">
+                                 {!f.isResolved && (
+                                    <button
+                                       onClick={() => handleResolveFeedback(f.id)}
+                                       className="text-xs bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg font-bold transition-colors whitespace-nowrap flex items-center gap-1.5"
+                                    >
+                                       <span className="material-symbols-outlined text-[14px]">check</span>
+                                       Mark Resolved
+                                    </button>
+                                 )}
+                              </div>
+                           </div>
+
+                           {/* Body */}
+                           <div className="px-6 py-4">
+                              {/* User info row */}
+                              <div className="flex items-center gap-2 mb-3">
+                                 <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-sm text-on-primary-fixed font-bold uppercase flex-shrink-0">
+                                    {(f.userName || feedbackUser?.name || '?').charAt(0)}
                                  </div>
-
-                                 <div className="mb-1">
-                                    <span className="text-sm font-bold text-on-surface">{f.userName || `User ${f.userId}`}</span>
-                                 </div>
-
-                                 <h4 className="font-bold text-on-surface mb-2">{f.subject}</h4>
-
-                                 {/* Feedback message with Read More / Show Less */}
-                                 <div 
-                                    className="text-sm text-on-surface-variant"
-                                    style={{
-                                       whiteSpace: 'normal',
-                                       wordBreak: 'break-word',
-                                       overflowWrap: 'anywhere'
-                                    }}
-                                 >
-                                    {isLongMessage && !isExpanded ? (
-                                       <>
-                                          {f.message.substring(0, 150)}...
-                                          <button
-                                             onClick={() => toggleFeedbackExpand(f.id)}
-                                             className="ml-1 text-primary font-bold hover:underline text-xs"
-                                          >
-                                             Read More
-                                          </button>
-                                       </>
-                                    ) : (
-                                       <>
-                                          {f.message}
-                                          {isLongMessage && (
-                                             <button
-                                                onClick={() => toggleFeedbackExpand(f.id)}
-                                                className="ml-1 text-primary font-bold hover:underline text-xs"
-                                             >
-                                                Show Less
-                                             </button>
-                                          )}
-                                       </>
+                                 <div className="min-w-0">
+                                    <span className="text-sm font-bold text-on-surface block truncate">
+                                       {f.userName || feedbackUser?.name || `User #${f.userId}`}
+                                    </span>
+                                    {(feedbackUser?.email) && (
+                                       <span className="text-xs text-on-surface-variant truncate block">{feedbackUser.email}</span>
                                     )}
                                  </div>
                               </div>
 
-                              {/* Right: Action */}
-                              <div className="flex-shrink-0">
-                                 {!f.isResolved && (
-                                    <button
-                                       onClick={() => handleResolveFeedback(f.id)}
-                                       className="text-xs bg-surface-container hover:bg-surface-container-high px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap"
-                                    >
-                                       Mark Resolved
-                                    </button>
+                              {/* Subject */}
+                              {f.subject && (
+                                 <h4 className="font-bold text-on-surface mb-2">{f.subject}</h4>
+                              )}
+
+                              {/* Feedback message with Read More / Show Less */}
+                              <div 
+                                 className="text-sm text-on-surface-variant leading-relaxed"
+                                 style={{
+                                    whiteSpace: 'normal',
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'anywhere'
+                                 }}
+                              >
+                                 {isLongMessage && !isExpanded ? (
+                                    <>
+                                       {f.message.substring(0, 200)}...
+                                       <button
+                                          onClick={() => toggleFeedbackExpand(f.id)}
+                                          className="ml-1 text-primary font-bold hover:underline text-xs"
+                                       >
+                                          Read More
+                                       </button>
+                                    </>
+                                 ) : (
+                                    <>
+                                       {f.message}
+                                       {isLongMessage && (
+                                          <button
+                                             onClick={() => toggleFeedbackExpand(f.id)}
+                                             className="ml-1 text-primary font-bold hover:underline text-xs"
+                                          >
+                                             Show Less
+                                          </button>
+                                       )}
+                                    </>
                                  )}
                               </div>
                            </div>

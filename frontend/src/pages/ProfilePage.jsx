@@ -18,7 +18,6 @@ const ProfilePage = () => {
   const [approvedProperties, setApprovedProperties] = useState([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [linkedProperty, setLinkedProperty] = useState(null);
-  const [propertyLinkLoading, setPropertyLinkLoading] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('newGoogleUser') === 'true') {
@@ -40,6 +39,9 @@ const ProfilePage = () => {
         if (hmProfile && hmProfile.property) {
           setLinkedProperty(hmProfile.property);
           setSelectedPropertyId(hmProfile.property.id.toString());
+        } else {
+          setLinkedProperty(null);
+          setSelectedPropertyId('');
         }
       } catch (err) {
         console.error('Error fetching property data:', err);
@@ -103,13 +105,15 @@ const ProfilePage = () => {
       setSaving(true);
       setSaveSuccess(false);
       setSaveError('');
+
+      // Save user profile first
       await updateProfile({
         ...formData,
         budget: formData.budget ? parseFloat(formData.budget) : null,
       });
 
-      // Link property if user is listed as housemate
-      if (formData.isListedAsHousemate && currentUser.id !== 999) {
+      // Link/unlink property — always do this when listed as housemate
+      if (currentUser.id !== 999) {
         try {
           const propId = selectedPropertyId ? parseInt(selectedPropertyId) : null;
           const result = await linkHousemateToProperty(currentUser.id, propId);
@@ -128,6 +132,7 @@ const ProfilePage = () => {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
+      // Extract specific error message from backend response
       const errorMsg = err?.response?.data?.message || err?.message || 'Failed to save profile.';
       setSaveError(errorMsg);
     } finally {
@@ -176,10 +181,10 @@ const ProfilePage = () => {
       )}
 
       {saveError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-800 animate-[fadeIn_0.3s_ease-out]">
-          <span className="material-symbols-outlined">error</span>
-          <span className="font-medium">{saveError}</span>
-          <button onClick={() => setSaveError('')} className="ml-auto text-red-400 hover:text-red-600">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-800 animate-[fadeIn_0.3s_ease-out]">
+          <span className="material-symbols-outlined mt-0.5">error</span>
+          <span className="font-medium flex-1">{saveError}</span>
+          <button onClick={() => setSaveError('')} className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0">
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>

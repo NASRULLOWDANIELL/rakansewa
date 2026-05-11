@@ -43,13 +43,6 @@ const computeMatchScore = (currentUser, housemate) => {
     }
   }
 
-  // Lifestyle overlap (from user data if available)
-  const myLifestyles = (currentUser.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
-  // For housemate profiles, try to map cleanlinessLevel/occupationType to lifestyle tags
-  const hmTags = [];
-  if (housemate.cleanlinessLevel) hmTags.push(housemate.cleanlinessLevel);
-  if (housemate.occupationType) hmTags.push(housemate.occupationType);
-
   // Gender match
   if (housemate.gender && currentUser.gender) {
     if (housemate.gender === currentUser.gender) {
@@ -117,7 +110,7 @@ const PropertyDetailsPage = () => {
         const propertyData = await getPropertyById(id);
         setProperty(propertyData);
 
-        // Fetch housemates linked to this property AND users for enrichment
+        // Fetch real housemates linked to this property AND users for enrichment
         const [housematesData, usersData] = await Promise.all([
           getHousematesByPropertyId(id).catch(() => []),
           getAllUsers().catch(() => [])
@@ -150,7 +143,7 @@ const PropertyDetailsPage = () => {
     setDistanceStatus('');
   }, [property]);
 
-  // Build user map and also find users linked to this property via isListedAsHousemate
+  // Build user map
   const userMap = useMemo(() => {
     const map = {};
     allUsers.forEach(u => { map[u.id] = u; });
@@ -159,8 +152,7 @@ const PropertyDetailsPage = () => {
 
   // Merge housemate profiles with user data and compute match scores
   const enrichedHousemates = useMemo(() => {
-    // Start with housemate profiles linked to this property
-    const profileHousemates = housemates.map(hm => {
+    return housemates.map(hm => {
       const user = hm.userId ? userMap[hm.userId] : null;
       const isCurrentUser = currentUser && user && user.id === currentUser.id;
       const { score, reasons } = isCurrentUser 
@@ -170,25 +162,29 @@ const PropertyDetailsPage = () => {
         ...hm,
         userName: user?.name || hm.name || 'Unknown',
         userEmail: user?.email || null,
+        userLifestyle: user?.lifestyle || null,
+        userBudget: user?.budget || hm.budget,
+        userSleepSchedule: user?.sleepSchedule || hm.sleepSchedule,
         isCurrentUser,
         matchScore: score,
         matchReasons: reasons,
         source: 'profile'
       };
     });
-
-    // Also find users who are listed as housemates AND linked to this property via their housemate profile
-    // (already covered above via housemate profiles with userId)
-    // Additionally, show users who have isListedAsHousemate but link found via housemate_profiles
-    
-    return profileHousemates;
   }, [housemates, userMap, currentUser]);
+
+  // Resolve image src: if it starts with /uploads, prepend backend URL
+  const resolveImageSrc = (url) => {
+    if (!url) return null;
+    if (url.startsWith('/uploads')) return `http://localhost:8080${url}`;
+    return url;
+  };
 
   if (loading) return <div className="text-center py-32 text-on-surface text-lg font-medium">Loading details...</div>;
   if (error || !property) return <div className="text-center py-32 text-error text-lg font-medium">{error || 'Property not found.'}</div>;
 
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fHByb3BlcnR5fGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=1200&q=80`;
-  const mainImage = property.imageUrl || placeholderImage;
+  const mainImage = resolveImageSrc(property.imageUrl) || placeholderImage;
 
   const whatsappNumber = "60123456789";
   const whatsappMessage = encodeURIComponent(`Hi, I'm interested in your property: ${property.title} in ${property.city}. Is it still available?`);
@@ -268,7 +264,7 @@ const PropertyDetailsPage = () => {
             </div>
           </div>
 
-          {/* Current Housemates Section */}
+          {/* Current Housemates Section — real data only */}
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold">Current Housemates at This Property</h3>
@@ -314,18 +310,22 @@ const PropertyDetailsPage = () => {
                              {hw.gender && (
                                <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.gender}</span>
                              )}
-                             {hw.budget && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.budget}</span>
+                             {(hw.userBudget || hw.budget) && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.userBudget || hw.budget}</span>
                              )}
                              {hw.cleanlinessLevel && (
                                <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">Clean: {hw.cleanlinessLevel}</span>
                              )}
-                             {hw.sleepSchedule && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.sleepSchedule}</span>
+                             {(hw.userSleepSchedule || hw.sleepSchedule) && (
+                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.userSleepSchedule || hw.sleepSchedule}</span>
                              )}
                              {hw.smokingPreference && (
                                <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.smokingPreference}</span>
                              )}
+                             {/* Show lifestyle tags from user data */}
+                             {hw.userLifestyle && hw.userLifestyle.split(',').map(l => l.trim()).filter(Boolean).map(tag => (
+                               <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{tag}</span>
+                             ))}
                           </div>
 
                           {/* Match reasons */}

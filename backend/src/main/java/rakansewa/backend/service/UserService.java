@@ -201,7 +201,7 @@ public class UserService {
             if (existingByMatric.isPresent()) {
                 Long existingId = existingByMatric.get().getId();
                 if (currentUserId == null || !existingId.equals(currentUserId)) {
-                    throw new RuntimeException("This matric number is already registered by another user.");
+                    throw new RuntimeException("This matric number is already used by another account.");
                 }
             }
         }
@@ -212,7 +212,7 @@ public class UserService {
             if (existingByUitmEmail.isPresent()) {
                 Long existingId = existingByUitmEmail.get().getId();
                 if (currentUserId == null || !existingId.equals(currentUserId)) {
-                    throw new RuntimeException("This UiTM email is already registered by another user.");
+                    throw new RuntimeException("This UiTM email is already used by another account.");
                 }
             }
         }

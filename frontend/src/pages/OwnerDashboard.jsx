@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty } from '../services/api';
+import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -12,6 +12,9 @@ const OwnerDashboard = () => {
   const [editingWasRejected, setEditingWasRejected] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '', 
     monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', 
@@ -45,6 +48,14 @@ const OwnerDashboard = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const startEdit = (property) => {
     setFormData({
       title: property.title || '',
@@ -59,6 +70,8 @@ const OwnerDashboard = () => {
       availabilityStatus: property.availabilityStatus || 'Pending',
       imageUrl: property.imageUrl || ''
     });
+    setImageFile(null);
+    setImagePreview(property.imageUrl || '');
     setEditingId(property.id);
     setEditingWasRejected(property.approvalStatus === 'Rejected');
     setShowForm(true);
@@ -71,6 +84,8 @@ const OwnerDashboard = () => {
       furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
       imageUrl: ''
     });
+    setImageFile(null);
+    setImagePreview('');
     setEditingId(null);
     setEditingWasRejected(false);
     setShowForm(false);
@@ -79,23 +94,29 @@ const OwnerDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setUploading(true);
+      let finalImageUrl = formData.imageUrl;
+
+      // Upload image file if selected
+      if (imageFile) {
+        const uploadResult = await uploadPropertyImage(imageFile);
+        finalImageUrl = uploadResult.imageUrl;
+      }
+
       const payload = { 
         ...formData, 
+        imageUrl: finalImageUrl,
         monthlyRent: parseFloat(formData.monthlyRent),
         ownerId: currentUser.id
       };
 
       if (editingId) {
-        // If the property was rejected, use the resubmit endpoint
-        // which resets approvalStatus to Pending and clears rejectionReason
         if (editingWasRejected) {
           await resubmitProperty(editingId, payload);
         } else {
-          // Normal update (keep existing approval status)
           await updateProperty(editingId, payload);
         }
       } else {
-        // New property creation — always starts as Pending
         payload.availabilityStatus = 'Pending';
         await createProperty(payload);
       }
@@ -105,6 +126,8 @@ const OwnerDashboard = () => {
       console.error(error);
       setSaveError('Failed to save property. Please try again.');
       setTimeout(() => setSaveError(null), 4000);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -129,6 +152,13 @@ const OwnerDashboard = () => {
       default:
         return 'bg-orange-100 text-orange-700 border border-orange-200';
     }
+  };
+
+  // Resolve image src: if it starts with /uploads, prepend backend URL
+  const resolveImageSrc = (url) => {
+    if (!url) return null;
+    if (url.startsWith('/uploads')) return `http://localhost:8080${url}`;
+    return url;
   };
 
   if (loading) return <div className="text-center py-32 text-on-surface">Loading properties...</div>;
@@ -184,74 +214,119 @@ const OwnerDashboard = () => {
         )}
       </div>
 
+      {/* Modal overlay — fixed fullscreen */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-surface p-8 rounded-2xl shadow-2xl w-full max-w-3xl relative mt-auto mb-auto border border-white/20">
-             <button onClick={resetForm} className="absolute top-4 right-4 w-10 h-10 bg-surface-container hover:bg-surface-container-high rounded-full flex items-center justify-center text-on-surface transition-colors">
-                <span className="material-symbols-outlined">close</span>
-             </button>
-             <h2 className="text-2xl font-bold font-headline mb-2 text-on-surface">
-               {editingId ? (editingWasRejected ? 'Edit & Resubmit Property' : 'Edit Property') : 'List New Property'}
-             </h2>
-             {editingWasRejected && (
-               <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg mb-6 flex items-center gap-2">
-                 <span className="material-symbols-outlined text-sm">info</span>
-                 Saving changes will resubmit this property for admin approval.
-               </p>
-             )}
-             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-               <div className="space-y-4">
-                  <input required name="title" value={formData.title} onChange={handleInputChange} placeholder="Property Title" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
-                  <input required name="address" value={formData.address} onChange={handleInputChange} placeholder="Address" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
-                  <div className="flex gap-4">
-                    <input required name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
-                    <input required name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
-                  </div>
-                  <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="Monthly Rent (RM)" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
-                  <input 
-                    name="imageUrl" 
-                    value={formData.imageUrl} 
-                    onChange={handleInputChange} 
-                    placeholder="Image URL (optional)" 
-                    className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"
-                  />
-               </div>
-               <div className="space-y-4">
-                  <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
-                     <option>Apartment</option><option>Terrace</option><option>Condo</option>
-                  </select>
-                  <select name="roomType" value={formData.roomType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
-                     <option>Single</option><option>Master</option><option>Middle</option>
-                  </select>
-                  <select name="furnishedStatus" value={formData.furnishedStatus} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
-                     <option>Fully Furnished</option><option>Partially Furnished</option><option>Unfurnished</option>
-                  </select>
-                  <textarea required name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" rows="3" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"></textarea>
-               </div>
-               
-               {/* Image preview */}
-               {formData.imageUrl && (
-                 <div className="md:col-span-2">
-                   <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Image Preview</p>
-                   <img 
-                     src={formData.imageUrl} 
-                     alt="Preview" 
-                     className="w-48 h-32 object-cover rounded-xl border border-surface-container-high"
-                     onError={(e) => { e.target.style.display = 'none'; }}
-                   />
-                 </div>
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ 
+            position: 'fixed', 
+            top: 0, left: 0, right: 0, bottom: 0,
+            width: '100vw', 
+            height: '100vh', 
+            minHeight: '100vh',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
+        >
+          <div 
+            className="bg-surface rounded-2xl shadow-2xl w-full max-w-3xl relative border border-white/20"
+            style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+             <div className="p-8 pb-0 flex-shrink-0">
+               <button onClick={resetForm} className="absolute top-4 right-4 w-10 h-10 bg-surface-container hover:bg-surface-container-high rounded-full flex items-center justify-center text-on-surface transition-colors z-10">
+                  <span className="material-symbols-outlined">close</span>
+               </button>
+               <h2 className="text-2xl font-bold font-headline mb-2 text-on-surface">
+                 {editingId ? (editingWasRejected ? 'Edit & Resubmit Property' : 'Edit Property') : 'List New Property'}
+               </h2>
+               {editingWasRejected && (
+                 <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
+                   <span className="material-symbols-outlined text-sm">info</span>
+                   Saving changes will resubmit this property for admin approval.
+                 </p>
                )}
+             </div>
 
-               <div className="md:col-span-2 pt-4 flex gap-4 justify-end border-t border-surface-container-low mt-4 pt-6">
-                  <button type="button" onClick={resetForm} className="bg-surface-container text-on-surface font-bold py-3 px-8 rounded-full hover:bg-surface-container-high transition-colors">
-                    Cancel
-                  </button>
-                  <button type="submit" className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
-                    {editingId ? (editingWasRejected ? 'Resubmit for Approval' : 'Update Listing') : 'Submit for Approval'}
-                  </button>
-               </div>
-             </form>
-             <p className="text-xs text-on-surface-variant mt-4 text-center">* New properties require admin approval before becoming visible to students.</p>
+             <div className="overflow-y-auto flex-1 p-8 pt-4">
+               <form onSubmit={handleSubmit} id="propertyForm" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-4">
+                    <input required name="title" value={formData.title} onChange={handleInputChange} placeholder="Property Title" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                    <input required name="address" value={formData.address} onChange={handleInputChange} placeholder="Address" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                    <div className="flex gap-4">
+                      <input required name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                      <input required name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+                    </div>
+                    <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="Monthly Rent (RM)" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"/>
+
+                    {/* Image upload */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                        <span className="material-symbols-outlined text-[12px] align-middle mr-1">image</span>
+                        Upload Property Image
+                      </label>
+                      <input 
+                        type="file" 
+                        accept=".jpg,.jpeg,.png,.webp"
+                        onChange={handleImageFileChange}
+                        className="w-full px-4 py-2.5 bg-surface-container-lowest rounded-xl text-on-surface text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                      />
+                      <p className="text-xs text-on-surface-variant mt-1">JPG, PNG, or WebP. Max 5MB.</p>
+                    </div>
+
+                    {/* Fallback: Image URL */}
+                    <input 
+                      name="imageUrl" 
+                      value={formData.imageUrl} 
+                      onChange={handleInputChange} 
+                      placeholder="Or paste Image URL (optional)" 
+                      className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface text-sm"
+                    />
+                 </div>
+                 <div className="space-y-4">
+                    <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
+                       <option>Apartment</option><option>Terrace</option><option>Condo</option>
+                    </select>
+                    <select name="roomType" value={formData.roomType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
+                       <option>Single</option><option>Master</option><option>Middle</option>
+                    </select>
+                    <select name="furnishedStatus" value={formData.furnishedStatus} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
+                       <option>Fully Furnished</option><option>Partially Furnished</option><option>Unfurnished</option>
+                    </select>
+                    <textarea required name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" rows="3" className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface"></textarea>
+                 </div>
+                 
+                 {/* Image preview */}
+                 {(imagePreview || formData.imageUrl) && (
+                   <div className="md:col-span-2">
+                     <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Image Preview</p>
+                     <img 
+                       src={imagePreview || resolveImageSrc(formData.imageUrl)} 
+                       alt="Preview" 
+                       className="w-48 h-32 object-cover rounded-xl border border-surface-container-high"
+                       onError={(e) => { e.target.style.display = 'none'; }}
+                     />
+                   </div>
+                 )}
+
+                 <div className="md:col-span-2 pt-4 flex gap-4 justify-end border-t border-surface-container-low mt-4 pt-6">
+                    <button type="button" onClick={resetForm} className="bg-surface-container text-on-surface font-bold py-3 px-8 rounded-full hover:bg-surface-container-high transition-colors">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={uploading} className="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center gap-2">
+                      {uploading ? (
+                        <>
+                          <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                          Uploading...
+                        </>
+                      ) : editingId ? (editingWasRejected ? 'Resubmit for Approval' : 'Update Listing') : 'Submit for Approval'}
+                    </button>
+                 </div>
+               </form>
+             </div>
+             <p className="text-xs text-on-surface-variant p-4 pt-0 text-center flex-shrink-0">* New properties require admin approval before becoming visible to students.</p>
           </div>
         </div>
       )}
@@ -275,7 +350,7 @@ const OwnerDashboard = () => {
                 {/* Property image thumbnail */}
                 {p.imageUrl && (
                   <div className="h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-2xl">
-                    <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />
+                    <img src={resolveImageSrc(p.imageUrl)} alt={p.title} className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div>

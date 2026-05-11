@@ -139,4 +139,14 @@ export const resolveFeedback = async (id) => {
   return response.data;
 };
 
+// File upload
+export const uploadPropertyImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/upload/property-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 export default api;
