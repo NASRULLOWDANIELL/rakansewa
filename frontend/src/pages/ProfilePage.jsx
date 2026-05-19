@@ -106,13 +106,7 @@ const ProfilePage = () => {
       setSaveSuccess(false);
       setSaveError('');
 
-      // Save user profile first
-      await updateProfile({
-        ...formData,
-        budget: formData.budget ? parseFloat(formData.budget) : null,
-      });
-
-      // Link/unlink property — always do this when listed as housemate
+      // Link/unlink property FIRST — to avoid race condition with context update
       if (currentUser.id !== 999) {
         try {
           const propId = selectedPropertyId ? parseInt(selectedPropertyId) : null;
@@ -124,8 +118,19 @@ const ProfilePage = () => {
           }
         } catch (linkErr) {
           console.error('Error linking property:', linkErr);
+          // Extract specific error message from backend response if property linking fails
+          const errorMsg = linkErr?.response?.data?.message || linkErr?.message || 'Failed to link property.';
+          setSaveError(errorMsg);
+          setSaving(false);
+          return;
         }
       }
+
+      // Save user profile AFTER
+      await updateProfile({
+        ...formData,
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+      });
 
       setIsEditing(false);
       setSaveSuccess(true);
@@ -246,17 +251,6 @@ const ProfilePage = () => {
                 Complete your profile to improve trust and matching.
               </p>
             ) : null}
-            {missingStudentFields.length > 0 && (
-              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl text-orange-800">
-                <p className="font-medium text-sm flex items-center gap-2">
-                  <span className="material-symbols-outlined text-orange-600">info</span>
-                  Complete your student verification to unlock full trust features.
-                </p>
-                <p className="text-xs mt-1 ml-7 text-orange-700">
-                  Missing: <span className="font-bold">{missingStudentFields.join(', ')}</span>
-                </p>
-              </div>
-            )}
           </div>
         )}
 

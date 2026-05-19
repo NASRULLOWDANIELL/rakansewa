@@ -229,7 +229,6 @@ const HousematesPage = () => {
                 <div className="p-6 pt-0 -mt-4 relative z-10 flex flex-col flex-grow">
                   <div className="text-center mb-4">
                     <h3 className="text-xl font-headline font-bold text-on-surface">{hm.name}</h3>
-                    <p className="text-sm text-on-surface-variant">{hm.email}</p>
                     {currentUser?.isListedAsHousemate && hm.matchScore > 0 && (
                       <span className={`inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full ${
                         hm.matchScore >= 75 ? 'bg-green-100 text-green-700' :

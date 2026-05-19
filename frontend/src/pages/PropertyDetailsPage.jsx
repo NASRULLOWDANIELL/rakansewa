@@ -96,11 +96,11 @@ const PropertyDetailsPage = () => {
     const R = 6371; // km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -155,8 +155,8 @@ const PropertyDetailsPage = () => {
     return housemates.map(hm => {
       const user = hm.userId ? userMap[hm.userId] : null;
       const isCurrentUser = currentUser && user && user.id === currentUser.id;
-      const { score, reasons } = isCurrentUser 
-        ? { score: 0, reasons: [] } 
+      const { score, reasons } = isCurrentUser
+        ? { score: 0, reasons: [] }
         : computeMatchScore(currentUser, hm);
       return {
         ...hm,
@@ -218,17 +218,17 @@ const PropertyDetailsPage = () => {
             <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property Detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlGVz0m4WAKg7KxMswmOnWIiWPhlpLip7ZJMuM_3QlvAhEMSqlZ9iBy59ztLi1mk-6NYQDcT4BEB4ksnvG1ADXdcJBhuMofZOLhehEJv9aFgd8gS_24hV4QOIqbsZMFGb87n3k3JWFflm39INQEfokYoIm_yrCWefZTDI_SjN9B18Kuj62s9NyqISswpDzTp1JJpUFIfUHtcR9W7b6qvA1bo4t6RkUXC7By-aK-ksM3FO4DQehl6ucVibB8J3RbTFQ_LiQ3ixsOUXG" />
           </div>
           <div className="hidden md:block col-span-4 row-span-1 relative overflow-hidden rounded-lg group">
-             <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property Bedroom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABXDjCCUQ9Q-v8VPk2kF9wlCda3RSJ_kWtt82n2tlwGoPaKTqxgR22EZhViwm4c3I9VsbeLVltsVEubkUZrcevNFvg8iPYD2IR9SfGiTg9fonJHH6ORjVamInvsy5qAfQ-UP3HBpxzYFo6eJ-6mGcRQ3AB6IN8-O1JaHk2q6POq8c4H-MaYPmL58uaaAdxjHNLOtRX72Lgoo9rNPRuMCrPVax7vn89BSuwUXAuNpBBMBdVmhkI-oZmtVOtwxNI9_a9cyKJLTOiImOU" />
+            <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property Bedroom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABXDjCCUQ9Q-v8VPk2kF9wlCda3RSJ_kWtt82n2tlwGoPaKTqxgR22EZhViwm4c3I9VsbeLVltsVEubkUZrcevNFvg8iPYD2IR9SfGiTg9fonJHH6ORjVamInvsy5qAfQ-UP3HBpxzYFo6eJ-6mGcRQ3AB6IN8-O1JaHk2q6POq8c4H-MaYPmL58uaaAdxjHNLOtRX72Lgoo9rNPRuMCrPVax7vn89BSuwUXAuNpBBMBdVmhkI-oZmtVOtwxNI9_a9cyKJLTOiImOU" />
           </div>
         </div>
       </section>
 
       {/* Main Content Section */}
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-12">
-        
+
         {/* Left Column: Property Info */}
         <div className="lg:col-span-2 space-y-12">
-          
+
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <span className="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-fixed-variant text-xs font-medium">{property.propertyType}</span>
@@ -252,7 +252,7 @@ const PropertyDetailsPage = () => {
             <div className="text-right">
               <p className="text-on-surface-variant text-sm mb-1">Furnishing</p>
               <span className="text-primary font-semibold flex items-center justify-end gap-1">
-                 <span className="material-symbols-outlined text-base">chair</span> {property.furnishedStatus}
+                <span className="material-symbols-outlined text-base">chair</span> {property.furnishedStatus}
               </span>
             </div>
           </div>
@@ -260,7 +260,7 @@ const PropertyDetailsPage = () => {
           <div className="space-y-6">
             <h3 className="text-2xl font-bold">Property Description</h3>
             <div className="prose prose-slate max-w-none text-on-surface-variant leading-relaxed font-body">
-               <p>{property.description || 'No description provided for this listing.'}</p>
+              <p>{property.description || 'No description provided for this listing.'}</p>
             </div>
           </div>
 
@@ -269,7 +269,7 @@ const PropertyDetailsPage = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold">Current Housemates at This Property</h3>
               <span className="bg-tertiary-container/10 text-tertiary text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                 <span className="material-symbols-outlined text-sm">groups</span> {enrichedHousemates.length} Profile{enrichedHousemates.length !== 1 && 's'}
+                <span className="material-symbols-outlined text-sm">groups</span> {enrichedHousemates.length} Profile{enrichedHousemates.length !== 1 && 's'}
               </span>
             </div>
             {enrichedHousemates.length === 0 ? (
@@ -279,95 +279,95 @@ const PropertyDetailsPage = () => {
                 <p className="text-xs text-on-surface-variant/70 mt-1">Students can link their profiles to this property from their profile page.</p>
               </div>
             ) : (
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {enrichedHousemates.map((hw) => (
-                    <div key={hw.id} className="bg-surface-container-lowest p-6 rounded-lg border-2 border-transparent hover:border-primary-fixed transition-all group">
-                       <div className="flex flex-col items-center text-center space-y-4">
-                          <div className="w-20 h-20 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border-4 border-surface-container-high text-primary">
-                             <span className="material-symbols-outlined text-4xl">person</span>
-                          </div>
-                          <div>
-                             <h4 className="font-bold text-on-surface">{hw.userName}</h4>
-                             <p className="text-xs text-primary font-medium">
-                               {hw.occupationType && `${hw.occupationType}`}
-                               {hw.age && `, ${hw.age} y/o`}
-                             </p>
-                          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {enrichedHousemates.map((hw) => (
+                  <div key={hw.id} className="bg-surface-container-lowest p-6 rounded-lg border-2 border-transparent hover:border-primary-fixed transition-all group">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      <div className="w-20 h-20 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border-4 border-surface-container-high text-primary">
+                        <span className="material-symbols-outlined text-4xl">person</span>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-on-surface">{hw.userName}</h4>
+                        <p className="text-xs text-primary font-medium">
+                          {hw.occupationType && `${hw.occupationType}`}
+                          {hw.age && `, ${hw.age} y/o`}
+                        </p>
+                      </div>
 
-                          {/* Match score */}
-                          {hw.isCurrentUser ? (
-                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">Your Profile</span>
-                          ) : hw.matchScore > 0 && currentUser ? (
-                            <div className="space-y-1">
-                              <div className={`bg-gradient-to-br ${getScoreColor(hw.matchScore)} text-white rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2`}>
-                                <span className="text-lg font-black">{hw.matchScore}%</span>
-                                <span className="text-[10px] font-bold uppercase">{getScoreLabel(hw.matchScore)}</span>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          <div className="flex flex-wrap justify-center gap-1.5">
-                             {hw.gender && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.gender}</span>
-                             )}
-                             {(hw.userBudget || hw.budget) && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.userBudget || hw.budget}</span>
-                             )}
-                             {hw.cleanlinessLevel && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">Clean: {hw.cleanlinessLevel}</span>
-                             )}
-                             {(hw.userSleepSchedule || hw.sleepSchedule) && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.userSleepSchedule || hw.sleepSchedule}</span>
-                             )}
-                             {hw.smokingPreference && (
-                               <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.smokingPreference}</span>
-                             )}
-                             {/* Show lifestyle tags from user data */}
-                             {hw.userLifestyle && hw.userLifestyle.split(',').map(l => l.trim()).filter(Boolean).map(tag => (
-                               <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{tag}</span>
-                             ))}
+                      {/* Match score */}
+                      {hw.isCurrentUser ? (
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">Your Profile</span>
+                      ) : hw.matchScore > 0 && currentUser ? (
+                        <div className="space-y-1">
+                          <div className={`bg-gradient-to-br ${getScoreColor(hw.matchScore)} text-white rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2`}>
+                            <span className="text-lg font-black">{hw.matchScore}%</span>
+                            <span className="text-[10px] font-bold uppercase">{getScoreLabel(hw.matchScore)}</span>
                           </div>
+                        </div>
+                      ) : null}
 
-                          {/* Match reasons */}
-                          {!hw.isCurrentUser && hw.matchReasons && hw.matchReasons.length > 0 && (
-                            <div className="space-y-0.5 w-full text-left">
-                              {hw.matchReasons.slice(0, 3).map((reason, idx) => (
-                                <span key={idx} className="flex items-center gap-1 text-[10px] text-primary">
-                                  <span className="material-symbols-outlined text-[10px]">check_circle</span> {reason}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                       </div>
+                      <div className="flex flex-wrap justify-center gap-1.5">
+                        {hw.gender && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.gender}</span>
+                        )}
+                        {(hw.userBudget || hw.budget) && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.userBudget || hw.budget}</span>
+                        )}
+                        {hw.cleanlinessLevel && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">Clean: {hw.cleanlinessLevel}</span>
+                        )}
+                        {(hw.userSleepSchedule || hw.sleepSchedule) && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.userSleepSchedule || hw.sleepSchedule}</span>
+                        )}
+                        {hw.smokingPreference && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.smokingPreference}</span>
+                        )}
+                        {/* Show lifestyle tags from user data */}
+                        {hw.userLifestyle && hw.userLifestyle.split(',').map(l => l.trim()).filter(Boolean).map(tag => (
+                          <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{tag}</span>
+                        ))}
+                      </div>
+
+                      {/* Match reasons */}
+                      {!hw.isCurrentUser && hw.matchReasons && hw.matchReasons.length > 0 && (
+                        <div className="space-y-0.5 w-full text-left">
+                          {hw.matchReasons.slice(0, 3).map((reason, idx) => (
+                            <span key={idx} className="flex items-center gap-1 text-[10px] text-primary">
+                              <span className="material-symbols-outlined text-[10px]">check_circle</span> {reason}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                 ))}
-               </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          
+
         </div>
 
         {/* Right Column: Maps & Actions */}
         <div className="space-y-8">
-           <div className="bg-surface-container-low rounded-lg overflow-hidden h-64 relative flex flex-col items-center justify-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-4xl mb-2">map</span>
-              
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-outline-variant/30 text-sm font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-base">directions_walk</span>
-                {distance ? `${distance} km from UiTM Jasin` : distanceStatus}
-              </div>
+          <div className="bg-surface-container-low rounded-lg overflow-hidden h-64 relative flex flex-col items-center justify-center text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl mb-2">map</span>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent flex items-end p-6">
-                <a 
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-white text-on-surface font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all shadow-lg"
-                >
-                  <span className="material-symbols-outlined">map</span> View in Maps
-                </a>
-              </div>
-           </div>
+            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-outline-variant/30 text-sm font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-base">directions_walk</span>
+              {distance ? `${distance} km from UiTM Jasin` : distanceStatus}
+            </div>
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent flex items-end p-6">
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-white text-on-surface font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all shadow-lg"
+              >
+                <span className="material-symbols-outlined">map</span> View in Maps
+              </a>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -375,38 +375,38 @@ const PropertyDetailsPage = () => {
       {/* Sticky Bottom Actions */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-3xl border-t border-outline-variant/10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <div className="max-w-7xl mx-auto px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-           <div className="hidden md:flex flex-col">
-              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Selected Property</span>
-              <span className="text-lg font-bold text-on-surface">{property.title}</span>
-           </div>
-           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto relative">
-               {currentUser ? (
-                 isUitmVerified() ? (
-                   <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
-                      <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>chat_bubble</span> Contact Landlord
-                   </a>
-                 ) : (
-                   <div className="relative flex-1 md:flex-none">
-                     <button
-                       onClick={() => setShowVerifyWarning(!showVerifyWarning)}
-                       className="w-full px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/5 cursor-not-allowed opacity-75"
-                     >
-                       <span className="material-symbols-outlined text-amber-500">warning</span> Complete UiTM Verification to Contact
-                     </button>
-                     {showVerifyWarning && (
-                       <div className="absolute bottom-full mb-2 right-0 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800 text-xs shadow-lg w-72 animate-[fadeIn_0.2s_ease-out]">
-                         <span className="font-bold block mb-1">UiTM verification required</span>
-                         Please complete your UiTM student verification (matric number + UiTM email) in your Profile page to contact landlords.
-                       </div>
-                     )}
-                   </div>
-                 )
-               ) : (
-                 <Link to="/login" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/5">
-                    <span className="material-symbols-outlined">lock</span> Login to Contact
-                 </Link>
-               )}
-           </div>
+          <div className="hidden md:flex flex-col">
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Selected Property</span>
+            <span className="text-lg font-bold text-on-surface">{property.title}</span>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto relative">
+            {currentUser ? (
+              isUitmVerified() ? (
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span> Contact Landlord
+                </a>
+              ) : (
+                <div className="relative flex-1 md:flex-none">
+                  <button
+                    onClick={() => setShowVerifyWarning(!showVerifyWarning)}
+                    className="w-full px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/5 cursor-not-allowed opacity-75"
+                  >
+                    <span className="material-symbols-outlined text-amber-500">warning</span> Complete UiTM Verification to Contact
+                  </button>
+                  {showVerifyWarning && (
+                    <div className="absolute bottom-full mb-2 right-0 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800 text-xs shadow-lg w-72 animate-[fadeIn_0.2s_ease-out]">
+                      <span className="font-bold block mb-1">UiTM verification required</span>
+                      Please complete your UiTM student verification (matric number + UiTM email) in your Profile page to contact landlords.
+                    </div>
+                  )}
+                </div>
+              )
+            ) : (
+              <Link to="/login" className="flex-1 md:flex-none px-8 py-3.5 rounded-full bg-surface-container-high text-on-surface font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/5">
+                <span className="material-symbols-outlined">lock</span> Login to Contact
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>

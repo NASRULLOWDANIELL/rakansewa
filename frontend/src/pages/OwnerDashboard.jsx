@@ -29,6 +29,17 @@ const OwnerDashboard = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showForm]);
+
   const fetchProperties = async () => {
     if (!currentUser?.id) return;
     setLoading(true);
@@ -276,14 +287,7 @@ const OwnerDashboard = () => {
                       <p className="text-xs text-on-surface-variant mt-1">JPG, PNG, or WebP. Max 5MB.</p>
                     </div>
 
-                    {/* Fallback: Image URL */}
-                    <input 
-                      name="imageUrl" 
-                      value={formData.imageUrl} 
-                      onChange={handleInputChange} 
-                      placeholder="Or paste Image URL (optional)" 
-                      className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface text-sm"
-                    />
+                    {/* Image URL input removed as per user request */}
                  </div>
                  <div className="space-y-4">
                     <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface">
