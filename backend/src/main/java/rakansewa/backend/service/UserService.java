@@ -2,6 +2,7 @@ package rakansewa.backend.service;
 
 import org.springframework.stereotype.Service;
 import rakansewa.backend.model.User;
+import rakansewa.backend.repository.PropertyRepository;
 import rakansewa.backend.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PropertyRepository propertyRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
@@ -21,9 +23,11 @@ public class UserService {
 
     // Constructor injection (recommended over @Autowired on fields)
     public UserService(UserRepository userRepository,
+                       PropertyRepository propertyRepository,
                        org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
                        EmailService emailService) {
         this.userRepository = userRepository;
+        this.propertyRepository = propertyRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
     }
@@ -103,6 +107,31 @@ public class UserService {
 
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    /**
+     * Link a user to a rental property.
+     */
+    public User linkProperty(Long userId, Long propertyId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (propertyId != null) {
+            rakansewa.backend.model.Property property = propertyRepository.findById(propertyId)
+                    .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
+            user.setLinkedProperty(property);
+        } else {
+            user.setLinkedProperty(null);
+        }
+
+        return userRepository.save(user);
+    }
+
+    /**
+     * Unlink a user from any property.
+     */
+    public User unlinkProperty(Long userId) {
+        return linkProperty(userId, null);
     }
 
     public Optional<User> findByEmail(String email) {

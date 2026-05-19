@@ -2,6 +2,7 @@ package rakansewa.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 
@@ -65,4 +66,10 @@ public class User {
 
     @Column
     private String authProvider;
+
+    // Linked rental property (nullable — housemate may not be linked to any property)
+    @ManyToOne
+    @JoinColumn(name = "linked_property_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Property linkedProperty;
 }

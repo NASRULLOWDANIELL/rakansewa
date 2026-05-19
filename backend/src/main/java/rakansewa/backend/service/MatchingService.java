@@ -1,468 +1,203 @@
 package rakansewa.backend.service;
 
 import org.springframework.stereotype.Service;
-import rakansewa.backend.dto.MatchingRequestDTO;
 import rakansewa.backend.dto.MatchingResponseDTO;
-import rakansewa.backend.model.HousemateProfile;
-import rakansewa.backend.model.Property;
-import rakansewa.backend.repository.HousemateProfileRepository;
-import rakansewa.backend.repository.PropertyRepository;
+import rakansewa.backend.model.User;
+import rakansewa.backend.repository.UserRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Rule-Based Matching Service for RakanSewa.
+ * Matching Service for RakanSewa — Users-based matching.
  *
- * Matching uses two phases:
- *   1. Hard Rules  — Filter out incompatible candidates (gender, budget, smoking, availability).
- *   2. Soft Rules  — Score remaining candidates on weighted lifestyle criteria.
+ * Uses the users table (isListedAsHousemate = true) as the sole source
+ * for housemate listings and compatibility scoring.
  *
- * The result is a ranked list of housemates sorted by compatibility score (highest first).
+ * Matching criteria (from User fields):
+ *   - budget proximity
+ *   - lifestyle overlap (comma-separated multi-select)
+ *   - sleepSchedule compatibility
  */
 @Service
 public class MatchingService {
 
-    private final HousemateProfileRepository housemateProfileRepository;
-    private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
 
-    public MatchingService(HousemateProfileRepository housemateProfileRepository,
-                           PropertyRepository propertyRepository) {
-        this.housemateProfileRepository = housemateProfileRepository;
-        this.propertyRepository = propertyRepository;
+    public MatchingService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
-
-    // ==================== CLEANLINESS MAP ====================
-
-    private static final Map<String, Integer> CLEANLINESS_MAP = Map.of(
-            "very flexible", 1,
-            "flexible", 2,
-            "moderate", 3,
-            "strict", 4,
-            "very strict", 5
-    );
-
-    // ==================== GUEST TOLERANCE MAP ====================
-
-    private static final Map<String, Integer> GUEST_TOLERANCE_MAP = Map.of(
-            "rarely", 1,
-            "sometimes", 2,
-            "often", 3
-    );
-
-    // ==================== NOISE PREFERENCE MAP ====================
-
-    private static final Map<String, Integer> NOISE_MAP = Map.of(
-            "silent", 1,
-            "low noise", 2,
-            "flexible", 3
-    );
-
-    // ==================== SOFT RULE WEIGHTS ====================
-    // Weights must sum to 100
-
-    private static final double WEIGHT_CLEANLINESS  = 25.0;
-    private static final double WEIGHT_SLEEP        = 20.0;
-    private static final double WEIGHT_SOCIAL       = 15.0;
-    private static final double WEIGHT_OCCUPATION   = 15.0;
-    private static final double WEIGHT_GUEST        = 12.5;
-    private static final double WEIGHT_NOISE        = 12.5;
 
     // ==================== MAIN ENTRY POINT ====================
 
     /**
-     * Find compatible housemates for the given property based on user preferences.
+     * Match a user against ALL other listed housemates.
+     * This powers the housemate-first flow on the Housemates page.
      *
-     * @param request    The user's preference fields from the frontend form
-     * @param propertyId The property to search housemates under
-     * @return Sorted list of matching results (best matches first)
+     * @param userId The current user's ID
+     * @return Sorted list of matching results (best matches first),
+     *         excluding the user themselves
      */
-    public List<MatchingResponseDTO> findMatches(MatchingRequestDTO request, Long propertyId) {
+    public List<MatchingResponseDTO> matchAllHousemates(Long userId) {
+        Optional<User> currentUserOpt = userRepository.findById(userId);
+        List<User> listedHousemates = userRepository.findByIsListedAsHousemateTrue();
 
-        // Validate the property exists and is available
-        Property property = propertyRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
+        if (currentUserOpt.isEmpty()) {
+            // User not found — return all housemates with 0 score
+            return listedHousemates.stream()
+                    .map(u -> MatchingResponseDTO.fromUser(u, 0, "Low Match", List.of()))
+                    .collect(Collectors.toList());
+        }
 
-        // Get all housemate profiles for this property
-        List<HousemateProfile> housemates = housemateProfileRepository.findByPropertyId(propertyId);
+        User currentUser = currentUserOpt.get();
 
-        // Phase 1: Apply hard rules to filter out incompatible candidates
-        // Phase 2: Score remaining candidates using soft rules
-        // Phase 3: Sort by score and return
-        return housemates.stream()
-                .filter(housemate -> passesHardRules(request, housemate, property))
-                .map(housemate -> scoreAndBuildResponse(request, housemate))
+        return listedHousemates.stream()
+                .filter(u -> !userId.equals(u.getId())) // Exclude self
+                .map(u -> scoreAndBuildResponse(currentUser, u))
                 .sorted(Comparator.comparingDouble(MatchingResponseDTO::getCompatibilityScore).reversed())
                 .collect(Collectors.toList());
     }
 
-    // ==================== PHASE 1: HARD RULES ====================
-
     /**
-     * Hard rules act as binary filters — a candidate must pass ALL of them.
-     * If any hard rule fails, the candidate is excluded entirely.
+     * Get housemates linked to a specific property, with match scoring
+     * against the current user (if provided).
+     *
+     * @param propertyId The property to search housemates under
+     * @param currentUserId Optional current user ID for scoring (can be null)
+     * @return List of matching results for housemates at this property
      */
-    private boolean passesHardRules(MatchingRequestDTO request, HousemateProfile housemate, Property property) {
-        return passesGenderRule(request, housemate)
-                && passesBudgetRule(request, housemate)
-                && passesSmokingRule(request, housemate)
-                && passesAvailabilityRule(property);
-    }
+    public List<MatchingResponseDTO> getHousematesForProperty(Long propertyId, Long currentUserId) {
+        List<User> linkedUsers = userRepository.findByLinkedPropertyId(propertyId);
 
-    /**
-     * Gender compatibility (bidirectional check):
-     * 1. The user's preferred gender must accept the housemate's gender
-     * 2. The housemate's preferred gender must accept the user's gender
-     */
-    private boolean passesGenderRule(MatchingRequestDTO request, HousemateProfile housemate) {
-        // Check if user accepts the housemate's gender
-        if (!isGenderAccepted(request.getPreferredGender(), housemate.getGender())) {
-            return false;
-        }
-        // Check if housemate accepts the user's gender
-        return isGenderAccepted(housemate.getPreferredGender(), request.getGender());
-    }
-
-    private boolean isGenderAccepted(String preferredGender, String actualGender) {
-        if (preferredGender == null || actualGender == null) return true;
-        if (preferredGender.equalsIgnoreCase("Any")) return true;
-        // "Male Only" should accept "Male", "Female Only" should accept "Female"
-        return preferredGender.toLowerCase().contains(actualGender.toLowerCase());
-    }
-
-    /**
-     * Budget compatibility:
-     * The housemate's budget must be within the user's max budget (± 30% tolerance).
-     * If user has no budget preference, this rule passes.
-     */
-    private boolean passesBudgetRule(MatchingRequestDTO request, HousemateProfile housemate) {
-        if (request.getMaxBudget() == null || request.getMaxBudget() <= 0) return true;
-        if (housemate.getBudget() == null) return true;
-
-        double maxAllowed = request.getMaxBudget() * 1.30;
-        return housemate.getBudget() <= maxAllowed;
-    }
-
-    /**
-     * Smoking compatibility:
-     * Non-smoker users won't match with smoker housemates (unless preference is "No Preference").
-     */
-    private boolean passesSmokingRule(MatchingRequestDTO request, HousemateProfile housemate) {
-        if (request.getSmokingPreference() == null || housemate.getSmokingPreference() == null) return true;
-        if (request.getSmokingPreference().equalsIgnoreCase("No Preference")) return true;
-
-        // If user is "Non-Smoker", only match with "Non-Smoker" housemates
-        if (request.getSmokingPreference().equalsIgnoreCase("Non-Smoker")) {
-            return housemate.getSmokingPreference().equalsIgnoreCase("Non-Smoker");
+        User currentUser = null;
+        if (currentUserId != null) {
+            currentUser = userRepository.findById(currentUserId).orElse(null);
         }
 
-        return true; // Smoker users match with anyone
+        final User finalCurrentUser = currentUser;
+        return linkedUsers.stream()
+                .filter(u -> u.getIsListedAsHousemate() != null && u.getIsListedAsHousemate())
+                .map(u -> {
+                    if (finalCurrentUser != null && !currentUserId.equals(u.getId())) {
+                        return scoreAndBuildResponse(finalCurrentUser, u);
+                    }
+                    return MatchingResponseDTO.fromUser(u, 0, "Low Match", List.of());
+                })
+                .sorted(Comparator.comparingDouble(MatchingResponseDTO::getCompatibilityScore).reversed())
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Property/room availability check.
-     */
-    private boolean passesAvailabilityRule(Property property) {
-        if (property.getAvailabilityStatus() == null) return true;
-        return property.getAvailabilityStatus().equalsIgnoreCase("Available");
-    }
-
-    // ==================== PHASE 2: SOFT SCORING ====================
+    // ==================== SCORING ====================
 
     /**
-     * Score a candidate using weighted soft rules and build the response DTO.
+     * Score a candidate user against the current user and build the response DTO.
+     * Uses: budget, lifestyle, sleepSchedule.
      */
-    private MatchingResponseDTO scoreAndBuildResponse(MatchingRequestDTO request, HousemateProfile housemate) {
-
+    private MatchingResponseDTO scoreAndBuildResponse(User currentUser, User candidate) {
         List<String> reasons = new ArrayList<>();
         double totalScore = 0.0;
 
-        // --- Gender reason (already passed hard rule, so always add) ---
-        addGenderReason(request, housemate, reasons);
+        // --- Lifestyle overlap (40% weight) ---
+        totalScore += scoreLifestyle(currentUser, candidate, reasons);
 
-        // --- Budget reason ---
-        addBudgetReason(request, housemate, reasons);
+        // --- Sleep schedule (30% weight) ---
+        totalScore += scoreSleepSchedule(currentUser, candidate, reasons);
 
-        // --- Smoking reason ---
-        addSmokingReason(request, housemate, reasons);
+        // --- Budget proximity (30% weight) ---
+        totalScore += scoreBudget(currentUser, candidate, reasons);
 
-        // --- Cleanliness (weighted) ---
-        totalScore += scoreCleanliness(request, housemate, reasons);
-
-        // --- Sleep schedule (weighted) ---
-        totalScore += scoreSleepSchedule(request, housemate, reasons);
-
-        // --- Social level (weighted) ---
-        totalScore += scoreSocialLevel(request, housemate, reasons);
-
-        // --- Occupation type (weighted) ---
-        totalScore += scoreOccupationType(request, housemate, reasons);
-
-        // --- Guest tolerance (weighted) ---
-        totalScore += scoreGuestTolerance(request, housemate, reasons);
-
-        // --- Study/noise preference (weighted) ---
-        totalScore += scoreNoisePreference(request, housemate, reasons);
-
-        // Round to 1 decimal place
-        totalScore = Math.round(totalScore * 10.0) / 10.0;
+        // Round to nearest integer
+        totalScore = Math.min(100, Math.round(totalScore));
 
         String label = determineLabel(totalScore);
 
-        return MatchingResponseDTO.fromEntity(housemate, totalScore, label, reasons);
+        return MatchingResponseDTO.fromUser(candidate, totalScore, label, reasons);
     }
 
-    // ---------- Reason builders for hard-rule matches ----------
+    // ---------- Lifestyle scoring (40 points max) ----------
 
-    private void addGenderReason(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getGender() != null && housemate.getGender() != null) {
-            if (request.getGender().equalsIgnoreCase(housemate.getGender())) {
-                reasons.add("Same gender");
-            } else {
-                reasons.add("Gender compatible");
-            }
+    private double scoreLifestyle(User currentUser, User candidate, List<String> reasons) {
+        List<String> myLifestyles = parseLifestyle(currentUser.getLifestyle());
+        List<String> theirLifestyles = parseLifestyle(candidate.getLifestyle());
+
+        if (myLifestyles.isEmpty() || theirLifestyles.isEmpty()) {
+            return 0; // No data to compare
         }
+
+        List<String> overlap = myLifestyles.stream()
+                .filter(theirLifestyles::contains)
+                .collect(Collectors.toList());
+
+        if (overlap.isEmpty()) return 0;
+
+        double ratio = (double) overlap.size() / Math.max(myLifestyles.size(), 1);
+        double score = ratio * 40.0;
+
+        reasons.add("Shared lifestyle: " + String.join(", ", overlap));
+        return score;
     }
 
-    private void addBudgetReason(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getMaxBudget() != null && housemate.getBudget() != null) {
-            if (housemate.getBudget() <= request.getMaxBudget()) {
-                reasons.add("Within budget (RM " + housemate.getBudget().intValue() + ")");
-            } else {
-                reasons.add("Slightly above budget (RM " + housemate.getBudget().intValue() + ")");
-            }
-        }
+    private List<String> parseLifestyle(String lifestyle) {
+        if (lifestyle == null || lifestyle.isBlank()) return List.of();
+        return Arrays.stream(lifestyle.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
-    private void addSmokingReason(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getSmokingPreference() != null && housemate.getSmokingPreference() != null) {
-            if (request.getSmokingPreference().equalsIgnoreCase(housemate.getSmokingPreference())) {
-                reasons.add("Same smoking preference");
-            }
-        }
-    }
+    // ---------- Sleep schedule scoring (30 points max) ----------
 
-    // ---------- Soft scoring functions ----------
+    private double scoreSleepSchedule(User currentUser, User candidate, List<String> reasons) {
+        String userSleep = currentUser.getSleepSchedule();
+        String mateSleep = candidate.getSleepSchedule();
 
-    /**
-     * Cleanliness similarity (25% weight).
-     * Compares numeric cleanliness levels. Closer = higher score.
-     */
-    private double scoreCleanliness(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getCleanlinessLevel() == null || housemate.getCleanlinessLevel() == null) {
-            return WEIGHT_CLEANLINESS; // If data missing, give full points
+        if (userSleep == null || mateSleep == null) return 0;
+
+        if (userSleep.equalsIgnoreCase(mateSleep)) {
+            reasons.add("Same sleep pattern: " + mateSleep);
+            return 30.0;
         }
 
-        int userLevel = request.getCleanlinessLevel();
-        Integer mateLevel = CLEANLINESS_MAP.getOrDefault(housemate.getCleanlinessLevel().toLowerCase(), 3);
-
-        int diff = Math.abs(userLevel - mateLevel);
-        double ratio;
-
-        if (diff == 0) {
-            ratio = 1.0;
-            reasons.add("Similar cleanliness standards");
-        } else if (diff == 1) {
-            ratio = 0.75;
-            reasons.add("Close cleanliness standards");
-        } else if (diff == 2) {
-            ratio = 0.4;
-        } else {
-            ratio = 0.1;
-        }
-
-        return WEIGHT_CLEANLINESS * ratio;
-    }
-
-    /**
-     * Sleep schedule match (20% weight).
-     * Exact match = full, "Flexible" with anything = 75%, else 0.
-     */
-    private double scoreSleepSchedule(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getSleepSchedule() == null || housemate.getSleepSchedule() == null) {
-            return WEIGHT_SLEEP;
-        }
-
-        String userSleep = request.getSleepSchedule().toLowerCase();
-        String mateSleep = housemate.getSleepSchedule().toLowerCase();
-
-        if (userSleep.equals(mateSleep)) {
-            reasons.add("Same sleep schedule (" + housemate.getSleepSchedule() + ")");
-            return WEIGHT_SLEEP;
-        }
-
-        if (userSleep.equals("flexible") || mateSleep.equals("flexible")) {
+        if (userSleep.equalsIgnoreCase("Flexible") || mateSleep.equalsIgnoreCase("Flexible")) {
             reasons.add("Flexible sleep schedule");
-            return WEIGHT_SLEEP * 0.75;
+            return 15.0;
         }
 
-        return 0.0;
+        return 0;
     }
 
-    /**
-     * Social level similarity (15% weight).
-     * Scale 1–5 comparison.
-     */
-    private double scoreSocialLevel(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getSocialLevel() == null || housemate.getSocialLevel() == null) {
-            return WEIGHT_SOCIAL;
+    // ---------- Budget proximity scoring (30 points max) ----------
+
+    private double scoreBudget(User currentUser, User candidate, List<String> reasons) {
+        Double userBudget = currentUser.getBudget();
+        Double mateBudget = candidate.getBudget();
+
+        if (userBudget == null || mateBudget == null || userBudget <= 0 || mateBudget <= 0) return 0;
+
+        double diff = Math.abs(userBudget - mateBudget);
+        double avg = (userBudget + mateBudget) / 2;
+        double pctDiff = avg > 0 ? diff / avg : 1;
+
+        if (pctDiff <= 0.1) {
+            reasons.add("Very similar budget range");
+            return 30.0;
+        } else if (pctDiff <= 0.3) {
+            reasons.add("Compatible budget range");
+            return 20.0;
+        } else if (pctDiff <= 0.5) {
+            reasons.add("Somewhat similar budget");
+            return 10.0;
         }
 
-        int diff = Math.abs(request.getSocialLevel() - housemate.getSocialLevel());
-        double ratio;
-
-        if (diff == 0) {
-            ratio = 1.0;
-            reasons.add("Same social preference");
-        } else if (diff == 1) {
-            ratio = 0.75;
-            reasons.add("Compatible social preference");
-        } else if (diff == 2) {
-            ratio = 0.4;
-        } else {
-            ratio = 0.1;
-        }
-
-        return WEIGHT_SOCIAL * ratio;
-    }
-
-    /**
-     * Occupation type match (15% weight).
-     * Exact match = full, else partial.
-     */
-    private double scoreOccupationType(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getOccupationType() == null || housemate.getOccupationType() == null) {
-            return WEIGHT_OCCUPATION;
-        }
-
-        if (request.getOccupationType().equalsIgnoreCase(housemate.getOccupationType())) {
-            reasons.add("Same occupation type (" + housemate.getOccupationType() + ")");
-            return WEIGHT_OCCUPATION;
-        }
-
-        return WEIGHT_OCCUPATION * 0.3;
-    }
-
-    /**
-     * Guest tolerance similarity (12.5% weight).
-     */
-    private double scoreGuestTolerance(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getGuestTolerance() == null || housemate.getGuestTolerance() == null) {
-            return WEIGHT_GUEST;
-        }
-
-        Integer userLevel = GUEST_TOLERANCE_MAP.getOrDefault(request.getGuestTolerance().toLowerCase(), 2);
-        Integer mateLevel = GUEST_TOLERANCE_MAP.getOrDefault(housemate.getGuestTolerance().toLowerCase(), 2);
-
-        int diff = Math.abs(userLevel - mateLevel);
-
-        if (diff == 0) {
-            reasons.add("Similar guest tolerance");
-            return WEIGHT_GUEST;
-        } else if (diff == 1) {
-            return WEIGHT_GUEST * 0.6;
-        }
-
-        return WEIGHT_GUEST * 0.2;
-    }
-
-    /**
-     * Study/noise preference similarity (12.5% weight).
-     */
-    private double scoreNoisePreference(MatchingRequestDTO request, HousemateProfile housemate, List<String> reasons) {
-        if (request.getStudyNoisePreference() == null || housemate.getStudyNoisePreference() == null) {
-            return WEIGHT_NOISE;
-        }
-
-        Integer userLevel = NOISE_MAP.getOrDefault(request.getStudyNoisePreference().toLowerCase(), 2);
-        Integer mateLevel = NOISE_MAP.getOrDefault(housemate.getStudyNoisePreference().toLowerCase(), 2);
-
-        int diff = Math.abs(userLevel - mateLevel);
-
-        if (diff == 0) {
-            reasons.add("Same noise/study preference");
-            return WEIGHT_NOISE;
-        } else if (diff == 1) {
-            return WEIGHT_NOISE * 0.6;
-        }
-
-        return WEIGHT_NOISE * 0.2;
+        return 0;
     }
 
     // ==================== LABEL DETERMINATION ====================
 
-    /**
-     * Determine a human-readable compatibility label.
-     *   85–100 → "Great Match"
-     *   65–84  → "Good Match"
-     *   50–64  → "Fair Match"
-     *   below 50 → "Low Match"
-     */
     private String determineLabel(double score) {
-        if (score >= 85) return "Great Match";
-        if (score >= 65) return "Good Match";
-        if (score >= 50) return "Fair Match";
+        if (score >= 75) return "Great Match";
+        if (score >= 50) return "Good Match";
+        if (score >= 25) return "Fair Match";
         return "Low Match";
-    }
-
-    // ==================== PROFILE-BASED MATCHING ====================
-
-    /**
-     * Match a user's housemate profile against ALL other listed housemates.
-     * This powers the housemate-first flow on the Housemates page.
-     *
-     * @param userId The current user's ID
-     * @return Sorted list of matching results (best matches first), 
-     *         excluding the user themselves
-     */
-    public List<MatchingResponseDTO> matchAllHousemates(Long userId) {
-        Optional<HousemateProfile> currentProfileOpt = housemateProfileRepository.findByUserId(userId);
-        if (currentProfileOpt.isEmpty()) {
-            // User has no housemate profile — return all housemates with 0 score
-            List<HousemateProfile> allProfiles = housemateProfileRepository.findAll();
-            return allProfiles.stream()
-                    .filter(hp -> !userId.equals(hp.getUserId()))
-                    .map(hp -> MatchingResponseDTO.fromEntity(hp, 0, "Low Match", List.of()))
-                    .collect(Collectors.toList());
-        }
-
-        HousemateProfile currentProfile = currentProfileOpt.get();
-
-        // Build a MatchingRequestDTO from the current user's housemate profile
-        MatchingRequestDTO request = buildRequestFromProfile(currentProfile);
-
-        List<HousemateProfile> allProfiles = housemateProfileRepository.findAll();
-
-        return allProfiles.stream()
-                .filter(hp -> !userId.equals(hp.getUserId())) // Exclude self
-                .map(hp -> scoreAndBuildResponse(request, hp))
-                .sorted(Comparator.comparingDouble(MatchingResponseDTO::getCompatibilityScore).reversed())
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Build a MatchingRequestDTO from an existing HousemateProfile.
-     * This converts the profile's fields into the request format for scoring.
-     */
-    private MatchingRequestDTO buildRequestFromProfile(HousemateProfile profile) {
-        MatchingRequestDTO dto = new MatchingRequestDTO();
-        dto.setGender(profile.getGender());
-        dto.setPreferredGender(profile.getPreferredGender());
-        dto.setMaxBudget(profile.getBudget());
-        dto.setSmokingPreference(profile.getSmokingPreference());
-        dto.setSleepSchedule(profile.getSleepSchedule());
-        dto.setSocialLevel(profile.getSocialLevel());
-        dto.setOccupationType(profile.getOccupationType());
-        dto.setGuestTolerance(profile.getGuestTolerance());
-        dto.setStudyNoisePreference(profile.getStudyNoisePreference());
-
-        // Map cleanliness level string to integer
-        if (profile.getCleanlinessLevel() != null) {
-            dto.setCleanlinessLevel(
-                CLEANLINESS_MAP.getOrDefault(profile.getCleanlinessLevel().toLowerCase(), 3)
-            );
-        }
-
-        return dto;
     }
 }

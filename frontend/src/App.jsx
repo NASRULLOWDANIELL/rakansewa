@@ -4,7 +4,6 @@ import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import PropertiesPage from './pages/PropertiesPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
-import PropertyMatchPage from './pages/PropertyMatchPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -41,7 +40,6 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/properties" element={<PropertiesPage />} />
             <Route path="/properties/:id" element={<PropertyDetailsPage />} />
-            <Route path="/properties/:id/match" element={<PropertyMatchPage />} />
             <Route path="/housemates" element={<HousematesPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/feedback" element={<FeedbackPage />} />

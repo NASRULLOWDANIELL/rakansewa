@@ -55,34 +55,9 @@ export const resubmitProperty = async (id, property) => {
   return response.data;
 };
 
-// Housemate & Matching endpoints
-export const getHousematesByPropertyId = async (propertyId) => {
-  const response = await api.get(`/housemates/property/${propertyId}`);
-  return response.data;
-};
-
-export const findHousemateMatches = async (propertyId, preferences) => {
-  const response = await api.post(`/matching/${propertyId}`, preferences);
-  return response.data;
-};
-
-export const getAllHousemates = async () => {
-  const response = await api.get('/housemates');
-  return response.data;
-};
-
+// Matching endpoint (users-based)
 export const getMatchesForUser = async (userId) => {
   const response = await api.get(`/matching/user/${userId}`);
-  return response.data;
-};
-
-export const getHousemateProfileByUserId = async (userId) => {
-  const response = await api.get(`/housemates/user/${userId}`);
-  return response.data;
-};
-
-export const linkHousemateToProperty = async (userId, propertyId) => {
-  const response = await api.put(`/housemates/user/${userId}/link-property`, { propertyId });
   return response.data;
 };
 
@@ -99,6 +74,12 @@ export const getAllUsers = async () => {
 
 export const updateUser = async (id, user) => {
   const response = await api.put(`/users/${id}`, user);
+  return response.data;
+};
+
+// User property linking (replaces old housemate profile linking)
+export const linkUserToProperty = async (userId, propertyId) => {
+  const response = await api.put(`/users/${userId}/link-property`, { propertyId });
   return response.data;
 };
 

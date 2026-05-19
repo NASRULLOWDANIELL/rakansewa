@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getPropertyById, getHousematesByPropertyId, getAllUsers } from '../services/api';
+import { getPropertyById, getAllUsers } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Compute compatibility between logged-in user and a housemate profile.
+ * Compute compatibility between logged-in user and a housemate (user).
  */
 const computeMatchScore = (currentUser, housemate) => {
   if (!currentUser) return { score: 0, reasons: [] };
@@ -43,24 +43,15 @@ const computeMatchScore = (currentUser, housemate) => {
     }
   }
 
-  // Gender match
-  if (housemate.gender && currentUser.gender) {
-    if (housemate.gender === currentUser.gender) {
-      score += 10;
-      reasons.push('Same gender');
+  // Lifestyle overlap
+  const myLifestyles = (currentUser.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
+  const theirLifestyles = (housemate.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (myLifestyles.length > 0 && theirLifestyles.length > 0) {
+    const overlap = myLifestyles.filter(l => theirLifestyles.includes(l));
+    if (overlap.length > 0) {
+      score += Math.min(30, (overlap.length / Math.max(myLifestyles.length, 1)) * 30);
+      reasons.push(`Shared lifestyle: ${overlap.join(', ')}`);
     }
-  }
-
-  // Smoking match
-  if (housemate.smokingPreference === 'Non-Smoker') {
-    score += 10;
-    reasons.push('Non-smoker');
-  }
-
-  // Social level proximity
-  if (housemate.socialLevel) {
-    score += 10;
-    reasons.push('Social preference available');
   }
 
   return { score: Math.min(100, Math.round(score)), reasons };
@@ -84,7 +75,6 @@ const PropertyDetailsPage = () => {
   const { id } = useParams();
   const { currentUser, isUitmVerified } = useAuth();
   const [property, setProperty] = useState(null);
-  const [housemates, setHousemates] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,17 +97,12 @@ const PropertyDetailsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const propertyData = await getPropertyById(id);
-        setProperty(propertyData);
-
-        // Fetch real housemates linked to this property AND users for enrichment
-        const [housematesData, usersData] = await Promise.all([
-          getHousematesByPropertyId(id).catch(() => []),
+        const [propertyData, usersData] = await Promise.all([
+          getPropertyById(id),
           getAllUsers().catch(() => [])
         ]);
-        setHousemates(housematesData || []);
+        setProperty(propertyData);
         setAllUsers(usersData || []);
-
         setLoading(false);
       } catch (err) {
         console.error('Error fetching property details:', err);
@@ -143,35 +128,28 @@ const PropertyDetailsPage = () => {
     setDistanceStatus('');
   }, [property]);
 
-  // Build user map
-  const userMap = useMemo(() => {
-    const map = {};
-    allUsers.forEach(u => { map[u.id] = u; });
-    return map;
-  }, [allUsers]);
-
-  // Merge housemate profiles with user data and compute match scores
-  const enrichedHousemates = useMemo(() => {
-    return housemates.map(hm => {
-      const user = hm.userId ? userMap[hm.userId] : null;
-      const isCurrentUser = currentUser && user && user.id === currentUser.id;
-      const { score, reasons } = isCurrentUser
-        ? { score: 0, reasons: [] }
-        : computeMatchScore(currentUser, hm);
-      return {
-        ...hm,
-        userName: user?.name || hm.name || 'Unknown',
-        userEmail: user?.email || null,
-        userLifestyle: user?.lifestyle || null,
-        userBudget: user?.budget || hm.budget,
-        userSleepSchedule: user?.sleepSchedule || hm.sleepSchedule,
-        isCurrentUser,
-        matchScore: score,
-        matchReasons: reasons,
-        source: 'profile'
-      };
-    });
-  }, [housemates, userMap, currentUser]);
+  // Find users linked to this property (via linkedProperty.id)
+  const linkedHousemates = useMemo(() => {
+    const propertyId = parseInt(id);
+    return allUsers
+      .filter(u => 
+        u.isListedAsHousemate === true && 
+        u.linkedProperty && 
+        u.linkedProperty.id === propertyId
+      )
+      .map(u => {
+        const isCurrentUser = currentUser && u.id === currentUser.id;
+        const { score, reasons } = isCurrentUser
+          ? { score: 0, reasons: [] }
+          : computeMatchScore(currentUser, u);
+        return {
+          ...u,
+          isCurrentUser,
+          matchScore: score,
+          matchReasons: reasons,
+        };
+      });
+  }, [allUsers, id, currentUser]);
 
   // Resolve image src: if it starts with /uploads, prepend backend URL
   const resolveImageSrc = (url) => {
@@ -264,15 +242,15 @@ const PropertyDetailsPage = () => {
             </div>
           </div>
 
-          {/* Current Housemates Section — real data only */}
+          {/* Current Housemates Section — from users table */}
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold">Current Housemates at This Property</h3>
               <span className="bg-tertiary-container/10 text-tertiary text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">groups</span> {enrichedHousemates.length} Profile{enrichedHousemates.length !== 1 && 's'}
+                <span className="material-symbols-outlined text-sm">groups</span> {linkedHousemates.length} Profile{linkedHousemates.length !== 1 && 's'}
               </span>
             </div>
-            {enrichedHousemates.length === 0 ? (
+            {linkedHousemates.length === 0 ? (
               <div className="text-center py-8 bg-surface-container-low rounded-2xl">
                 <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">group_off</span>
                 <p className="text-on-surface-variant font-medium">No housemates linked to this property yet.</p>
@@ -280,18 +258,14 @@ const PropertyDetailsPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {enrichedHousemates.map((hw) => (
+                {linkedHousemates.map((hw) => (
                   <div key={hw.id} className="bg-surface-container-lowest p-6 rounded-lg border-2 border-transparent hover:border-primary-fixed transition-all group">
                     <div className="flex flex-col items-center text-center space-y-4">
                       <div className="w-20 h-20 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border-4 border-surface-container-high text-primary">
                         <span className="material-symbols-outlined text-4xl">person</span>
                       </div>
                       <div>
-                        <h4 className="font-bold text-on-surface">{hw.userName}</h4>
-                        <p className="text-xs text-primary font-medium">
-                          {hw.occupationType && `${hw.occupationType}`}
-                          {hw.age && `, ${hw.age} y/o`}
-                        </p>
+                        <h4 className="font-bold text-on-surface">{hw.name}</h4>
                       </div>
 
                       {/* Match score */}
@@ -307,23 +281,14 @@ const PropertyDetailsPage = () => {
                       ) : null}
 
                       <div className="flex flex-wrap justify-center gap-1.5">
-                        {hw.gender && (
-                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.gender}</span>
+                        {hw.budget && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.budget}</span>
                         )}
-                        {(hw.userBudget || hw.budget) && (
-                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">RM {hw.userBudget || hw.budget}</span>
+                        {hw.sleepSchedule && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.sleepSchedule}</span>
                         )}
-                        {hw.cleanlinessLevel && (
-                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">Clean: {hw.cleanlinessLevel}</span>
-                        )}
-                        {(hw.userSleepSchedule || hw.sleepSchedule) && (
-                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.userSleepSchedule || hw.sleepSchedule}</span>
-                        )}
-                        {hw.smokingPreference && (
-                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-semibold uppercase">{hw.smokingPreference}</span>
-                        )}
-                        {/* Show lifestyle tags from user data */}
-                        {hw.userLifestyle && hw.userLifestyle.split(',').map(l => l.trim()).filter(Boolean).map(tag => (
+                        {/* Show lifestyle tags */}
+                        {hw.lifestyle && hw.lifestyle.split(',').map(l => l.trim()).filter(Boolean).map(tag => (
                           <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{tag}</span>
                         ))}
                       </div>

@@ -1,7 +1,7 @@
 package rakansewa.backend.dto;
 
 import lombok.*;
-import rakansewa.backend.model.HousemateProfile;
+import rakansewa.backend.model.User;
 
 import java.util.List;
 
@@ -16,20 +16,11 @@ import java.util.List;
 @Builder
 public class MatchingResponseDTO {
 
-    private Long housemateId;
     private Long userId;
     private String housemateName;
-    private String gender;
-    private Integer age;
     private Double budget;
-    private String occupationType;
-    private String cleanlinessLevel;
     private String sleepSchedule;
-    private String smokingPreference;
-    private Integer socialLevel;
-    private String guestTolerance;
-    private String studyNoisePreference;
-    private String description;
+    private String lifestyle;
 
     // Property info (nullable — housemate may not be linked to any property)
     private Long propertyId;
@@ -40,43 +31,34 @@ public class MatchingResponseDTO {
 
     // Matching results
     private double compatibilityScore;  // 0–100
-    private String compatibilityLabel;  // "Best Match", "Good Match", "Fair Match"
-    private List<String> matchedReasons; // e.g. ["Same gender", "Within budget", ...]
+    private String compatibilityLabel;  // "Great Match", "Good Match", "Fair Match"
+    private List<String> matchedReasons; // e.g. ["Same sleep pattern", "Within budget", ...]
 
     /**
-     * Factory method to build a response from a HousemateProfile entity and scoring results.
-     * Safely handles null property (housemate not linked to any property).
+     * Factory method to build a response from a User entity and scoring results.
+     * Safely handles null linkedProperty (housemate not linked to any property).
      */
-    public static MatchingResponseDTO fromEntity(HousemateProfile housemate,
-                                                  double score,
-                                                  String label,
-                                                  List<String> reasons) {
+    public static MatchingResponseDTO fromUser(User user,
+                                               double score,
+                                               String label,
+                                               List<String> reasons) {
         MatchingResponseDTOBuilder builder = MatchingResponseDTO.builder()
-                .housemateId(housemate.getId())
-                .userId(housemate.getUserId())
-                .housemateName(housemate.getName())
-                .gender(housemate.getGender())
-                .age(housemate.getAge())
-                .budget(housemate.getBudget())
-                .occupationType(housemate.getOccupationType())
-                .cleanlinessLevel(housemate.getCleanlinessLevel())
-                .sleepSchedule(housemate.getSleepSchedule())
-                .smokingPreference(housemate.getSmokingPreference())
-                .socialLevel(housemate.getSocialLevel())
-                .guestTolerance(housemate.getGuestTolerance())
-                .studyNoisePreference(housemate.getStudyNoisePreference())
-                .description(housemate.getDescription())
+                .userId(user.getId())
+                .housemateName(user.getName())
+                .budget(user.getBudget())
+                .sleepSchedule(user.getSleepSchedule())
+                .lifestyle(user.getLifestyle())
                 .compatibilityScore(score)
                 .compatibilityLabel(label)
                 .matchedReasons(reasons);
 
-        // Safely set property fields only if property exists
-        if (housemate.getProperty() != null) {
-            builder.propertyId(housemate.getProperty().getId())
-                   .propertyTitle(housemate.getProperty().getTitle())
-                   .propertyAddress(housemate.getProperty().getAddress())
-                   .propertyCity(housemate.getProperty().getCity())
-                   .propertyState(housemate.getProperty().getState());
+        // Safely set property fields only if linkedProperty exists
+        if (user.getLinkedProperty() != null) {
+            builder.propertyId(user.getLinkedProperty().getId())
+                   .propertyTitle(user.getLinkedProperty().getTitle())
+                   .propertyAddress(user.getLinkedProperty().getAddress())
+                   .propertyCity(user.getLinkedProperty().getCity())
+                   .propertyState(user.getLinkedProperty().getState());
         }
 
         return builder.build();

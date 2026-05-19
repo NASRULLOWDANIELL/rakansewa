@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getAllUsers, getAllHousemates, getMatchesForUser } from '../services/api';
+import { getAllUsers, getMatchesForUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -72,7 +72,6 @@ const getScoreLabel = (score) => {
 const HousematesPage = () => {
   const { currentUser, isUitmVerified } = useAuth();
   const [housemates, setHousemates] = useState([]);
-  const [housemateProfiles, setHousemateProfiles] = useState([]);
   const [backendMatches, setBackendMatches] = useState(null); // null = not loaded, [] = loaded but empty
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -80,19 +79,15 @@ const HousematesPage = () => {
   useEffect(() => {
     const fetchHousemates = async () => {
       try {
-        const [users, profiles] = await Promise.all([
-          getAllUsers(),
-          getAllHousemates()
-        ]);
+        const users = await getAllUsers();
         // Only show users who opted in as housemates
         const listed = (users || []).filter(u => 
           u.isListedAsHousemate === true && 
           u.id !== currentUser?.id
         );
         setHousemates(listed);
-        setHousemateProfiles(profiles || []);
 
-        // Try to get backend-computed matching scores if user is logged in and has a profile
+        // Try to get backend-computed matching scores if user is logged in and listed
         if (currentUser?.id && currentUser.id !== 999 && currentUser.isListedAsHousemate) {
           try {
             const matches = await getMatchesForUser(currentUser.id);
@@ -111,17 +106,6 @@ const HousematesPage = () => {
     fetchHousemates();
   }, [currentUser]);
 
-  // Build a map of userId -> housemate profile (with property info)
-  const profileMap = useMemo(() => {
-    const map = {};
-    (housemateProfiles || []).forEach(p => {
-      if (p.userId) {
-        map[p.userId] = p;
-      }
-    });
-    return map;
-  }, [housemateProfiles]);
-
   // Build a map of userId -> backend match result
   const backendMatchMap = useMemo(() => {
     if (!backendMatches) return {};
@@ -137,8 +121,7 @@ const HousematesPage = () => {
   // Compute scores and sort by best match first
   const scoredHousemates = useMemo(() => {
     return housemates.map(hm => {
-      const hmProfile = profileMap[hm.id];
-      const linkedProperty = hmProfile?.property || null;
+      const linkedProperty = hm.linkedProperty || null;
       
       // Use backend matching scores if available, otherwise fall back to client-side
       const backendMatch = backendMatchMap[hm.id];
@@ -157,7 +140,7 @@ const HousematesPage = () => {
 
       return { ...hm, matchScore, matchReasons, matchLabel, linkedProperty };
     }).sort((a, b) => b.matchScore - a.matchScore);
-  }, [housemates, currentUser, profileMap, backendMatchMap]);
+  }, [housemates, currentUser, backendMatchMap]);
 
   const filteredHousemates = scoredHousemates.filter(hm => {
     if (filter === 'all') return true;

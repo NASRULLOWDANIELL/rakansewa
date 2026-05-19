@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getApprovedProperties, getHousemateProfileByUserId, linkHousemateToProperty } from '../services/api';
+import { getApprovedProperties, linkUserToProperty } from '../services/api';
 
 const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
 const SLEEP_OPTIONS = ['Early Bird', 'Night Owl', 'Flexible'];
@@ -26,19 +26,17 @@ const ProfilePage = () => {
     }
   }, [searchParams]);
 
-  // Fetch approved properties and user's housemate profile
+  // Fetch approved properties and user's linked property
   useEffect(() => {
     const fetchPropertyData = async () => {
       if (!currentUser || currentUser.id === 999) return;
       try {
-        const [props, hmProfile] = await Promise.all([
-          getApprovedProperties(),
-          getHousemateProfileByUserId(currentUser.id)
-        ]);
+        const props = await getApprovedProperties();
         setApprovedProperties(props || []);
-        if (hmProfile && hmProfile.property) {
-          setLinkedProperty(hmProfile.property);
-          setSelectedPropertyId(hmProfile.property.id.toString());
+        // Read linked property directly from user object
+        if (currentUser.linkedProperty) {
+          setLinkedProperty(currentUser.linkedProperty);
+          setSelectedPropertyId(currentUser.linkedProperty.id.toString());
         } else {
           setLinkedProperty(null);
           setSelectedPropertyId('');
@@ -106,19 +104,18 @@ const ProfilePage = () => {
       setSaveSuccess(false);
       setSaveError('');
 
-      // Link/unlink property FIRST — to avoid race condition with context update
+      // Link/unlink property FIRST — uses the users table directly
       if (currentUser.id !== 999) {
         try {
           const propId = selectedPropertyId ? parseInt(selectedPropertyId) : null;
-          const result = await linkHousemateToProperty(currentUser.id, propId);
-          if (result && result.property) {
-            setLinkedProperty(result.property);
+          const result = await linkUserToProperty(currentUser.id, propId);
+          if (result && result.linkedProperty) {
+            setLinkedProperty(result.linkedProperty);
           } else {
             setLinkedProperty(null);
           }
         } catch (linkErr) {
           console.error('Error linking property:', linkErr);
-          // Extract specific error message from backend response if property linking fails
           const errorMsg = linkErr?.response?.data?.message || linkErr?.message || 'Failed to link property.';
           setSaveError(errorMsg);
           setSaving(false);
@@ -137,7 +134,6 @@ const ProfilePage = () => {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
-      // Extract specific error message from backend response
       const errorMsg = err?.response?.data?.message || err?.message || 'Failed to save profile.';
       setSaveError(errorMsg);
     } finally {

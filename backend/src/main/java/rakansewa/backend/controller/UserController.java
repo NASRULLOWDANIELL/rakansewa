@@ -6,6 +6,7 @@ import rakansewa.backend.model.User;
 import rakansewa.backend.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -24,7 +25,7 @@ public class UserController {
             User savedUser = userService.createUser(user);
             return ResponseEntity.ok(savedUser);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -42,7 +43,24 @@ public class UserController {
             User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // PUT /users/{id}/link-property — Link/unlink a user to a property
+    @PutMapping("/{id}/link-property")
+    public ResponseEntity<?> linkProperty(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        try {
+            Long propertyId = null;
+            if (body.containsKey("propertyId") && body.get("propertyId") != null) {
+                propertyId = Long.valueOf(body.get("propertyId").toString());
+            }
+            User updated = userService.linkProperty(id, propertyId);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 }
