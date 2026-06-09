@@ -111,7 +111,6 @@ public class UserService {
             user.setPriority1(updatedUser.getPriority1());
             user.setPriority2(updatedUser.getPriority2());
             user.setPriority3(updatedUser.getPriority3());
-
             user.setPhoneNumber(updatedUser.getPhoneNumber());
             user.setMatricNumber(updatedUser.getMatricNumber());
             user.setUitmEmail(updatedUser.getUitmEmail());

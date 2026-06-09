@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getApprovedProperties, linkUserToProperty } from '../services/api';
@@ -23,44 +23,65 @@ const ManageHousemateProfilePage = () => {
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
 
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving]           = useState(false);
+  const [saveSuccess, setSaveSuccess]  = useState(false);
+  const [saveError, setSaveError]      = useState('');
   const [priorityError, setPriorityError] = useState('');
 
   const [approvedProperties, setApprovedProperties] = useState([]);
-  const [linkedProperty, setLinkedProperty] = useState(null);
+  const [linkedProperty, setLinkedProperty]         = useState(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
 
-  const getUserPriorities = () => {
-    const p1 = currentUser?.priority1;
-    const p2 = currentUser?.priority2;
-    const p3 = currentUser?.priority3;
-    if (p1 && p2 && p3) return [p1, p2, p3];
-    return [...DEFAULT_PRIORITIES];
-  };
+  // Track whether we've seeded the form from currentUser yet.
+  // We only want to seed ONCE on initial mount (or first time currentUser arrives),
+  // never while the user is actively editing or mid-save.
+  const formSeeded = useRef(false);
 
   const getLifestyleArray = (str) =>
     (str || '').split(',').map(s => s.trim()).filter(Boolean);
 
-  const [form, setForm] = useState({
-    isListedAsHousemate: currentUser?.isListedAsHousemate || false,
-    budget: currentUser?.budget || '',
-    sleepSchedule: currentUser?.sleepSchedule || '',
-    lifestyle: currentUser?.lifestyle || '',
-    priority1: '',
-    priority2: '',
-    priority3: '',
+  // Resolve saved priorities, falling back to defaults only when all three are absent.
+  const resolvePriorities = (user) => {
+    const p1 = user?.priority1;
+    const p2 = user?.priority2;
+    const p3 = user?.priority3;
+    return (p1 && p2 && p3) ? [p1, p2, p3] : [...DEFAULT_PRIORITIES];
+  };
+
+  const [form, setForm] = useState(() => {
+    // Initialise synchronously if currentUser is already available (e.g. from sessionStorage)
+    const [p1, p2, p3] = resolvePriorities(currentUser);
+    return {
+      isListedAsHousemate: currentUser?.isListedAsHousemate ?? false,
+      budget:              currentUser?.budget              ?? '',
+      sleepSchedule:       currentUser?.sleepSchedule       ?? '',
+      lifestyle:           currentUser?.lifestyle            ?? '',
+      priority1:           p1,
+      priority2:           p2,
+      priority3:           p3,
+    };
   });
 
-  // Initialise priorities from user after mount
+  // Seed form from currentUser exactly once — when currentUser first becomes available
+  // after an async load (e.g. sessionStorage restore on slow mount).
+  // Never runs again after the form has been seeded, so user edits are never clobbered.
   useEffect(() => {
-    const [p1, p2, p3] = getUserPriorities();
-    setForm(f => ({ ...f, priority1: p1, priority2: p2, priority3: p3 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!currentUser || formSeeded.current) return;
+    formSeeded.current = true;
+    const [p1, p2, p3] = resolvePriorities(currentUser);
+    setForm({
+      isListedAsHousemate: currentUser.isListedAsHousemate ?? false,
+      budget:              currentUser.budget              ?? '',
+      sleepSchedule:       currentUser.sleepSchedule       ?? '',
+      lifestyle:           currentUser.lifestyle            ?? '',
+      priority1:           p1,
+      priority2:           p2,
+      priority3:           p3,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  // Fetch approved properties
+  // Fetch approved properties (runs once on mount)
   useEffect(() => {
     const fetchProps = async () => {
       if (!currentUser || currentUser.id === 999) return;
@@ -76,14 +97,15 @@ const ManageHousemateProfilePage = () => {
       }
     };
     fetchProps();
-  }, [currentUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleLifestyle = (opt) => {
     const current = getLifestyleArray(form.lifestyle);
     const updated = current.includes(opt)
       ? current.filter(l => l !== opt)
       : [...current, opt];
-    setForm({ ...form, lifestyle: updated.join(', ') });
+    setForm(prev => ({ ...prev, lifestyle: updated.join(', ') }));
   };
 
   /* ---- Priority selection helpers ---- */
@@ -92,11 +114,10 @@ const ManageHousemateProfilePage = () => {
     setPriorityError('');
     setForm(prev => {
       const next = { ...prev, [slot]: value };
-      // Clear duplicates: if this value was already used in another slot, clear that slot
+      // Clear the other slot if it already holds this value (prevent duplicates)
       if (slot !== 'priority1' && next.priority1 === value) next.priority1 = '';
       if (slot !== 'priority2' && next.priority2 === value) next.priority2 = '';
       if (slot !== 'priority3' && next.priority3 === value) next.priority3 = '';
-      // Re-apply the selected value in the correct slot
       next[slot] = value;
       return next;
     });
@@ -117,13 +138,12 @@ const ManageHousemateProfilePage = () => {
     setSaveError('');
     setPriorityError('');
 
-    // Validate priorities
+    // Validate: all 3 priorities must be selected and unique
     if (!form.priority1 || !form.priority2 || !form.priority3) {
       setPriorityError('Please select exactly 3 different priorities before saving.');
       return;
     }
-    const chosen = [form.priority1, form.priority2, form.priority3];
-    if (new Set(chosen).size !== 3) {
+    if (new Set([form.priority1, form.priority2, form.priority3]).size !== 3) {
       setPriorityError('Each priority must be different. Please resolve the duplicate.');
       return;
     }
@@ -131,24 +151,51 @@ const ManageHousemateProfilePage = () => {
     try {
       setSaving(true);
 
-      // Link property first
+      // --- Step 1: link / unlink rental property ---
+      // This is a separate concern; if it fails we warn but still save the profile.
       if (currentUser.id !== 999) {
-        const propId = selectedPropertyId ? parseInt(selectedPropertyId) : null;
-        const result = await linkUserToProperty(currentUser.id, propId);
-        setLinkedProperty(result?.linkedProperty || null);
+        try {
+          const propId = selectedPropertyId ? parseInt(selectedPropertyId, 10) : null;
+          const linkResult = await linkUserToProperty(currentUser.id, propId);
+          setLinkedProperty(linkResult?.linkedProperty || null);
+        } catch (linkErr) {
+          console.warn('Property link failed (non-fatal):', linkErr);
+          // Don't block the profile save — just show a soft warning.
+          setSaveError('Note: property link could not be updated, but your other settings will still be saved.');
+        }
       }
 
-      // Save profile (including priority fields)
-      await updateProfile({
-        ...currentUser,
+      // --- Step 2: save profile fields (including priorities) ---
+      // Send ONLY the explicit fields we want to update.
+      // Do NOT spread ...currentUser here — stale null priorities in currentUser
+      // could overwrite the user's selections if the spread order is wrong.
+      const savedUser = await updateProfile({
+        name:                currentUser.name,
+        email:               currentUser.email,
+        role:                currentUser.role,
+        phoneNumber:         currentUser.phoneNumber,
+        matricNumber:        currentUser.matricNumber,
+        uitmEmail:           currentUser.uitmEmail,
+        authProvider:        currentUser.authProvider,
         isListedAsHousemate: form.isListedAsHousemate,
-        budget: form.budget ? parseFloat(form.budget) : null,
-        sleepSchedule: form.sleepSchedule,
-        lifestyle: form.lifestyle,
-        priority1: form.priority1,
-        priority2: form.priority2,
-        priority3: form.priority3,
+        budget:              form.budget ? parseFloat(form.budget) : null,
+        sleepSchedule:       form.sleepSchedule  || null,
+        lifestyle:           form.lifestyle       || null,
+        priority1:           form.priority1,
+        priority2:           form.priority2,
+        priority3:           form.priority3,
       });
+
+      // Sync form from what the backend actually persisted
+      if (savedUser) {
+        const [p1, p2, p3] = resolvePriorities(savedUser);
+        setForm(prev => ({
+          ...prev,
+          priority1: p1,
+          priority2: p2,
+          priority3: p3,
+        }));
+      }
 
       setSaveSuccess(true);
       setTimeout(() => {
