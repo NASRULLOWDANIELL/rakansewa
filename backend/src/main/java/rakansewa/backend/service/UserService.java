@@ -23,9 +23,9 @@ public class UserService {
 
     // Constructor injection (recommended over @Autowired on fields)
     public UserService(UserRepository userRepository,
-                       PropertyRepository propertyRepository,
-                       org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
-                       EmailService emailService) {
+            PropertyRepository propertyRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
+            EmailService emailService) {
         this.userRepository = userRepository;
         this.propertyRepository = propertyRepository;
         this.passwordEncoder = passwordEncoder;
@@ -45,7 +45,8 @@ public class UserService {
 
         updateVerificationStatus(user);
 
-        // For manual registration: set emailVerified=true by default (no longer using email verification flow)
+        // For manual registration: set emailVerified=true by default (no longer using
+        // email verification flow)
         if (user.getAuthProvider() == null || !"GOOGLE".equalsIgnoreCase(user.getAuthProvider())) {
             user.setAuthProvider("LOCAL");
             user.setEmailVerified(true); // No longer requiring email verification
@@ -56,7 +57,8 @@ public class UserService {
     }
 
     /**
-     * Creates a user from Google OAuth. Sets emailVerified=true and authProvider=GOOGLE.
+     * Creates a user from Google OAuth. Sets emailVerified=true and
+     * authProvider=GOOGLE.
      * Only creates Student role accounts.
      */
     public User createGoogleUser(String name, String email) {
@@ -104,11 +106,16 @@ public class UserService {
             user.setBudget(updatedUser.getBudget());
             user.setLifestyle(updatedUser.getLifestyle());
             user.setSleepSchedule(updatedUser.getSleepSchedule());
-            
+
+            // Persist compatibility priorities
+            user.setPriority1(updatedUser.getPriority1());
+            user.setPriority2(updatedUser.getPriority2());
+            user.setPriority3(updatedUser.getPriority3());
+
             user.setPhoneNumber(updatedUser.getPhoneNumber());
             user.setMatricNumber(updatedUser.getMatricNumber());
             user.setUitmEmail(updatedUser.getUitmEmail());
-            
+
             updateVerificationStatus(user);
 
             return userRepository.save(user);
@@ -188,11 +195,13 @@ public class UserService {
 
     /**
      * UiTM Student Verification Logic:
-     * A student is verified if their matricNumber equals the email username 
+     * A student is verified if their matricNumber equals the email username
      * before @student.uitm.edu.my.
      * 
-     * Example verified: matricNumber=2022456146, uitmEmail=2022456146@student.uitm.edu.my
-     * Example not verified: matricNumber=2022456146, uitmEmail=nasrul@student.uitm.edu.my
+     * Example verified: matricNumber=2022456146,
+     * uitmEmail=2022456146@student.uitm.edu.my
+     * Example not verified: matricNumber=2022456146,
+     * uitmEmail=nasrul@student.uitm.edu.my
      */
     private void updateVerificationStatus(User user) {
         if (!"Student".equalsIgnoreCase(user.getRole())) {
@@ -207,14 +216,14 @@ public class UserService {
 
         if (matricNumber != null && !matricNumber.trim().isEmpty()
                 && uitmEmail != null && !uitmEmail.trim().isEmpty()) {
-            
+
             String emailLower = uitmEmail.trim().toLowerCase();
-            
+
             // Check that the email ends with the UiTM student domain
             if (emailLower.endsWith(UITM_STUDENT_DOMAIN)) {
                 // Extract the username part before @student.uitm.edu.my
                 String emailUsername = emailLower.substring(0, emailLower.indexOf(UITM_STUDENT_DOMAIN));
-                
+
                 // Verify: matric number must exactly match the email username
                 if (matricNumber.trim().equalsIgnoreCase(emailUsername)) {
                     verified = true;
@@ -227,8 +236,10 @@ public class UserService {
 
     /**
      * Validate that matric number matches UiTM email prefix.
-     * If both are provided, the matric number must be the email username before @student.uitm.edu.my.
-     * This prevents users from entering fake matric numbers that don't match their UiTM email.
+     * If both are provided, the matric number must be the email username
+     * before @student.uitm.edu.my.
+     * This prevents users from entering fake matric numbers that don't match their
+     * UiTM email.
      */
     private void validateMatricEmailMatch(User user) {
         String matricNumber = user.getMatricNumber();

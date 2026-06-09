@@ -67,6 +67,18 @@ public class User {
     @Column
     private String authProvider;
 
+    // Compatibility priorities (P1=40%, P2=30%, P3=20%, rest=10%)
+    // Valid values: "Budget", "Sleep Pattern", "Cleanliness", "Quietness",
+    //               "Social Style", "Study Habit", "Activity Level", "Flexibility"
+    @Column
+    private String priority1;
+
+    @Column
+    private String priority2;
+
+    @Column
+    private String priority3;
+
     // Linked rental property (nullable — housemate may not be linked to any property)
     @ManyToOne
     @JoinColumn(name = "linked_property_id", nullable = true)

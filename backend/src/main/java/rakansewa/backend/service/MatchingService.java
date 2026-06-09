@@ -9,41 +9,52 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Matching Service for RakanSewa — Users-based matching.
+ * Matching Service for RakanSewa — Priority-Based Compatibility Scoring.
  *
- * Uses the users table (isListedAsHousemate = true) as the sole source
- * for housemate listings and compatibility scoring.
+ * Each student may set exactly 3 ordered priorities from the 8 available:
+ *   Budget, Sleep Pattern, Cleanliness, Quietness,
+ *   Social Style, Study Habit, Activity Level, Flexibility
  *
- * Matching criteria (from User fields):
- *   - budget proximity
- *   - lifestyle overlap (comma-separated multi-select)
- *   - sleepSchedule compatibility
+ * Score allocation:
+ *   Priority 1  → 40 points
+ *   Priority 2  → 30 points
+ *   Priority 3  → 20 points
+ *   Remaining 5 criteria (averaged) → 10 points
+ *   Total maximum: 100 points
+ *
+ * Default priorities (when not set): Budget → Sleep Pattern → Cleanliness
  */
 @Service
 public class MatchingService {
 
     private final UserRepository userRepository;
 
+    // All 8 valid priority names in a canonical order for "remaining" computation
+    private static final List<String> ALL_PRIORITIES = List.of(
+            "Budget", "Sleep Pattern", "Cleanliness", "Quietness",
+            "Social Style", "Study Habit", "Activity Level", "Flexibility"
+    );
+
+    // Default priorities for users who have not set any
+    private static final List<String> DEFAULT_PRIORITIES = List.of(
+            "Budget", "Sleep Pattern", "Cleanliness"
+    );
+
     public MatchingService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    // ==================== MAIN ENTRY POINT ====================
+    // ==================== MAIN ENTRY POINTS ====================
 
     /**
      * Match a user against ALL other listed housemates.
-     * This powers the housemate-first flow on the Housemates page.
-     *
-     * @param userId The current user's ID
-     * @return Sorted list of matching results (best matches first),
-     *         excluding the user themselves
+     * Scoring is driven by the current user's selected priorities.
      */
     public List<MatchingResponseDTO> matchAllHousemates(Long userId) {
         Optional<User> currentUserOpt = userRepository.findById(userId);
         List<User> listedHousemates = userRepository.findByIsListedAsHousemateTrue();
 
         if (currentUserOpt.isEmpty()) {
-            // User not found — return all housemates with 0 score
             return listedHousemates.stream()
                     .map(u -> MatchingResponseDTO.fromUser(u, 0, "Low Match", List.of()))
                     .collect(Collectors.toList());
@@ -61,10 +72,6 @@ public class MatchingService {
     /**
      * Get housemates linked to a specific property, with match scoring
      * against the current user (if provided).
-     *
-     * @param propertyId The property to search housemates under
-     * @param currentUserId Optional current user ID for scoring (can be null)
-     * @return List of matching results for housemates at this property
      */
     public List<MatchingResponseDTO> getHousematesForProperty(Long propertyId, Long currentUserId) {
         List<User> linkedUsers = userRepository.findByLinkedPropertyId(propertyId);
@@ -87,55 +94,162 @@ public class MatchingService {
                 .collect(Collectors.toList());
     }
 
-    // ==================== SCORING ====================
+    // ==================== PRIORITY-BASED SCORING ====================
 
     /**
-     * Score a candidate user against the current user and build the response DTO.
-     * Uses: budget, lifestyle, sleepSchedule.
+     * Core scoring method.
+     * Resolves the current user's 3 priorities, assigns weights, and scores
+     * the candidate accordingly.
      */
     private MatchingResponseDTO scoreAndBuildResponse(User currentUser, User candidate) {
         List<String> reasons = new ArrayList<>();
-        double totalScore = 0.0;
 
-        // --- Lifestyle overlap (40% weight) ---
-        totalScore += scoreLifestyle(currentUser, candidate, reasons);
+        // Resolve priorities (fall back to defaults if not set)
+        List<String> priorities = resolvePriorities(currentUser);
 
-        // --- Sleep schedule (30% weight) ---
-        totalScore += scoreSleepSchedule(currentUser, candidate, reasons);
+        String p1 = priorities.get(0); // 40 pts
+        String p2 = priorities.get(1); // 30 pts
+        String p3 = priorities.get(2); // 20 pts
 
-        // --- Budget proximity (30% weight) ---
-        totalScore += scoreBudget(currentUser, candidate, reasons);
+        // Compute the 3 priority scores (normalised to their max weight)
+        double score1 = scoreCriterion(p1, 40.0, currentUser, candidate, reasons);
+        double score2 = scoreCriterion(p2, 30.0, currentUser, candidate, reasons);
+        double score3 = scoreCriterion(p3, 20.0, currentUser, candidate, reasons);
 
-        // Round to nearest integer
+        // Remaining 5 criteria — each contributes 2 pts max (5 × 2 = 10)
+        List<String> remaining = ALL_PRIORITIES.stream()
+                .filter(c -> !priorities.contains(c))
+                .collect(Collectors.toList());
+
+        double remainingScore = 0.0;
+        for (String criterion : remaining) {
+            remainingScore += scoreCriterion(criterion, 2.0, currentUser, candidate, reasons);
+        }
+
+        double totalScore = score1 + score2 + score3 + remainingScore;
         totalScore = Math.min(100, Math.round(totalScore));
 
-        String label = determineLabel(totalScore);
+        // Prepend priority-based matching note
+        if (!reasons.isEmpty()) {
+            reasons.add(0, "Priority match: " + p1 + " → " + p2 + " → " + p3);
+        }
 
+        String label = determineLabel(totalScore);
         return MatchingResponseDTO.fromUser(candidate, totalScore, label, reasons);
     }
 
-    // ---------- Lifestyle scoring (40 points max) ----------
+    /**
+     * Resolve a user's 3 priorities, falling back to defaults if any are missing.
+     */
+    private List<String> resolvePriorities(User user) {
+        String p1 = user.getPriority1();
+        String p2 = user.getPriority2();
+        String p3 = user.getPriority3();
 
-    private double scoreLifestyle(User currentUser, User candidate, List<String> reasons) {
-        List<String> myLifestyles = parseLifestyle(currentUser.getLifestyle());
-        List<String> theirLifestyles = parseLifestyle(candidate.getLifestyle());
+        boolean allSet = p1 != null && !p1.isBlank()
+                && p2 != null && !p2.isBlank()
+                && p3 != null && !p3.isBlank();
 
-        if (myLifestyles.isEmpty() || theirLifestyles.isEmpty()) {
-            return 0; // No data to compare
+        if (allSet) {
+            return List.of(p1.trim(), p2.trim(), p3.trim());
         }
-
-        List<String> overlap = myLifestyles.stream()
-                .filter(theirLifestyles::contains)
-                .collect(Collectors.toList());
-
-        if (overlap.isEmpty()) return 0;
-
-        double ratio = (double) overlap.size() / Math.max(myLifestyles.size(), 1);
-        double score = ratio * 40.0;
-
-        reasons.add("Shared lifestyle: " + String.join(", ", overlap));
-        return score;
+        return DEFAULT_PRIORITIES;
     }
+
+    /**
+     * Score a single criterion normalised to the given maxPoints.
+     * Raw scorer methods return a value in [0, 1] representing achievement.
+     */
+    private double scoreCriterion(String criterion,
+                                   double maxPoints,
+                                   User currentUser,
+                                   User candidate,
+                                   List<String> reasons) {
+        double raw = switch (criterion) {
+            case "Budget"         -> rawBudget(currentUser, candidate, reasons);
+            case "Sleep Pattern"  -> rawSleep(currentUser, candidate, reasons);
+            case "Cleanliness"    -> rawLifestyleTag("Clean", currentUser, candidate, reasons);
+            case "Quietness"      -> rawLifestyleTag("Quiet", currentUser, candidate, reasons);
+            case "Social Style"   -> rawLifestyleTag("Social", currentUser, candidate, reasons);
+            case "Study Habit"    -> rawLifestyleTag("Studious", currentUser, candidate, reasons);
+            case "Activity Level" -> rawLifestyleTag("Active", currentUser, candidate, reasons);
+            case "Flexibility"    -> rawLifestyleTag("Flexible", currentUser, candidate, reasons);
+            default               -> 0.0;
+        };
+        return raw * maxPoints;
+    }
+
+    // ==================== RAW SCORERS (return 0.0 – 1.0) ====================
+
+    /**
+     * Budget proximity scorer.
+     * Returns 1.0 if budgets are within 10%, 0.67 within 30%, 0.33 within 50%.
+     */
+    private double rawBudget(User currentUser, User candidate, List<String> reasons) {
+        Double userBudget = currentUser.getBudget();
+        Double mateBudget = candidate.getBudget();
+
+        if (userBudget == null || mateBudget == null || userBudget <= 0 || mateBudget <= 0) return 0.0;
+
+        double diff = Math.abs(userBudget - mateBudget);
+        double avg  = (userBudget + mateBudget) / 2.0;
+        double pct  = avg > 0 ? diff / avg : 1.0;
+
+        if (pct <= 0.10) {
+            addReasonIfAbsent(reasons, "Very similar budget range");
+            return 1.0;
+        } else if (pct <= 0.30) {
+            addReasonIfAbsent(reasons, "Compatible budget range");
+            return 0.67;
+        } else if (pct <= 0.50) {
+            addReasonIfAbsent(reasons, "Somewhat similar budget");
+            return 0.33;
+        }
+        return 0.0;
+    }
+
+    /**
+     * Sleep schedule scorer.
+     * Returns 1.0 for exact match, 0.5 if either is Flexible.
+     */
+    private double rawSleep(User currentUser, User candidate, List<String> reasons) {
+        String userSleep = currentUser.getSleepSchedule();
+        String mateSleep = candidate.getSleepSchedule();
+
+        if (userSleep == null || mateSleep == null) return 0.0;
+
+        if (userSleep.equalsIgnoreCase(mateSleep)) {
+            addReasonIfAbsent(reasons, "Same sleep pattern: " + mateSleep);
+            return 1.0;
+        }
+        if (userSleep.equalsIgnoreCase("Flexible") || mateSleep.equalsIgnoreCase("Flexible")) {
+            addReasonIfAbsent(reasons, "Flexible sleep schedule");
+            return 0.5;
+        }
+        return 0.0;
+    }
+
+    /**
+     * Single lifestyle tag scorer.
+     * Returns 1.0 if both users share the specified tag, 0.0 otherwise.
+     */
+    private double rawLifestyleTag(String tag, User currentUser, User candidate, List<String> reasons) {
+        List<String> myTags   = parseLifestyle(currentUser.getLifestyle());
+        List<String> theirTags = parseLifestyle(candidate.getLifestyle());
+
+        if (myTags.isEmpty() || theirTags.isEmpty()) return 0.0;
+
+        boolean myHas    = myTags.stream().anyMatch(t -> t.equalsIgnoreCase(tag));
+        boolean theirHas = theirTags.stream().anyMatch(t -> t.equalsIgnoreCase(tag));
+
+        if (myHas && theirHas) {
+            addReasonIfAbsent(reasons, "Shared lifestyle: " + tag);
+            return 1.0;
+        }
+        return 0.0;
+    }
+
+    // ==================== HELPERS ====================
 
     private List<String> parseLifestyle(String lifestyle) {
         if (lifestyle == null || lifestyle.isBlank()) return List.of();
@@ -145,51 +259,11 @@ public class MatchingService {
                 .collect(Collectors.toList());
     }
 
-    // ---------- Sleep schedule scoring (30 points max) ----------
-
-    private double scoreSleepSchedule(User currentUser, User candidate, List<String> reasons) {
-        String userSleep = currentUser.getSleepSchedule();
-        String mateSleep = candidate.getSleepSchedule();
-
-        if (userSleep == null || mateSleep == null) return 0;
-
-        if (userSleep.equalsIgnoreCase(mateSleep)) {
-            reasons.add("Same sleep pattern: " + mateSleep);
-            return 30.0;
+    /** Avoids duplicate reason strings in the list. */
+    private void addReasonIfAbsent(List<String> reasons, String reason) {
+        if (!reasons.contains(reason)) {
+            reasons.add(reason);
         }
-
-        if (userSleep.equalsIgnoreCase("Flexible") || mateSleep.equalsIgnoreCase("Flexible")) {
-            reasons.add("Flexible sleep schedule");
-            return 15.0;
-        }
-
-        return 0;
-    }
-
-    // ---------- Budget proximity scoring (30 points max) ----------
-
-    private double scoreBudget(User currentUser, User candidate, List<String> reasons) {
-        Double userBudget = currentUser.getBudget();
-        Double mateBudget = candidate.getBudget();
-
-        if (userBudget == null || mateBudget == null || userBudget <= 0 || mateBudget <= 0) return 0;
-
-        double diff = Math.abs(userBudget - mateBudget);
-        double avg = (userBudget + mateBudget) / 2;
-        double pctDiff = avg > 0 ? diff / avg : 1;
-
-        if (pctDiff <= 0.1) {
-            reasons.add("Very similar budget range");
-            return 30.0;
-        } else if (pctDiff <= 0.3) {
-            reasons.add("Compatible budget range");
-            return 20.0;
-        } else if (pctDiff <= 0.5) {
-            reasons.add("Somewhat similar budget");
-            return 10.0;
-        }
-
-        return 0;
     }
 
     // ==================== LABEL DETERMINATION ====================

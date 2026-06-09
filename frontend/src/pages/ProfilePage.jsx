@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getApprovedProperties, linkUserToProperty } from '../services/api';
+
+const DEFAULT_PRIORITIES = ['Budget', 'Sleep Pattern', 'Cleanliness'];
 
 const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
 const SLEEP_OPTIONS = ['Early Bird', 'Night Owl', 'Flexible'];
@@ -283,104 +285,23 @@ const ProfilePage = () => {
                  )}
               </div>
 
-              {/* Housemate Section - Only for students */}
+              {/* Housemate Section - redirect to dedicated page */}
               {isStudent && (
                 <div className="mt-8 p-6 bg-gradient-to-br from-primary/5 to-tertiary/5 rounded-2xl border border-primary/10">
-                  <h3 className="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">groups</span>
                     Housemate Profile
                   </h3>
-                  
-                  <label className="flex items-center gap-3 p-3 bg-white/50 rounded-xl transition-colors mb-6 cursor-pointer hover:bg-white/80">
-                    <input 
-                      type="checkbox" 
-                      name="isListedAsHousemate" 
-                      checked={formData.isListedAsHousemate} 
-                      onChange={handleChange}
-                      className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer accent-primary"
-                    />
-                    <div>
-                      <span className="font-bold text-on-surface">I want to be listed as a housemate</span>
-                      <p className="text-xs text-on-surface-variant mt-0.5">You'll appear on the housemate listing page for others to find</p>
-                    </div>
-                  </label>
-
-                  {formData.isListedAsHousemate && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-[fadeIn_0.3s_ease-out]">
-                      <div>
-                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Monthly Budget (RM)</label>
-                        <input 
-                          type="number" 
-                          name="budget" 
-                          value={formData.budget} 
-                          onChange={handleChange} 
-                          placeholder="e.g. 500" 
-                          className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Sleep Pattern</label>
-                        <select 
-                          name="sleepSchedule" 
-                          value={formData.sleepSchedule} 
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface"
-                        >
-                          <option value="">Select...</option>
-                          {SLEEP_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Lifestyle (select multiple)</label>
-                        <div className="flex flex-wrap gap-2">
-                          {LIFESTYLE_OPTIONS.map(opt => {
-                            const selected = getLifestyleArray(formData.lifestyle).includes(opt);
-                            return (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => toggleLifestyle(opt)}
-                                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                                  selected
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' 
-                                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-                                }`}
-                              >
-                                {selected && <span className="mr-1">✓</span>}
-                                {opt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {getLifestyleArray(formData.lifestyle).length === 0 && (
-                          <p className="text-xs text-on-surface-variant mt-2">Select one or more lifestyle tags</p>
-                        )}
-                      </div>
-
-                      {/* Property Linking */}
-                      <div className="md:col-span-2">
-                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">
-                          <span className="material-symbols-outlined text-[12px] align-middle mr-1">home</span>
-                          Link to Rental Property
-                        </label>
-                        <select
-                          value={selectedPropertyId}
-                          onChange={(e) => setSelectedPropertyId(e.target.value)}
-                          className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface"
-                        >
-                          <option value="">No linked property</option>
-                          {approvedProperties.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.title} — {p.city}, {p.state} (RM {p.monthlyRent}/mo)
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-xs text-on-surface-variant mt-1">
-                          Select the rental property where you are staying or looking for housemates.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                  <p className="text-sm text-on-surface-variant mb-4">
+                    Manage your housemate listing, budget, sleep pattern, lifestyle tags, and compatibility priorities on the dedicated page.
+                  </p>
+                  <Link
+                    to="/profile/housemate"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] transition-all"
+                  >
+                    <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                    Manage Housemate Profile
+                  </Link>
                 </div>
               )}
 
@@ -468,8 +389,39 @@ const ProfilePage = () => {
                         </div>
                       </div>
 
+                      {/* Compatibility Priorities summary */}
+                      <div className="bg-white/50 p-4 rounded-xl">
+                        <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">
+                          <span className="material-symbols-outlined text-[12px] align-middle mr-1">bar_chart</span>
+                          Matching Priorities
+                        </label>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(() => {
+                            const p1 = currentUser.priority1 || DEFAULT_PRIORITIES[0];
+                            const p2 = currentUser.priority2 || DEFAULT_PRIORITIES[1];
+                            const p3 = currentUser.priority3 || DEFAULT_PRIORITIES[2];
+                            return [
+                              { label: p1, weight: '40%' },
+                              { label: p2, weight: '30%' },
+                              { label: p3, weight: '20%' },
+                            ].map((item, idx) => (
+                              <span key={idx} className="flex items-center gap-1">
+                                {idx > 0 && <span className="text-on-surface-variant text-xs">→</span>}
+                                <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
+                                  {item.label}
+                                  <span className="ml-1 opacity-60">({item.weight})</span>
+                                </span>
+                              </span>
+                            ));
+                          })()}
+                        </div>
+                        {!currentUser.priority1 && (
+                          <p className="text-[11px] text-on-surface-variant mt-1.5 italic">Using defaults — customise in Manage Housemate Profile</p>
+                        )}
+                      </div>
+
                       {/* Linked Property Display */}
-                      <div className="bg-white/50 p-4 rounded-xl mt-4">
+                      <div className="bg-white/50 p-4 rounded-xl">
                         <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1">
                           <span className="material-symbols-outlined text-[12px] align-middle mr-1">home</span>
                           Linked Rental Property
@@ -485,12 +437,30 @@ const ProfilePage = () => {
                           <p className="text-on-surface-variant text-sm italic">No linked property selected.</p>
                         )}
                       </div>
+
+                      {/* Manage button */}
+                      <div className="pt-2">
+                        <Link
+                          to="/profile/housemate"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] transition-all"
+                        >
+                          <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                          Manage Housemate Profile
+                        </Link>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-4">
                       <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">person_off</span>
                       <p className="text-on-surface-variant text-sm mb-1">Not listed as housemate</p>
-                      <p className="text-xs text-on-surface-variant/70">Edit your profile to opt in and appear on the housemate listing page.</p>
+                      <p className="text-xs text-on-surface-variant/70 mb-4">Set up your housemate profile to appear on the listing page.</p>
+                      <Link
+                        to="/profile/housemate"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-container-high hover:bg-primary hover:text-white text-on-surface rounded-full text-sm font-bold transition-all"
+                      >
+                        <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                        Manage Housemate Profile
+                      </Link>
                     </div>
                   )}
                 </div>

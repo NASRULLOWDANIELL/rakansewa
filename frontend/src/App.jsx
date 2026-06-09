@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
 import HousematesPage from './pages/HousematesPage';
 import ProfilePage from './pages/ProfilePage';
+import ManageHousemateProfilePage from './pages/ManageHousemateProfilePage';
 import AboutPage from './pages/AboutPage';
 import FeedbackPage from './pages/FeedbackPage';
 
@@ -46,6 +47,10 @@ function App() {
 
             <Route path="/profile" element={
               <ProtectedRoute><ProfilePage /></ProtectedRoute>
+            } />
+
+            <Route path="/profile/housemate" element={
+              <ProtectedRoute><ManageHousemateProfilePage /></ProtectedRoute>
             } />
 
             <Route path="/owner/*" element={
