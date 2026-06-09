@@ -83,7 +83,7 @@ const ForgotPasswordPage = () => {
               >
                 {loading ? (
                   <>
-                    <span className="material-symbols-rounded animate-spin text-lg">progress_activity</span>
+                    <span className="btn-spinner"></span>
                     Sending...
                   </>
                 ) : (

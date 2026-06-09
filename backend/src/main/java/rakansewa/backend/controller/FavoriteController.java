@@ -6,6 +6,7 @@ import rakansewa.backend.model.Favorite;
 import rakansewa.backend.service.FavoriteService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/favorites")
@@ -17,7 +18,39 @@ public class FavoriteController {
         this.favoriteService = favoriteService;
     }
 
-    // POST /favorites?propertyId=1 — Add a property to favorites
+    /**
+     * POST /favorites/toggle — Toggle favourite for a property.
+     * Body: { "userEmail": "...", "propertyId": 1 }
+     * Returns { "favourited": true/false }
+     */
+    @PostMapping("/toggle")
+    public ResponseEntity<?> toggleFavorite(@RequestBody Map<String, Object> body) {
+        try {
+            String userEmail = (String) body.get("userEmail");
+            Long propertyId = Long.valueOf(body.get("propertyId").toString());
+
+            if (userEmail == null || userEmail.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "User email is required."));
+            }
+
+            Favorite result = favoriteService.toggleFavorite(userEmail, propertyId);
+            boolean isFavourited = result != null;
+            return ResponseEntity.ok(Map.of("favourited", isFavourited));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /favorites/user/{email} — Get all favourites for a user.
+     */
+    @GetMapping("/user/{email}")
+    public ResponseEntity<List<Favorite>> getFavoritesByUser(@PathVariable String email) {
+        List<Favorite> favorites = favoriteService.getFavoritesByUserEmail(email);
+        return ResponseEntity.ok(favorites);
+    }
+
+    // POST /favorites?propertyId=1 — Add a property to favorites (legacy)
     @PostMapping
     public ResponseEntity<Favorite> addFavorite(
             @RequestParam Long propertyId,

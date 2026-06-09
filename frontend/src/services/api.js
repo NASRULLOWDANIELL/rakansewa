@@ -130,4 +130,15 @@ export const uploadPropertyImage = async (file) => {
   return response.data;
 };
 
+// Favourite endpoints
+export const toggleFavourite = async (userEmail, propertyId) => {
+  const response = await api.post('/favorites/toggle', { userEmail, propertyId });
+  return response.data;
+};
+
+export const getUserFavourites = async (userEmail) => {
+  const response = await api.get(`/favorites/user/${encodeURIComponent(userEmail)}`);
+  return response.data;
+};
+
 export default api;

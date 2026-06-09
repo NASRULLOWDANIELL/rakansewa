@@ -40,6 +40,9 @@ public class UserService {
         // Validate uniqueness of matric number and UiTM email
         validateUniqueness(user, null);
 
+        // Validate matric number matches UiTM email prefix
+        validateMatricEmailMatch(user);
+
         updateVerificationStatus(user);
 
         // For manual registration: set emailVerified=true by default (no longer using email verification flow)
@@ -90,6 +93,9 @@ public class UserService {
         return userRepository.findById(id).map(user -> {
             // Validate uniqueness (exclude current user)
             validateUniqueness(updatedUser, id);
+
+            // Validate matric number matches UiTM email prefix
+            validateMatricEmailMatch(updatedUser);
 
             user.setName(updatedUser.getName());
             user.setEmail(updatedUser.getEmail());
@@ -217,6 +223,34 @@ public class UserService {
         }
 
         user.setIsStudentVerified(verified);
+    }
+
+    /**
+     * Validate that matric number matches UiTM email prefix.
+     * If both are provided, the matric number must be the email username before @student.uitm.edu.my.
+     * This prevents users from entering fake matric numbers that don't match their UiTM email.
+     */
+    private void validateMatricEmailMatch(User user) {
+        String matricNumber = user.getMatricNumber();
+        String uitmEmail = user.getUitmEmail();
+
+        // Only validate if both fields are provided
+        if (matricNumber != null && !matricNumber.trim().isEmpty()
+                && uitmEmail != null && !uitmEmail.trim().isEmpty()) {
+
+            String emailLower = uitmEmail.trim().toLowerCase();
+
+            // UiTM email must end with the correct domain
+            if (!emailLower.endsWith(UITM_STUDENT_DOMAIN)) {
+                throw new RuntimeException("UiTM email must end with " + UITM_STUDENT_DOMAIN);
+            }
+
+            // Extract the username part and compare with matric number
+            String emailUsername = emailLower.substring(0, emailLower.indexOf(UITM_STUDENT_DOMAIN));
+            if (!matricNumber.trim().equalsIgnoreCase(emailUsername)) {
+                throw new RuntimeException("Matric number must match your UiTM student email.");
+            }
+        }
     }
 
     /**

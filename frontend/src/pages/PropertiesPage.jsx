@@ -1,9 +1,12 @@
-import { useEffect, useState, useMemo } from 'react';
-import { getProperties } from '../services/api';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { getProperties, getUserFavourites, toggleFavourite } from '../services/api';
 import PropertyList from '../components/PropertyList';
 import PropertyFilter from '../components/PropertyFilter';
+import { useAuth } from '../context/AuthContext';
 
 const PropertiesPage = () => {
+  const { currentUser } = useAuth();
+
   const initialFilters = {
     search: '',
     state: '',
@@ -18,6 +21,7 @@ const PropertiesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(initialFilters);
+  const [favouritedIds, setFavouritedIds] = useState(new Set());
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -34,6 +38,39 @@ const PropertiesPage = () => {
 
     fetchProperties();
   }, []);
+
+  // Fetch user's favourites
+  useEffect(() => {
+    if (!currentUser?.email) return;
+    const fetchFavourites = async () => {
+      try {
+        const favs = await getUserFavourites(currentUser.email);
+        const ids = new Set(favs.map(f => f.property?.id).filter(Boolean));
+        setFavouritedIds(ids);
+      } catch (err) {
+        console.error('Error fetching favourites:', err);
+      }
+    };
+    fetchFavourites();
+  }, [currentUser]);
+
+  const handleToggleFavourite = useCallback(async (propertyId) => {
+    if (!currentUser?.email) return;
+    try {
+      const result = await toggleFavourite(currentUser.email, propertyId);
+      setFavouritedIds(prev => {
+        const next = new Set(prev);
+        if (result.favourited) {
+          next.add(propertyId);
+        } else {
+          next.delete(propertyId);
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error('Error toggling favourite:', err);
+    }
+  }, [currentUser]);
 
   const filteredProperties = useMemo(() => {
     return allProperties.filter((property) => {
@@ -94,7 +131,11 @@ const PropertiesPage = () => {
           </div>
         </header>
 
-        <PropertyList properties={filteredProperties} />
+        <PropertyList
+          properties={filteredProperties}
+          favouritedIds={favouritedIds}
+          onToggleFavourite={currentUser ? handleToggleFavourite : null}
+        />
       </section>
     </main>
   );

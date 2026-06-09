@@ -1,21 +1,36 @@
 import { Link } from 'react-router-dom';
 
-const PropertyCard = ({ property }) => {
+const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => {
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fHByb3BlcnR5fGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60`;
   const rawImage = property.imageUrl || placeholderImage;
   const displayImage = rawImage.startsWith('/uploads') ? `http://localhost:8080${rawImage}` : rawImage;
+
+  const handleFavouriteClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleFavourite) {
+      onToggleFavourite(property.id);
+    }
+  };
 
   return (
     <article className="group relative bg-surface-container-lowest rounded-lg overflow-hidden shadow-[0_40px_60px_-10px_rgba(25,28,30,0.04)] hover:shadow-[0_40px_80px_-5px_rgba(0,88,190,0.08)] transition-all duration-500 transform hover:-translate-y-2 flex flex-col">
       <div className="h-64 overflow-hidden relative">
         <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={property.title} src={displayImage}/>
-        <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1">
-          <span className="material-symbols-outlined text-tertiary text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-          <span className="text-xs font-bold text-on-surface">4.8</span>
-        </div>
-        <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-lg rounded-full text-white cursor-pointer hover:bg-white/40 transition-colors">
-          <span className="material-symbols-outlined text-sm">favorite</span>
-        </div>
+        <button
+          onClick={handleFavouriteClick}
+          className={`absolute top-4 right-4 p-2.5 backdrop-blur-lg rounded-full cursor-pointer transition-all duration-300 ${
+            isFavourited
+              ? 'bg-red-500/90 text-white shadow-lg shadow-red-500/30 scale-110'
+              : 'bg-white/20 text-white hover:bg-white/40'
+          }`}
+          title={isFavourited ? 'Remove from favourites' : 'Add to favourites'}
+        >
+          <span
+            className="material-symbols-outlined text-sm"
+            style={isFavourited ? { fontVariationSettings: "'FILL' 1" } : {}}
+          >favorite</span>
+        </button>
       </div>
       <div className="p-8 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-4">

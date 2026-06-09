@@ -117,29 +117,56 @@ const RegisterPage = () => {
           </div>
           
           {role === 'Student' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-on-surface mb-1">Matric Number</label>
-                <input 
-                  type="text" 
-                  value={matricNumber}
-                  onChange={(e) => setMatricNumber(e.target.value)}
-                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
-                  placeholder="Optional"
-                />
-              </div>
-              {!isUitmEmail && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-1">UiTM Email</label>
+                  <label className="block text-sm font-semibold text-on-surface mb-1">Matric Number</label>
                   <input 
-                    type="email" 
-                    value={uitmEmail}
-                    onChange={(e) => setUitmEmail(e.target.value)}
+                    type="text" 
+                    value={matricNumber}
+                    onChange={(e) => setMatricNumber(e.target.value)}
                     className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
-                    placeholder="Optional"
+                    placeholder="e.g. 2022456146"
                   />
                 </div>
-              )}
+                {!isUitmEmail && (
+                  <div>
+                    <label className="block text-sm font-semibold text-on-surface mb-1">UiTM Email</label>
+                    <input 
+                      type="email" 
+                      value={uitmEmail}
+                      onChange={(e) => setUitmEmail(e.target.value)}
+                      className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-body text-sm"
+                      placeholder="e.g. 2022456146@student.uitm.edu.my"
+                    />
+                  </div>
+                )}
+              </div>
+              {/* Matric-email mismatch warning */}
+              {(() => {
+                const effectiveUitmEmail = isUitmEmail ? email : uitmEmail;
+                if (matricNumber.trim() && effectiveUitmEmail.trim()) {
+                  const emailLower = effectiveUitmEmail.trim().toLowerCase();
+                  if (emailLower.endsWith('@student.uitm.edu.my')) {
+                    const emailPrefix = emailLower.split('@')[0];
+                    if (matricNumber.trim().toLowerCase() !== emailPrefix) {
+                      return (
+                        <p className="text-xs text-red-600 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          Matric number must match your UiTM student email.
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
+                        Matric number matches UiTM email — verification will apply!
+                      </p>
+                    );
+                  }
+                }
+                return null;
+              })()}
             </div>
           )}
 
@@ -155,7 +182,7 @@ const RegisterPage = () => {
           >
             {isSubmitting ? (
               <>
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                <span className="btn-spinner"></span>
                 Creating Account...
               </>
             ) : (
