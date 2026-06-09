@@ -20,7 +20,7 @@ const FeedbackPage = () => {
         <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 mb-4 block">login</span>
         <h2 className="text-2xl font-bold mb-4">Please Login</h2>
         <p className="text-on-surface-variant mb-6">You must be logged in to submit feedback.</p>
-        <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-full font-bold">Login</Link>
+        <Link to="/login" className="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">Login</Link>
       </div>
     );
   }
@@ -45,85 +45,147 @@ const FeedbackPage = () => {
       setSuccess(true);
       setFormData({ category: 'Comment', subject: '', message: '' });
     } catch (err) {
-       setError('Failed to submit feedback. Please try again.');
-       console.error(err);
+      setError('Failed to submit feedback. Please try again.');
+      console.error(err);
     } finally {
-       setLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="pt-32 pb-20 px-6 max-w-2xl mx-auto space-y-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-extrabold font-headline text-on-surface mb-2">Submit Feedback</h1>
-        <p className="text-on-surface-variant">We value your input. Let us know how we can improve RakanSewa.</p>
+    <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto">
+      {/* Page header */}
+      <div className="mb-8 pb-4 border-b border-outline-variant/20">
+        <h1 className="text-3xl font-extrabold font-headline tracking-tight text-on-surface">Submit Feedback</h1>
+        <p className="text-on-surface-variant text-sm mt-1">Help us improve RakanSewa by sharing your thoughts, suggestions, or reports.</p>
       </div>
 
-      <div className="glass p-8 rounded-2xl shadow-xl border border-white/40">
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800 animate-[fadeIn_0.3s_ease-out]">
-            <span className="material-symbols-outlined">check_circle</span>
-            <span className="font-medium">Thank you! Your feedback has been submitted successfully.</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left info panel */}
+        <div className="space-y-6">
+          <div className="bg-white border border-outline-variant/20 rounded-xl p-6">
+            <h2 className="text-base font-bold text-on-surface mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">info</span>
+              Why Feedback Matters
+            </h2>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Your feedback directly shapes the development of RakanSewa. Every suggestion and report is reviewed by the admin team and considered for future improvements.
+            </p>
           </div>
-        )}
-        
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-800 animate-[fadeIn_0.3s_ease-out]">
-            <span className="material-symbols-outlined">error</span>
-            <span className="font-medium">{error}</span>
+
+          <div className="bg-white border border-outline-variant/20 rounded-xl p-6">
+            <h2 className="text-base font-bold text-on-surface mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">category</span>
+              Feedback Categories
+            </h2>
+            <ul className="space-y-3">
+              {[
+                { icon: 'chat', label: 'Comment', desc: 'General thoughts or observations about the platform.' },
+                { icon: 'lightbulb', label: 'Suggestion', desc: 'Ideas for new features or improvements.' },
+                { icon: 'flag', label: 'Report', desc: 'Report a bug, issue, or policy violation.' },
+              ].map(item => (
+                <li key={item.label} className="flex gap-3">
+                  <span className="material-symbols-outlined text-primary/70 text-[18px] mt-0.5 flex-shrink-0">{item.icon}</span>
+                  <div>
+                    <p className="text-sm font-bold text-on-surface">{item.label}</p>
+                    <p className="text-xs text-on-surface-variant">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-           <div>
-              <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Category</label>
-              <select 
-                 name="category" 
-                 value={formData.category} 
-                 onChange={handleChange}
-                 className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:ring-2 focus:ring-primary/50 outline-none"
-              >
-                 <option>Comment</option>
-                 <option>Suggestion</option>
-                 <option>Report</option>
-              </select>
-           </div>
-           
-           <div>
-              <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Subject</label>
-              <input 
-                 required 
-                 name="subject" 
-                 value={formData.subject} 
-                 onChange={handleChange} 
-                 placeholder="Brief summary of your feedback" 
-                 className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:ring-2 focus:ring-primary/50 outline-none"
-              />
-           </div>
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+              <p className="text-sm font-bold text-primary">Logged in as</p>
+            </div>
+            <p className="text-sm text-on-surface font-medium">{currentUser.name}</p>
+            <p className="text-xs text-on-surface-variant">{currentUser.email}</p>
+          </div>
+        </div>
 
-           <div>
-              <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">Message</label>
-              <textarea 
-                 required 
-                 name="message" 
-                 value={formData.message} 
-                 onChange={handleChange} 
-                 placeholder="Please provide details..." 
-                 rows="5"
-                 className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl text-on-surface focus:ring-2 focus:ring-primary/50 outline-none"
-              ></textarea>
-           </div>
+        {/* Right form panel */}
+        <div className="lg:col-span-2">
+          <div className="bg-white border border-outline-variant/20 rounded-xl p-8 shadow-sm">
+            <h2 className="text-lg font-bold text-on-surface mb-6">Your Feedback</h2>
 
-           <button 
-             type="submit" 
-             disabled={loading}
-             className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100 flex justify-center items-center gap-2"
-           >
-             {loading ? 'Submitting...' : (
-               <><span className="material-symbols-outlined">send</span> Submit Feedback</>
-             )}
-           </button>
-        </form>
+            {success && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-800">
+                <span className="material-symbols-outlined">check_circle</span>
+                <span className="font-medium text-sm">Thank you! Your feedback has been submitted successfully.</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-800">
+                <span className="material-symbols-outlined">error</span>
+                <span className="font-medium text-sm">{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1.5">Category</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                >
+                  <option>Comment</option>
+                  <option>Suggestion</option>
+                  <option>Report</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1.5">Subject</label>
+                <input
+                  required
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  placeholder="Brief summary of your feedback"
+                  className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-1.5">Message</label>
+                <textarea
+                  required
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  placeholder="Please provide details..."
+                  rows="6"
+                  className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-none"
+                ></textarea>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 bg-primary text-white font-bold py-2.5 px-8 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm shadow-sm"
+                >
+                  {loading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[16px]">send</span>
+                      Submit Feedback
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );
