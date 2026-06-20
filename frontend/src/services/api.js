@@ -120,7 +120,7 @@ export const resolveFeedback = async (id) => {
   return response.data;
 };
 
-// File upload
+// File upload — single image (existing, kept for backward compatibility)
 export const uploadPropertyImage = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -129,6 +129,23 @@ export const uploadPropertyImage = async (file) => {
   });
   return response.data;
 };
+
+// File upload — multiple images for a specific property
+export const uploadPropertyImages = async (propertyId, files) => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  const response = await api.post(`/upload/property-images/${propertyId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data; // returns array of { imageUrl }
+};
+
+// Delete a single property image by its ID
+export const deletePropertyImage = async (imageId) => {
+  const response = await api.delete(`/property-images/${imageId}`);
+  return response.data;
+};
+
 
 // Favourite endpoints
 export const toggleFavourite = async (userEmail, propertyId) => {

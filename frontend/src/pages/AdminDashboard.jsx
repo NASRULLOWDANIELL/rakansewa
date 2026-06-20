@@ -172,9 +172,9 @@ const AdminDashboard = () => {
                                  <tr key={p.id} className="hover:bg-surface-container-lowest transition-colors">
                                     <td className="px-6 py-4">
                                        <div className="flex items-center gap-3">
-                                          {p.imageUrl ? (
+                                          {(p.images?.[0]?.imageUrl || p.imageUrl) ? (
                                              <img
-                                                src={resolveImageSrc(p.imageUrl)}
+                                                src={resolveImageSrc(p.images?.[0]?.imageUrl || p.imageUrl)}
                                                 alt={p.title}
                                                 className="w-12 h-12 object-cover rounded-lg border border-outline-variant/20 flex-shrink-0"
                                                 onError={(e) => { e.target.style.display = 'none'; }}

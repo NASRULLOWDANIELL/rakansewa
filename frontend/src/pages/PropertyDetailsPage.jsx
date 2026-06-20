@@ -162,7 +162,19 @@ const PropertyDetailsPage = () => {
   if (error || !property) return <div className="text-center py-32 text-error text-lg font-medium">{error || 'Property not found.'}</div>;
 
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fHByb3BlcnR5fGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=1200&q=80`;
-  const mainImage = resolveImageSrc(property.imageUrl) || placeholderImage;
+
+  // Build ordered image list: from images[] first, then fall back to imageUrl
+  const allImages = (() => {
+    if (property.images && property.images.length > 0) {
+      return property.images.map(img => resolveImageSrc(img.imageUrl));
+    }
+    if (property.imageUrl) return [resolveImageSrc(property.imageUrl)];
+    return [];
+  })();
+
+  const mainImage = allImages[0] || placeholderImage;
+  const sideImage1 = allImages[1] || null;
+  const sideImage2 = allImages[2] || null;
 
   const whatsappNumber = "60123456789";
   const whatsappMessage = encodeURIComponent(`Hi, I'm interested in your property: ${property.title} in ${property.city}. Is it still available?`);
@@ -184,6 +196,7 @@ const PropertyDetailsPage = () => {
       {/* Image Gallery */}
       <section className="max-w-7xl mx-auto px-6 mb-12">
         <div className="grid grid-cols-12 grid-rows-2 gap-4 h-[300px] md:h-[500px]">
+          {/* Main large image */}
           <div className="col-span-12 md:col-span-8 md:row-span-2 relative overflow-hidden rounded-lg group">
             <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={property.title} src={mainImage} />
             <div className="absolute top-4 left-4">
@@ -191,12 +204,32 @@ const PropertyDetailsPage = () => {
                 {property.availabilityStatus}
               </span>
             </div>
+            {allImages.length > 1 && (
+              <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px]">photo_library</span>
+                {allImages.length} Photos
+              </div>
+            )}
           </div>
+          {/* Side image 1 */}
           <div className="hidden md:block col-span-4 row-span-1 relative overflow-hidden rounded-lg group">
-            <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property Detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlGVz0m4WAKg7KxMswmOnWIiWPhlpLip7ZJMuM_3QlvAhEMSqlZ9iBy59ztLi1mk-6NYQDcT4BEB4ksnvG1ADXdcJBhuMofZOLhehEJv9aFgd8gS_24hV4QOIqbsZMFGb87n3k3JWFflm39INQEfokYoIm_yrCWefZTDI_SjN9B18Kuj62s9NyqISswpDzTp1JJpUFIfUHtcR9W7b6qvA1bo4t6RkUXC7By-aK-ksM3FO4DQehl6ucVibB8J3RbTFQ_LiQ3ixsOUXG" />
+            {sideImage1 ? (
+              <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property photo 2" src={sideImage1} />
+            ) : (
+              <div className="w-full h-full bg-surface-container-low flex flex-col items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-3xl text-on-surface-variant/30">photo</span>
+              </div>
+            )}
           </div>
+          {/* Side image 2 */}
           <div className="hidden md:block col-span-4 row-span-1 relative overflow-hidden rounded-lg group">
-            <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property Bedroom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABXDjCCUQ9Q-v8VPk2kF9wlCda3RSJ_kWtt82n2tlwGoPaKTqxgR22EZhViwm4c3I9VsbeLVltsVEubkUZrcevNFvg8iPYD2IR9SfGiTg9fonJHH6ORjVamInvsy5qAfQ-UP3HBpxzYFo6eJ-6mGcRQ3AB6IN8-O1JaHk2q6POq8c4H-MaYPmL58uaaAdxjHNLOtRX72Lgoo9rNPRuMCrPVax7vn89BSuwUXAuNpBBMBdVmhkI-oZmtVOtwxNI9_a9cyKJLTOiImOU" />
+            {sideImage2 ? (
+              <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Property photo 3" src={sideImage2} />
+            ) : (
+              <div className="w-full h-full bg-surface-container-low flex flex-col items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-3xl text-on-surface-variant/30">photo</span>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -84,24 +84,10 @@ graph TD
     ComputeScores --> DisplayMatches[Display Sorted Compatibility Lists & Reasons]
     DisplayMatches --> EndStudent([End])
 
-    %% Action Path B: Property Browsing & Rental Requests
+    %% Action Path B: Property Browsing & Favorites
     VerifiedUser -->|Browse Properties| ViewProperties[Filter Listings by Room Type, Rent, furnishedStatus]
     ViewProperties --> ChooseProperty[Select Specific Property Listing]
-    ChooseProperty --> ChooseActionOnProp{Action?}
-    
-    ChooseActionOnProp -->|Favorite| ToggleFav[Toggle Favorite status via FavoriteController]
+    ChooseProperty --> ToggleFav[Toggle Favorite status via FavoriteController]
     ToggleFav --> ViewProperties
-    
-    ChooseActionOnProp -->|Send Request| FillReqForm[Enter Message & Student Details]
-    FillReqForm --> CreateReq[Submit Request via RentalRequestController]
-    CreateReq --> SavedReq[Save Request as PENDING status]
-    SavedReq --> LandlordQueue[Owner Views Rental Request in Dashboard]
-    LandlordQueue --> LandlordDecision{Landlord Decision}
-    
-    LandlordDecision -- Approve --> SetReqApproved[Update Request Status to APPROVED]
-    SetReqApproved --> LinkUser[Link User to Property via linkProperty Service]
-    LinkUser --> EndStudent
-    
-    LandlordDecision -- Reject --> SetReqRejected[Update Request Status to REJECTED]
-    SetReqRejected --> EndStudent
+    ViewProperties --> EndStudent
 ```

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImage } from '../services/api';
+import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImages, deletePropertyImage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -12,8 +12,10 @@ const OwnerDashboard = () => {
   const [editingWasRejected, setEditingWasRejected] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);           // new files selected by user
+  const [imagePreviews, setImagePreviews] = useState([]);     // { file, previewUrl } for new files
+  const [existingImages, setExistingImages] = useState([]);   // { id, imageUrl } from DB
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '',
@@ -60,10 +62,27 @@ const OwnerDashboard = () => {
   };
 
   const handleImageFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    const previews = files.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setImageFiles((prev) => [...prev, ...files]);
+    setImagePreviews((prev) => [...prev, ...previews]);
+  };
+
+  const removeNewPreview = (index) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteExistingImage = async (imageId) => {
+    try {
+      await deletePropertyImage(imageId);
+      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    } catch (err) {
+      console.error('Failed to delete image:', err);
     }
   };
 
@@ -81,8 +100,13 @@ const OwnerDashboard = () => {
       availabilityStatus: property.availabilityStatus || 'Pending',
       imageUrl: property.imageUrl || ''
     });
-    setImageFile(null);
-    setImagePreview(property.imageUrl || '');
+    setImageFiles([]);
+    setImagePreviews([]);
+    // Load existing images from DB (images list) + legacy imageUrl as fallback
+    const imgs = property.images && property.images.length > 0
+      ? property.images
+      : (property.imageUrl ? [{ id: null, imageUrl: property.imageUrl }] : []);
+    setExistingImages(imgs);
     setEditingId(property.id);
     setEditingWasRejected(property.approvalStatus === 'Rejected');
     setShowForm(true);
@@ -95,8 +119,9 @@ const OwnerDashboard = () => {
       furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
       imageUrl: ''
     });
-    setImageFile(null);
-    setImagePreview('');
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImages([]);
     setEditingId(null);
     setEditingWasRejected(false);
     setShowForm(false);
@@ -104,42 +129,100 @@ const OwnerDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setUploading(true);
+    setSaveError(null);
+
     try {
-      setUploading(true);
-      let finalImageUrl = formData.imageUrl;
-
-      if (imageFile) {
-        const uploadResult = await uploadPropertyImage(imageFile);
-        finalImageUrl = uploadResult.imageUrl;
-      }
-
-      const payload = {
-        ...formData,
-        imageUrl: finalImageUrl,
-        monthlyRent: parseFloat(formData.monthlyRent),
-        ownerId: currentUser.id
-      };
-
       if (editingId) {
+        // ── EDIT FLOW ──────────────────────────────────────────────────────────
+        // Build cover imageUrl: first existing DB image, else legacy imageUrl
+        const coverUrl =
+          existingImages.find((img) => img.id !== null)?.imageUrl ||
+          formData.imageUrl ||
+          '';
+
+        const payload = {
+          ...formData,
+          imageUrl: coverUrl,
+          monthlyRent: parseFloat(formData.monthlyRent),
+          ownerId: currentUser.id,
+        };
+
+        // Step 1 — Save property details (if this throws, we stay in modal)
         if (editingWasRejected) {
           await resubmitProperty(editingId, payload);
         } else {
           await updateProperty(editingId, payload);
         }
+
+        // Step 2 — Upload newly selected image files (separate error path)
+        if (imageFiles.length > 0) {
+          try {
+            await uploadPropertyImages(editingId, imageFiles);
+          } catch (imgErr) {
+            console.error('[EditProperty] Image upload failed after property save:', imgErr);
+            // Property was already saved — close modal and refresh, but warn user
+            resetForm();
+            await fetchProperties();
+            setUploading(false);
+            setSaveError('Property saved, but new images failed to upload. Please edit the listing to try uploading again.');
+            setTimeout(() => setSaveError(null), 6000);
+            return;
+          }
+        }
+
       } else {
-        payload.availabilityStatus = 'Pending';
-        await createProperty(payload);
+        // ── CREATE FLOW ────────────────────────────────────────────────────────
+        const payload = {
+          ...formData,
+          imageUrl: '',           // will be backfilled after upload
+          monthlyRent: parseFloat(formData.monthlyRent),
+          ownerId: currentUser.id,
+          availabilityStatus: 'Pending',
+        };
+
+        const created = await createProperty(payload);
+
+        // Upload images then backfill imageUrl as cover
+        if (imageFiles.length > 0) {
+          try {
+            const uploaded = await uploadPropertyImages(created.id, imageFiles);
+            if (uploaded && uploaded.length > 0) {
+              // Best-effort: set cover imageUrl; ignore error if this PUT fails
+              await updateProperty(created.id, {
+                ...payload,
+                id: created.id,
+                imageUrl: uploaded[0].imageUrl,
+              }).catch((err) =>
+                console.warn('[CreateProperty] Cover imageUrl update failed (non-critical):', err)
+              );
+            }
+          } catch (imgErr) {
+            console.error('[CreateProperty] Image upload failed after property create:', imgErr);
+            // Property was created — still close modal and refresh
+            resetForm();
+            await fetchProperties();
+            setUploading(false);
+            setSaveError('Property created, but images failed to upload. Please edit the listing to add images.');
+            setTimeout(() => setSaveError(null), 6000);
+            return;
+          }
+        }
       }
+
+      // Success — close modal and refresh
       resetForm();
       await fetchProperties();
     } catch (error) {
-      console.error(error);
-      setSaveError('Failed to save property. Please try again.');
-      setTimeout(() => setSaveError(null), 4000);
+      // Property save itself failed
+      console.error('[handleSubmit] Property save failed:', error);
+      setSaveError('Failed to save property. Please check your input and try again.');
+      setTimeout(() => setSaveError(null), 5000);
     } finally {
       setUploading(false);
     }
   };
+
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -185,6 +268,144 @@ const OwnerDashboard = () => {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* Property Details Modal */}
+      {selectedProperty && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setSelectedProperty(null)}
+        >
+          <div
+            className="bg-surface rounded-xl shadow-2xl w-full max-w-2xl relative border border-outline-variant/20"
+            style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-outline-variant/20 flex items-start justify-between flex-shrink-0">
+              <div className="min-w-0 pr-4">
+                <h2 className="text-lg font-bold font-headline text-on-surface truncate">{selectedProperty.title}</h2>
+                <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+                  <span className="material-symbols-outlined text-[13px]">location_on</span>
+                  {selectedProperty.address}, {selectedProperty.city}, {selectedProperty.state}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedProperty(null)}
+                className="w-9 h-9 bg-surface-container hover:bg-surface-container-high rounded-lg flex items-center justify-center text-on-surface transition-colors flex-shrink-0"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto flex-1 p-6 space-y-5">
+
+              {/* Property Image */}
+              {selectedProperty.imageUrl ? (
+                <img
+                  src={resolveImageSrc(selectedProperty.imageUrl)}
+                  alt={selectedProperty.title}
+                  className="w-full h-52 object-cover rounded-xl border border-outline-variant/20"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <div className="w-full h-40 bg-surface-container-low rounded-xl border border-outline-variant/20 flex flex-col items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">home</span>
+                  <span className="text-xs text-on-surface-variant/50">No image uploaded</span>
+                </div>
+              )}
+
+              {/* Rent + Approval Status */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Monthly Rent</span>
+                  <span className="text-2xl font-extrabold text-primary">RM {selectedProperty.monthlyRent}</span>
+                </div>
+                <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                  selectedProperty.approvalStatus === 'Approved'
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : selectedProperty.approvalStatus === 'Rejected'
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : 'bg-orange-100 text-orange-700 border border-orange-200'
+                }`}>
+                  {selectedProperty.approvalStatus}
+                </span>
+              </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container text-on-surface-variant text-xs font-semibold rounded-lg border border-outline-variant/20">
+                  <span className="material-symbols-outlined text-[14px]">home_work</span>
+                  {selectedProperty.propertyType}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container text-on-surface-variant text-xs font-semibold rounded-lg border border-outline-variant/20">
+                  <span className="material-symbols-outlined text-[14px]">bed</span>
+                  {selectedProperty.roomType} Room
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container text-on-surface-variant text-xs font-semibold rounded-lg border border-outline-variant/20">
+                  <span className="material-symbols-outlined text-[14px]">chair</span>
+                  {selectedProperty.furnishedStatus}
+                </span>
+                {selectedProperty.availabilityStatus && selectedProperty.availabilityStatus !== 'Pending' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 text-primary text-xs font-semibold rounded-lg border border-primary/10">
+                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    {selectedProperty.availabilityStatus}
+                  </span>
+                )}
+              </div>
+
+              {/* Rejection Reason */}
+              {selectedProperty.approvalStatus === 'Rejected' && selectedProperty.rejectionReason && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-red-500 text-[18px] mt-0.5">error</span>
+                    <div>
+                      <span className="block text-xs font-bold text-red-700 uppercase tracking-wider mb-1">Rejection Reason</span>
+                      <p className="text-sm text-red-700">{selectedProperty.rejectionReason}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {selectedProperty.description && (
+                <div>
+                  <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Description</span>
+                  <p className="text-sm text-on-surface-variant leading-relaxed">{selectedProperty.description}</p>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3 flex-shrink-0 bg-surface-container-lowest">
+              <button
+                onClick={() => { setSelectedProperty(null); setDeleteTarget(selectedProperty.id); }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-error/10 text-error hover:bg-error/20 text-xs font-bold rounded-lg transition-colors border border-error/10"
+              >
+                <span className="material-symbols-outlined text-sm">delete</span>
+                Delete
+              </button>
+              <button
+                onClick={() => { setSelectedProperty(null); startEdit(selectedProperty); }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white hover:bg-primary/90 text-xs font-bold rounded-lg transition-colors shadow-sm"
+              >
+                <span className="material-symbols-outlined text-sm">edit</span>
+                {selectedProperty.approvalStatus === 'Rejected' ? 'Edit & Resubmit' : 'Edit Listing'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Property Modal */}
       {showForm && (
@@ -255,20 +476,79 @@ const OwnerDashboard = () => {
                     <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Monthly Rent (RM)</label>
                     <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="e.g. 450" className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
                   </div>
-                  {/* Image upload */}
+                  {/* Image upload — multiple */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
-                      <span className="material-symbols-outlined text-[12px] align-middle mr-1">image</span>
-                      Property Image
+                      <span className="material-symbols-outlined text-[12px] align-middle mr-1">photo_library</span>
+                      Property Images
                     </label>
                     <input
                       type="file"
                       accept=".jpg,.jpeg,.png,.webp"
+                      multiple
                       onChange={handleImageFileChange}
                       className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
                     />
-                    <p className="text-xs text-on-surface-variant mt-1">JPG, PNG, or WebP. Max 5MB.</p>
+                    <p className="text-xs text-on-surface-variant mt-1">JPG, PNG, or WebP. Max 5MB each. Select multiple files at once.</p>
                   </div>
+
+                  {/* Existing images (edit mode) */}
+                  {existingImages.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Current Images</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {existingImages.map((img, idx) => (
+                          <div key={img.id ?? `legacy-${idx}`} className="relative group">
+                            <img
+                              src={resolveImageSrc(img.imageUrl)}
+                              alt={`Image ${idx + 1}`}
+                              className="w-full h-20 object-cover rounded-lg border border-outline-variant/20"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                            {img.id !== null && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteExistingImage(img.id)}
+                                className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Remove image"
+                              >
+                                <span className="material-symbols-outlined text-[11px]">close</span>
+                              </button>
+                            )}
+                            {idx === 0 && (
+                              <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1 rounded">Cover</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New image previews */}
+                  {imagePreviews.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">New Images to Upload</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {imagePreviews.map((item, idx) => (
+                          <div key={idx} className="relative group">
+                            <img
+                              src={item.previewUrl}
+                              alt={`New ${idx + 1}`}
+                              className="w-full h-20 object-cover rounded-lg border border-outline-variant/20"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeNewPreview(idx)}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Remove"
+                            >
+                              <span className="material-symbols-outlined text-[11px]">close</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right column */}
@@ -295,18 +575,7 @@ const OwnerDashboard = () => {
                     <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Description</label>
                     <textarea required name="description" value={formData.description} onChange={handleInputChange} placeholder="Describe the property..." rows="4" className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-none"></textarea>
                   </div>
-                  {/* Image preview */}
-                  {(imagePreview || formData.imageUrl) && (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Preview</p>
-                      <img
-                        src={imagePreview || resolveImageSrc(formData.imageUrl)}
-                        alt="Preview"
-                        className="w-full h-28 object-cover rounded-lg border border-outline-variant/20"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    </div>
-                  )}
+
                 </div>
               </form>
             </div>
@@ -427,9 +696,10 @@ const OwnerDashboard = () => {
                 <tr key={`property-${p.id}`} className="hover:bg-surface-container-lowest transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      {p.imageUrl ? (
+                      {/* Use first image from images[] list, or fall back to legacy imageUrl */}
+                      {(p.images?.[0]?.imageUrl || p.imageUrl) ? (
                         <img
-                          src={resolveImageSrc(p.imageUrl)}
+                          src={resolveImageSrc(p.images?.[0]?.imageUrl || p.imageUrl)}
                           alt={p.title}
                           className="w-12 h-12 object-cover rounded-lg border border-outline-variant/20 flex-shrink-0"
                           onError={(e) => { e.target.style.display = 'none'; }}
@@ -470,6 +740,12 @@ const OwnerDashboard = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => setSelectedProperty(p)}
+                        className="text-on-surface-variant bg-surface-container px-3 py-1.5 rounded-lg font-bold hover:bg-primary/10 hover:text-primary transition-colors text-xs whitespace-nowrap border border-outline-variant/20"
+                      >
+                        View
+                      </button>
                       <button
                         onClick={() => startEdit(p)}
                         className="text-primary bg-primary/10 px-3 py-1.5 rounded-lg font-bold hover:bg-primary/20 transition-colors text-xs whitespace-nowrap"

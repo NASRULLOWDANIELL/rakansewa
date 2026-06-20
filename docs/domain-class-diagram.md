@@ -77,17 +77,6 @@ classDiagram
         +isExpired() boolean
     }
 
-    class RentalRequest {
-        +Long id
-        +String studentName
-        +String studentEmail
-        +String message
-        +String requestStatus
-        +LocalDateTime requestDate
-        +Property property
-        +prePersist() void
-    }
-
     %% Enumerations
     class VerificationStatus {
         <<enumeration>>
@@ -119,7 +108,6 @@ classDiagram
     User "0..*" --> "0..1" Property : linkedProperty
     Favorite "0..*" --> "1" Property : property
     PasswordResetToken "0..*" --> "1" User : user
-    RentalRequest "0..*" --> "1" Property : property
 
     %% DTO Dependency (Indicates instantiation mapping)
     MatchingResponseDTO ..> User : constructs from
@@ -130,6 +118,5 @@ classDiagram
 
 1. **User and Property (`linkedProperty`)**: A user (Student) can be linked to zero or one Property. A single Property can have multiple linked Users (housemates). This is mapped as a `@ManyToOne` association in `User.java`.
 2. **Favorite and Property**: Many favorites can point to a single Property. A Favorite is identified by the user's email (`userEmail` as a field) and holds a `@ManyToOne` reference to `Property.java`.
-3. **RentalRequest and Property**: A Property can receive multiple rental applications. Each `RentalRequest` is linked to exactly one `Property` via a `@ManyToOne` reference.
-4. **PasswordResetToken and User**: Each reset token is associated with exactly one `User` via a `@ManyToOne` reference.
-5. **Property and VerificationStatus**: Property has a field `verificationStatus` which is an Enum indicating whether the listing is `PENDING`, `APPROVED`, or `REJECTED`.
+3. **PasswordResetToken and User**: Each reset token is associated with exactly one `User` via a `@ManyToOne` reference.
+4. **Property and VerificationStatus**: Property has a field `verificationStatus` which is an Enum indicating whether the listing is `PENDING`, `APPROVED`, or `REJECTED`.

@@ -3,9 +3,13 @@ package rakansewa.backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "properties")
 @Data
+@EqualsAndHashCode(exclude = "images")   // prevents circular hashCode: Property → images → PropertyImage → Property
 @NoArgsConstructor
 @AllArgsConstructor
 public class Property {
@@ -50,13 +54,7 @@ public class Property {
     @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
-    public enum VerificationStatus {
-        PENDING, APPROVED, REJECTED
-    }
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
 
     @Column
     private Double latitude;
@@ -69,4 +67,8 @@ public class Property {
 
     @Column(columnDefinition = "TEXT")
     private String rejectionReason; // reason provided by admin when rejecting
+
+    // Multiple images — one-to-many relationship with PropertyImage
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<PropertyImage> images = new ArrayList<>();
 }

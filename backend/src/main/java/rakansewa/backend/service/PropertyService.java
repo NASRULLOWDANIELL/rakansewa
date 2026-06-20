@@ -1,7 +1,9 @@
 package rakansewa.backend.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import rakansewa.backend.model.Property;
+import rakansewa.backend.repository.PropertyImageRepository;
 import rakansewa.backend.repository.PropertyRepository;
 
 import java.util.List;
@@ -10,15 +12,16 @@ import java.util.List;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final PropertyImageRepository propertyImageRepository;
 
-    public PropertyService(PropertyRepository propertyRepository) {
+    public PropertyService(PropertyRepository propertyRepository, PropertyImageRepository propertyImageRepository) {
         this.propertyRepository = propertyRepository;
+        this.propertyImageRepository = propertyImageRepository;
     }
 
     // Create a new property listing
     public Property createProperty(Property property) {
         property.setApprovalStatus("Pending");
-        property.setVerificationStatus(Property.VerificationStatus.PENDING);
         property.setRejectionReason(null);
         return propertyRepository.save(property);
     }
@@ -59,9 +62,6 @@ public class PropertyService {
         // Preserve approvalStatus and rejectionReason from the incoming payload
         if (updatedProperty.getApprovalStatus() != null) {
             existing.setApprovalStatus(updatedProperty.getApprovalStatus());
-            if (updatedProperty.getApprovalStatus().equals("Approved")) existing.setVerificationStatus(Property.VerificationStatus.APPROVED);
-            else if (updatedProperty.getApprovalStatus().equals("Rejected")) existing.setVerificationStatus(Property.VerificationStatus.REJECTED);
-            else existing.setVerificationStatus(Property.VerificationStatus.PENDING);
         }
         if (updatedProperty.getRejectionReason() != null) {
             existing.setRejectionReason(updatedProperty.getRejectionReason());
@@ -74,7 +74,6 @@ public class PropertyService {
     public Property approveProperty(Long id) {
         Property existing = getPropertyById(id);
         existing.setApprovalStatus("Approved");
-        existing.setVerificationStatus(Property.VerificationStatus.APPROVED);
         existing.setAvailabilityStatus("Available");
         existing.setRejectionReason(null);
         return propertyRepository.save(existing);
@@ -84,7 +83,6 @@ public class PropertyService {
     public Property rejectProperty(Long id, String reason) {
         Property existing = getPropertyById(id);
         existing.setApprovalStatus("Rejected");
-        existing.setVerificationStatus(Property.VerificationStatus.REJECTED);
         existing.setAvailabilityStatus("Rejected");
         existing.setRejectionReason(reason);
         return propertyRepository.save(existing);
@@ -108,16 +106,17 @@ public class PropertyService {
 
         // Reset approval state
         existing.setApprovalStatus("Pending");
-        existing.setVerificationStatus(Property.VerificationStatus.PENDING);
         existing.setAvailabilityStatus("Pending");
         existing.setRejectionReason(null);
 
         return propertyRepository.save(existing);
     }
 
-    // Delete a property by ID
+    // Delete a property by ID (images cascade-deleted via JPA; explicit delete for safety)
+    @Transactional
     public void deleteProperty(Long id) {
         Property existing = getPropertyById(id); // throws if not found
+        propertyImageRepository.deleteByPropertyId(id);
         propertyRepository.delete(existing);
     }
 }
