@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { DarkModeProvider } from './context/DarkModeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import PropertiesPage from './pages/PropertiesPage';
@@ -35,6 +37,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
   return (
+    <DarkModeProvider>
+    <LanguageProvider>
     <Router>
       <div className="app-container">
         <Navbar />
@@ -71,6 +75,8 @@ function App() {
         </main>
       </div>
     </Router>
+    </LanguageProvider>
+    </DarkModeProvider>
   );
 }
 

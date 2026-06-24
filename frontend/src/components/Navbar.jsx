@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useDarkMode } from '../context/DarkModeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getProperties } from '../services/api';
 
@@ -7,6 +9,8 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { isDark, toggle: toggleDark } = useDarkMode();
+  const { lang, toggle: toggleLang, t } = useLanguage();
 
   const [notifications, setNotifications] = useState([]);
   const [newCount, setNewCount] = useState(0);
@@ -19,7 +23,6 @@ const Navbar = () => {
   const notifRef = useRef(null);
   const userRef = useRef(null);
 
-  // Scroll shadow effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -31,7 +34,6 @@ const Navbar = () => {
     return `rakansewa_notif_seen_${currentUser.id}_${currentUser.role}`;
   }, [currentUser]);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifDropdown(false);
@@ -65,35 +67,15 @@ const Navbar = () => {
           const rejected = ownerProps.filter(p => p.approvalStatus === 'Rejected');
           const pending = ownerProps.filter(p => p.approvalStatus === 'Pending');
 
-          approved.forEach(p => notifs.push({
-            id: `approved_${p.id}`,
-            text: `"${p.title}" has been approved`,
-            icon: 'check_circle',
-            type: 'success'
-          }));
-          rejected.forEach(p => notifs.push({
-            id: `rejected_${p.id}`,
-            text: `"${p.title}" was rejected — view reason`,
-            icon: 'cancel',
-            type: 'error'
-          }));
+          approved.forEach(p => notifs.push({ id: `approved_${p.id}`, text: `"${p.title}" has been approved`, icon: 'check_circle', type: 'success' }));
+          rejected.forEach(p => notifs.push({ id: `rejected_${p.id}`, text: `"${p.title}" was rejected — view reason`, icon: 'cancel', type: 'error' }));
           if (pending.length > 0) {
-            notifs.push({
-              id: `pending_owner_${pending.length}`,
-              text: `${pending.length} listing${pending.length !== 1 ? 's' : ''} awaiting admin review`,
-              icon: 'schedule',
-              type: 'warning'
-            });
+            notifs.push({ id: `pending_owner_${pending.length}`, text: `${pending.length} listing${pending.length !== 1 ? 's' : ''} awaiting admin review`, icon: 'schedule', type: 'warning' });
           }
         } else if (currentUser.role === 'Admin') {
           const pending = props.filter(p => p.approvalStatus === 'Pending');
           if (pending.length > 0) {
-            notifs.push({
-              id: `pending_admin_${pending.length}`,
-              text: `${pending.length} listing${pending.length !== 1 ? 's' : ''} need${pending.length === 1 ? 's' : ''} approval`,
-              icon: 'pending_actions',
-              type: 'warning'
-            });
+            notifs.push({ id: `pending_admin_${pending.length}`, text: `${pending.length} listing${pending.length !== 1 ? 's' : ''} need${pending.length === 1 ? 's' : ''} approval`, icon: 'pending_actions', type: 'warning' });
           }
         }
 
@@ -137,37 +119,28 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  const getLinkClass = (path) =>
-    isActive(path)
-      ? 'text-primary font-bold relative after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
-      : 'text-on-surface-variant hover:text-on-surface font-medium transition-colors duration-200';
-
   const getNavLinks = () => {
     if (!currentUser) return [
-      { path: '/', label: 'Discover' },
-      { path: '/housemates', label: 'Housemates' },
-      { path: '/properties', label: 'Properties' },
-      { path: '/about', label: 'About' },
+      { path: '/', label: t('nav_discover') },
+      { path: '/housemates', label: t('nav_housemates') },
+      { path: '/properties', label: t('nav_properties') },
+      { path: '/about', label: t('nav_about') },
     ];
-
     if (currentUser.role === 'Student') return [
-      { path: '/', label: 'Discover' },
-      { path: '/properties', label: 'Properties' },
-      { path: '/housemates', label: 'Matches' },
-      { path: '/profile/housemate', label: 'Preferences' },
-      { path: '/feedback', label: 'Feedback' },
+      { path: '/', label: t('nav_discover') },
+      { path: '/properties', label: t('nav_properties') },
+      { path: '/housemates', label: t('nav_housemates') },
+      { path: '/profile/housemate', label: t('nav_preferences') },
+      { path: '/feedback', label: t('nav_feedback') },
     ];
-
     if (currentUser.role === 'Owner') return [
-      { path: '/owner', label: 'Dashboard' },
-      { path: '/feedback', label: 'Feedback' },
-      { path: '/about', label: 'About' },
+      { path: '/owner', label: t('nav_dashboard') },
+      { path: '/feedback', label: t('nav_feedback') },
+      { path: '/about', label: t('nav_about') },
     ];
-
     if (currentUser.role === 'Admin') return [
-      { path: '/admin', label: 'Admin' },
+      { path: '/admin', label: t('nav_admin') },
     ];
-
     return [];
   };
 
@@ -182,6 +155,9 @@ const Navbar = () => {
     info: 'text-primary',
   };
 
+  /* ── Shared small icon button style ── */
+  const iconBtnClass = 'p-2 rounded-full text-on-surface-variant hover:bg-gray-100 hover:text-on-surface transition-all duration-200 flex-shrink-0';
+
   return (
     <>
       <nav
@@ -192,12 +168,12 @@ const Navbar = () => {
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16 gap-2">
 
-            {/* Logo */}
+            {/* ── Logo ── */}
             <Link
               to={currentUser?.role === 'Admin' ? '/admin' : currentUser?.role === 'Owner' ? '/owner' : '/'}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group flex-shrink-0"
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-rs-blue group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined text-white text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>home_work</span>
@@ -207,13 +183,13 @@ const Navbar = () => {
               </span>
             </Link>
 
-            {/* Desktop Nav Links */}
-            <div className="hidden md:flex items-center gap-1">
+            {/* ── Desktop Nav Links ── */}
+            <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
               {navLinks.map(link => (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-4 py-2 rounded-full text-sm transition-all duration-200 ${
+                  className={`px-3.5 py-2 rounded-full text-sm transition-all duration-200 whitespace-nowrap ${
                     isActive(link.path)
                       ? 'bg-primary/10 text-primary font-bold'
                       : 'text-on-surface-variant hover:text-on-surface hover:bg-gray-100 font-medium'
@@ -224,23 +200,46 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* Right Side */}
-            <div className="flex items-center gap-2">
+            {/* ── Right Controls ── */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+
+              {/* Language Toggle */}
+              <button
+                onClick={toggleLang}
+                className={`${iconBtnClass} hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-black border border-gray-200 hover:border-primary/30 hover:bg-blue-50/30`}
+                title={lang === 'en' ? 'Switch to Bahasa Melayu' : 'Switch to English'}
+                aria-label="Toggle language"
+              >
+                <span className="material-symbols-outlined text-[14px]">translate</span>
+                <span className="text-[11px] font-black tracking-wider">{lang === 'en' ? 'BM' : 'EN'}</span>
+              </button>
+
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDark}
+                className={`${iconBtnClass} hidden md:flex`}
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label="Toggle dark mode"
+              >
+                <span className="material-symbols-outlined text-xl transition-all duration-200" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
 
               {/* Guest CTAs */}
               {!currentUser && (
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2 ml-1">
                   <Link
                     to="/login"
                     className="px-4 py-2 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
                   >
-                    Sign In
+                    {t('nav_sign_in')}
                   </Link>
                   <Link
                     to="/register"
                     className="px-4 py-2 text-sm font-bold bg-primary text-white rounded-full shadow-rs-blue hover:bg-primary/90 transition-all hover:shadow-lg hover:scale-[1.02]"
                   >
-                    Get Started
+                    {t('nav_get_started')}
                   </Link>
                 </div>
               )}
@@ -253,8 +252,8 @@ const Navbar = () => {
                   <div className="relative" ref={notifRef}>
                     <button
                       onClick={handleBellClick}
-                      className="relative p-2 rounded-full text-on-surface-variant hover:bg-gray-100 hover:text-on-surface transition-all duration-200"
-                      aria-label="Notifications"
+                      className={iconBtnClass}
+                      aria-label={t('nav_notifications')}
                     >
                       <span className="material-symbols-outlined text-xl">notifications</span>
                       {newCount > 0 && (
@@ -264,11 +263,10 @@ const Navbar = () => {
                       )}
                     </button>
 
-                    {/* Notification Dropdown */}
                     {showNotifDropdown && (
                       <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-rs-lg border border-gray-100 overflow-hidden animate-slide-down z-50">
                         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                          <h4 className="font-bold text-sm text-on-surface">Notifications</h4>
+                          <h4 className="font-bold text-sm text-on-surface">{t('nav_notifications')}</h4>
                           <span className="text-xs text-on-surface-variant bg-gray-100 px-2 py-0.5 rounded-full">{notifications.length}</span>
                         </div>
                         <div className="max-h-64 overflow-y-auto">
@@ -298,7 +296,7 @@ const Navbar = () => {
                   <div className="relative ml-1" ref={userRef}>
                     <button
                       onClick={() => { setShowUserDropdown(!showUserDropdown); setShowNotifDropdown(false); }}
-                      className="flex items-center gap-2 p-1.5 pr-3 rounded-full border border-gray-200 hover:border-primary/40 hover:bg-gray-50 transition-all duration-200 group"
+                      className="flex items-center gap-2 p-1.5 pr-3 rounded-full border border-gray-200 hover:border-primary/40 hover:bg-gray-50 transition-all duration-200"
                     >
                       <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black shadow-sm">
                         {userInitial}
@@ -321,7 +319,7 @@ const Navbar = () => {
                               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface hover:bg-gray-50 transition-colors font-medium"
                             >
                               <span className="material-symbols-outlined text-base text-on-surface-variant">person</span>
-                              My Profile
+                              {t('nav_profile')}
                             </Link>
                           )}
                           {currentUser.role === 'Student' && (
@@ -331,7 +329,7 @@ const Navbar = () => {
                               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-on-surface hover:bg-gray-50 transition-colors font-medium"
                             >
                               <span className="material-symbols-outlined text-base text-on-surface-variant">tune</span>
-                              Preferences
+                              {t('nav_preferences')}
                             </Link>
                           )}
                           <hr className="my-1 border-gray-100" />
@@ -340,7 +338,7 @@ const Navbar = () => {
                             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
                           >
                             <span className="material-symbols-outlined text-base">logout</span>
-                            Sign Out
+                            {t('nav_sign_out')}
                           </button>
                         </div>
                       </div>
@@ -361,7 +359,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* ── Mobile Menu ── */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 animate-slide-down">
             <div className="px-4 py-3 space-y-1">
@@ -380,6 +378,26 @@ const Navbar = () => {
                 </Link>
               ))}
 
+              {/* Mobile utility controls */}
+              <div className="flex items-center gap-2 pt-2 pb-1 border-t border-gray-100 mt-1">
+                <button
+                  onClick={toggleDark}
+                  className="flex items-center gap-2 flex-1 px-4 py-2.5 rounded-xl text-sm text-on-surface-variant hover:bg-gray-50 font-medium"
+                >
+                  <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    {isDark ? 'light_mode' : 'dark_mode'}
+                  </span>
+                  {isDark ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                <button
+                  onClick={toggleLang}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm text-on-surface-variant hover:bg-gray-50 font-medium border border-gray-200"
+                >
+                  <span className="material-symbols-outlined text-base">translate</span>
+                  <span className="text-xs font-black">{lang === 'en' ? 'BM' : 'EN'}</span>
+                </button>
+              </div>
+
               {currentUser ? (
                 <>
                   <hr className="border-gray-100 my-1" />
@@ -390,7 +408,7 @@ const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span className="material-symbols-outlined text-base">person</span>
-                      My Profile
+                      {t('nav_profile')}
                     </Link>
                   )}
                   <button
@@ -398,7 +416,7 @@ const Navbar = () => {
                     className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-red-600 hover:bg-red-50 font-medium"
                   >
                     <span className="material-symbols-outlined text-base">logout</span>
-                    Sign Out
+                    {t('nav_sign_out')}
                   </button>
                 </>
               ) : (
@@ -409,14 +427,14 @@ const Navbar = () => {
                     className="flex items-center px-4 py-3 rounded-xl text-sm text-on-surface-variant hover:bg-gray-50 font-medium"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Sign In
+                    {t('nav_sign_in')}
                   </Link>
                   <Link
                     to="/register"
                     className="flex items-center justify-center px-4 py-3 rounded-xl text-sm text-white bg-primary font-bold"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Get Started
+                    {t('nav_get_started')}
                   </Link>
                 </>
               )}
@@ -425,7 +443,7 @@ const Navbar = () => {
         )}
       </nav>
 
-      {/* Logout Confirmation Modal */}
+      {/* ── Logout Confirmation Modal ── */}
       {showLogoutModal && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
@@ -455,7 +473,7 @@ const Navbar = () => {
                 onClick={handleLogoutConfirm}
                 className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-sm transition-all hover:shadow-lg"
               >
-                Sign Out
+                {t('nav_sign_out')}
               </button>
             </div>
           </div>

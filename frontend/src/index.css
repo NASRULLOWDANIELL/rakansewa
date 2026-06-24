@@ -461,3 +461,394 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(114, 119, 133, 0.7);
 }
+
+/* ─────────────────────────────────────────
+   DESIGN TOKENS (CSS Variables)
+   Light values live on :root, dark overrides on .dark
+   ───────────────────────────────────────── */
+
+:root {
+  --rs-bg:           #f7f9fb;
+  --rs-surface:      #ffffff;
+  --rs-surface-2:    #f2f4f6;
+  --rs-card:         #ffffff;
+  --rs-card-2:       #f9fafb;
+  --rs-border:       rgba(194, 198, 214, 0.35);
+  --rs-border-strong:rgba(194, 198, 214, 0.6);
+  --rs-text:         #191c1e;
+  --rs-text-2:       #424754;
+  --rs-text-3:       #6b7280;
+  --rs-accent:       #0058be;
+  --rs-accent-soft:  rgba(0, 88, 190, 0.08);
+  --rs-shadow-sm:    0 1px 3px rgba(25,28,30,0.04), 0 4px 12px rgba(25,28,30,0.04);
+  --rs-shadow-md:    0 2px 8px rgba(25,28,30,0.06), 0 8px 24px rgba(25,28,30,0.06);
+  --rs-shadow-lg:    0 4px 16px rgba(25,28,30,0.08), 0 16px 48px rgba(0,88,190,0.08);
+}
+
+.dark {
+  --rs-bg:           #0d0f14;
+  --rs-surface:      #161920;
+  --rs-surface-2:    #1e2128;
+  --rs-card:         #1e2128;
+  --rs-card-2:       #252930;
+  --rs-border:       rgba(255, 255, 255, 0.07);
+  --rs-border-strong:rgba(255, 255, 255, 0.12);
+  --rs-text:         #e4e8f0;
+  --rs-text-2:       #9ba3b8;
+  --rs-text-3:       #6b7a96;
+  --rs-accent:       #4d8ef7;
+  --rs-accent-soft:  rgba(77, 142, 247, 0.12);
+  --rs-shadow-sm:    0 1px 3px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.2);
+  --rs-shadow-md:    0 2px 8px rgba(0,0,0,0.3),  0 8px 24px rgba(0,0,0,0.25);
+  --rs-shadow-lg:    0 4px 16px rgba(0,0,0,0.35), 0 16px 48px rgba(0,0,0,0.3);
+}
+
+/* ─────────────────────────────────────────
+   DARK MODE — GLOBAL COVERAGE
+   Targets every Tailwind utility used in the app.
+   No JSX changes required.
+   ───────────────────────────────────────── */
+
+/* ── Body & page backgrounds ── */
+.dark body                       { background-color: var(--rs-bg); color: var(--rs-text); }
+.dark .bg-background             { background-color: var(--rs-bg) !important; }
+.dark .bg-white                  { background-color: var(--rs-card) !important; }
+.dark .bg-gray-50                { background-color: var(--rs-surface-2) !important; }
+.dark .bg-gray-100               { background-color: var(--rs-surface-2) !important; }
+.dark .bg-gray-200               { background-color: #2a2e38 !important; }
+.dark .bg-surface-container-low  { background-color: var(--rs-surface) !important; }
+.dark .bg-surface-container-lowest { background-color: var(--rs-card) !important; }
+.dark .bg-surface-container      { background-color: var(--rs-surface-2) !important; }
+.dark .bg-surface-container-high { background-color: var(--rs-surface-2) !important; }
+.dark .bg-surface-container-highest { background-color: #2a2e38 !important; }
+.dark .bg-surface               { background-color: var(--rs-surface) !important; }
+
+/* ── Text colors ── */
+.dark .text-on-surface           { color: var(--rs-text) !important; }
+.dark .text-on-surface-variant   { color: var(--rs-text-2) !important; }
+.dark .text-on-background        { color: var(--rs-text) !important; }
+.dark .text-gray-900             { color: var(--rs-text) !important; }
+.dark .text-gray-800             { color: var(--rs-text) !important; }
+.dark .text-gray-700             { color: var(--rs-text-2) !important; }
+.dark .text-gray-600             { color: var(--rs-text-2) !important; }
+.dark .text-gray-500             { color: var(--rs-text-3) !important; }
+.dark .text-gray-400             { color: var(--rs-text-3) !important; }
+
+/* ── Borders ── */
+.dark .border-gray-100           { border-color: var(--rs-border) !important; }
+.dark .border-gray-200           { border-color: var(--rs-border) !important; }
+.dark .border-gray-300           { border-color: var(--rs-border-strong) !important; }
+.dark .border-outline-variant\/30 { border-color: var(--rs-border) !important; }
+.dark .divide-gray-100 > * + *   { border-color: var(--rs-border) !important; }
+.dark .divide-gray-200 > * + *   { border-color: var(--rs-border) !important; }
+
+/* ── Hover backgrounds that turn white/gray ── */
+.dark .hover\:bg-white:hover     { background-color: var(--rs-card-2) !important; }
+.dark .hover\:bg-gray-50:hover   { background-color: var(--rs-surface-2) !important; }
+.dark .hover\:bg-gray-100:hover  { background-color: var(--rs-surface-2) !important; }
+.dark .hover\:bg-gray-200:hover  { background-color: #2a2e38 !important; }
+
+/* ── Navbar ── */
+.dark nav {
+  background: rgba(22, 25, 32, 0.92) !important;
+  border-bottom-color: var(--rs-border) !important;
+  backdrop-filter: blur(24px) saturate(120%);
+}
+
+/* ── Design system card ── */
+.dark .rs-card {
+  background: var(--rs-card);
+  border-color: var(--rs-border);
+  box-shadow: var(--rs-shadow-sm);
+}
+.dark .rs-card:hover,
+.dark .rs-card-lift:hover {
+  box-shadow: var(--rs-shadow-md);
+}
+
+/* ── Design system page wrapper ── */
+.dark .rs-page              { background: var(--rs-bg); }
+.dark .rs-stat-card         { background: var(--rs-card); border-color: var(--rs-border); }
+.dark .rs-empty-state       { background: var(--rs-card); border-color: var(--rs-border); }
+.dark .rs-divider           { border-top-color: var(--rs-border); }
+
+/* ── Inputs and selects ── */
+.dark .rs-input,
+.dark .rs-select {
+  background: var(--rs-surface);
+  border-color: var(--rs-border-strong);
+  color: var(--rs-text);
+}
+.dark .rs-input::placeholder  { color: var(--rs-text-3); }
+.dark .rs-input:focus,
+.dark .rs-select:focus {
+  border-color: var(--rs-accent);
+  box-shadow: 0 0 0 3px rgba(77, 142, 247, 0.15);
+}
+
+/* ── Pill filters ── */
+.dark .rs-pill-inactive {
+  background: var(--rs-surface);
+  color: var(--rs-text-2);
+  border-color: var(--rs-border-strong);
+}
+.dark .rs-pill-inactive:hover {
+  border-color: var(--rs-accent);
+  color: var(--rs-accent);
+  background: var(--rs-accent-soft);
+}
+
+/* ── Progress bar track ── */
+.dark .rs-progress { background: #2a2e38; }
+
+/* ── Ghost button ── */
+.dark .rs-btn-ghost {
+  color: var(--rs-text-2);
+  border-color: var(--rs-border-strong);
+}
+.dark .rs-btn-ghost:hover {
+  background: var(--rs-surface-2);
+  color: var(--rs-accent);
+}
+
+/* ── Secondary button ── */
+.dark .rs-btn-secondary {
+  background: var(--rs-surface);
+  border-color: var(--rs-accent);
+}
+
+/* ── Skeleton loading ── */
+.dark .skeleton {
+  background: linear-gradient(90deg, #1e2128 25%, #252930 50%, #1e2128 75%);
+  background-size: 800px 100%;
+}
+
+/* ── Badge system dark overrides ── */
+.dark .rs-badge-available {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.dark .rs-badge-occupied {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.dark .rs-badge-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.dark .rs-badge-approved {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.dark .rs-badge-rejected {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.dark .rs-badge-verified {
+  background: rgba(77, 142, 247, 0.12);
+  color: #7ab3ff;
+  border-color: rgba(77, 142, 247, 0.2);
+}
+.dark .rs-badge-primary {
+  background: rgba(77, 142, 247, 0.12);
+  color: #7ab3ff;
+  border-color: rgba(77, 142, 247, 0.2);
+}
+
+/* ── Inline color tokens used in JSX ── */
+/* Soft emerald boxes (verification, success states) */
+.dark .bg-emerald-50  { background-color: rgba(16, 185, 129, 0.1) !important; }
+.dark .bg-red-50      { background-color: rgba(239, 68, 68, 0.1) !important; }
+.dark .bg-amber-50    { background-color: rgba(245, 158, 11, 0.1) !important; }
+.dark .bg-blue-50     { background-color: rgba(77, 142, 247, 0.1) !important; }
+.dark .bg-purple-50   { background-color: rgba(139, 92, 246, 0.1) !important; }
+.dark .bg-teal-50     { background-color: rgba(20, 184, 166, 0.1) !important; }
+
+/* Soft colored borders */
+.dark .border-emerald-100,
+.dark .border-emerald-200  { border-color: rgba(16, 185, 129, 0.2) !important; }
+.dark .border-red-100,
+.dark .border-red-200      { border-color: rgba(239, 68, 68, 0.2) !important; }
+.dark .border-amber-100,
+.dark .border-amber-200    { border-color: rgba(245, 158, 11, 0.2) !important; }
+.dark .border-blue-100,
+.dark .border-blue-200     { border-color: rgba(77, 142, 247, 0.2) !important; }
+
+/* Text colors in soft boxes */
+.dark .text-emerald-600,
+.dark .text-emerald-700,
+.dark .text-emerald-800  { color: #34d399 !important; }
+.dark .text-red-600,
+.dark .text-red-700,
+.dark .text-red-800      { color: #f87171 !important; }
+.dark .text-amber-600,
+.dark .text-amber-700,
+.dark .text-amber-800    { color: #fbbf24 !important; }
+.dark .text-blue-600,
+.dark .text-blue-700     { color: #60a5fa !important; }
+
+/* ── Glass morphism dark ── */
+.dark .glass {
+  background: rgba(22, 25, 32, 0.7);
+  backdrop-filter: blur(24px) saturate(120%);
+}
+
+/* ── Inline white/gray backgrounds commonly inlined in JSX ── */
+/* Targets style={{ background: '...' }} usage cannot be auto-overridden,
+   but class-based ones are all captured above.                         */
+
+/* ── Drop-down menus and modals ── */
+.dark [role="menu"],
+.dark [role="dialog"] {
+  background: var(--rs-card);
+  border-color: var(--rs-border);
+}
+
+/* ── Tables (AdminDashboard) ── */
+.dark table                { color: var(--rs-text); }
+.dark thead                { background: var(--rs-surface-2); }
+.dark thead th             { color: var(--rs-text-2); border-color: var(--rs-border); }
+.dark tbody td             { border-color: var(--rs-border); color: var(--rs-text); }
+.dark tbody tr:hover       { background: var(--rs-surface-2); }
+.dark .border-b            { border-color: var(--rs-border) !important; }
+.dark .border-t            { border-color: var(--rs-border) !important; }
+
+/* ── Form label text ── */
+.dark label                { color: var(--rs-text-2); }
+
+/* ── Scrollbar dark ── */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(100, 110, 130, 0.5);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 150, 170, 0.6);
+}
+
+
+/* Dark mode is fully implemented above via CSS tokens and utility class overrides. */
+
+
+
+
+
+  /* Text tokens */
+  --rs-text-primary: #e8ecf4;
+  --rs-text-secondary: #9ba3b8;
+
+  /* Primary accent stays consistent */
+  --rs-accent: #4d8ef7;
+}
+
+/* Dark mode card */
+.dark .rs-card {
+  background: var(--rs-card);
+  border-color: var(--rs-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Dark mode page background */
+.dark body {
+  background-color: var(--rs-bg);
+  color: var(--rs-text-primary);
+}
+
+/* Dark mode input */
+.dark .rs-input,
+.dark .rs-select {
+  background: var(--rs-surface);
+  border-color: var(--rs-border);
+  color: var(--rs-text-primary);
+}
+
+.dark .rs-input::placeholder {
+  color: var(--rs-text-secondary);
+}
+
+/* Dark mode navbar */
+.dark nav {
+  background: rgba(26, 29, 35, 0.85);
+  border-bottom-color: var(--rs-border);
+}
+
+/* Dark mode badges */
+.dark .rs-badge-primary {
+  background: rgba(77, 142, 247, 0.15);
+  color: #7ab3ff;
+  border-color: rgba(77, 142, 247, 0.25);
+}
+
+.dark .rs-badge-available {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.dark .rs-badge-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.dark .rs-badge-rejected {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+/*
+  NOTE: Dark mode toggle logic is NOT yet wired up.
+  To activate: add 'dark' class to <html lang="en" class="light dark">
+  and implement a toggle button that switches it via JS.
+  All CSS variables above will take effect automatically.
+*/
+
+/* ─────────────────────────────────────────
+   i18n READINESS STRUCTURE
+   Bahasa Melayu / language support preparation.
+   When BM toggle is implemented, swap [data-lang="ms"] text content
+   via a context/provider, keeping the same component structure.
+   ───────────────────────────────────────── */
+
+/*
+  i18n Strategy for RakanSewa:
+  ─────────────────────────────
+  1. No page duplication needed.
+  2. Use a lightweight LanguageContext that returns translated strings.
+  3. Components consume: const { t } = useLanguage();
+  4. Example usage: t('hero.headline') → "Cari Rakan Serumah Anda"
+
+  Key label map (EN → BM reference):
+  ─────────────────────────────────────────────────────────
+  Find Housemates       → Cari Rakan Serumah
+  Browse Listings       → Semak Senarai Hartanah
+  Matching-first        → Padanan Pertama
+  Create Account        → Daftar Akaun
+  Sign In               → Log Masuk
+  My Profile            → Profil Saya
+  Preferences           → Keutamaan
+  Dashboard             → Papan Pemuka
+  Available             → Tersedia
+  Occupied              → Diduduki
+  Pending               → Menunggu Kelulusan
+  Approved              → Diluluskan
+  Rejected              → Ditolak
+  Monthly Rent          → Sewa Bulanan
+  Great Match           → Padanan Terbaik
+  Good Match            → Padanan Baik
+  Why you match         → Sebab padanan anda
+  Student               → Pelajar
+  Property Owner        → Tuan Rumah
+  ─────────────────────────────────────────────────────────
+
+  Implementation TODO (future sprint):
+  1. Create src/context/LanguageContext.jsx
+  2. Add a LanguageProvider wrapping App
+  3. Create src/locales/en.js and src/locales/ms.js
+  4. Add a language toggle button to Navbar
+  5. No routing changes needed.
+*/

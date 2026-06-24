@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getPropertyById, getAllUsers } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * Compute compatibility between logged-in user and a housemate.
@@ -66,6 +67,7 @@ const AMENITY_ICONS = {
 const PropertyDetailsPage = () => {
   const { id } = useParams();
   const { currentUser, isUitmVerified } = useAuth();
+  const { t } = useLanguage();
   const [property, setProperty] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +133,7 @@ const PropertyDetailsPage = () => {
     <div className="rs-page flex items-center justify-center min-h-screen">
       <div className="text-center">
         <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderWidth: '3px' }} />
-        <p className="text-on-surface-variant font-medium">Loading property details...</p>
+        <p className="text-on-surface-variant font-medium">{t('common_loading')}</p>
       </div>
     </div>
   );
@@ -141,7 +143,7 @@ const PropertyDetailsPage = () => {
       <div className="text-center">
         <span className="material-symbols-outlined text-5xl text-red-400 mb-3 block">error_outline</span>
         <p className="text-on-surface font-bold text-lg">{error || 'Property not found.'}</p>
-        <Link to="/properties" className="mt-4 inline-block text-primary hover:underline font-medium text-sm">← Back to listings</Link>
+        <Link to="/properties" className="mt-4 inline-block text-primary hover:underline font-medium text-sm">← {t('detail_back')}</Link>
       </div>
     </div>
   );

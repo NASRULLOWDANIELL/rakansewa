@@ -1,0 +1,496 @@
+import { createContext, useContext, useState, useCallback } from 'react';
+
+/**
+ * RakanSewa Global i18n System
+ * Supports: 'en' (English) | 'ms' (Bahasa Melayu)
+ *
+ * Usage in any component:
+ *   const { t, lang, toggle } = useLanguage();
+ *   <h1>{t('hero_headline_start')}</h1>
+ */
+
+const STRINGS = {
+  en: {
+    /* ── Navbar ── */
+    nav_discover:      'Discover',
+    nav_properties:    'Properties',
+    nav_housemates:    'Matches',
+    nav_preferences:   'Preferences',
+    nav_feedback:      'Feedback',
+    nav_about:         'About',
+    nav_dashboard:     'Dashboard',
+    nav_admin:         'Admin',
+    nav_profile:       'My Profile',
+    nav_sign_in:       'Sign In',
+    nav_get_started:   'Get Started',
+    nav_sign_out:      'Sign Out',
+    nav_notifications: 'Notifications',
+    nav_no_notif:      'No notifications yet',
+
+    /* ── HomePage ── */
+    hero_badge:           "UiTM Jasin's Student Housing & Matching Platform",
+    hero_headline_start:  'Your Perfect Housemate',
+    hero_headline_accent: 'Starts Here',
+    hero_sub:             'Get matched with compatible UiTM Jasin students based on budget, lifestyle, and sleep schedule. Find verified rentals, connect confidently.',
+    hero_cta_housemates:  'Find Housemates',
+    hero_cta_listings:    'Browse Listings',
+    hero_cta_register:    'Register Free',
+    hero_trust:           'UiTM-verified · Free for students · No spam',
+    stat_listings:        'Active Listings',
+    stat_matched:         'Students Matched',
+    stat_verified:        'UiTM Verified',
+    hiw_label:            'Getting Started',
+    hiw_title:            'How Matching Works',
+    hiw_step1_title:      'Create Your Profile',
+    hiw_step1_desc:       'Sign up with your UiTM email and set your housemate preferences.',
+    hiw_step2_title:      'Set Your Priorities',
+    hiw_step2_desc:       'Budget, sleep pattern, lifestyle — your criteria drive the match score.',
+    hiw_step3_title:      'Connect & Move In',
+    hiw_step3_desc:       'Reach out to compatible housemates and secure your ideal student home.',
+    feat_label:           'Platform',
+    feat_title:           'Built for UiTM Students',
+    feat_sub:             'Everything you need to find a safe, comfortable, and compatible living situation near campus.',
+    cta_guest_title:      'Ready to find your new home?',
+    cta_guest_sub:        'Join hundreds of UiTM Jasin students who found their perfect living space.',
+    cta_browse:           'Browse Properties',
+    cta_create_acc:       'Create Free Account',
+    cta_student_listed_title:    'Find Your Matching Housemate',
+    cta_student_listed_desc:     'Browse compatible students based on your set preferences and move in together.',
+    cta_student_unlisted_title:  'Get Listed as a Housemate',
+    cta_student_unlisted_desc:   'Complete your housemate profile so other students can find and match with you.',
+    cta_browse_housemates:       'Browse Housemates',
+    cta_edit_profile:            'Edit My Profile',
+    cta_view_listings:           'View Listings',
+
+    /* ── PropertiesPage ── */
+    prop_title:           'Browse Properties',
+    prop_subtitle:        'Verified rental listings near UiTM Jasin campus.',
+    prop_filter_toggle:   'Filters',
+    prop_results:         '{count} properties found',
+    prop_results_filtered: 'showing filtered results',
+    prop_no_results_title: 'No properties found',
+    prop_no_results_sub:   'Try adjusting your filters or check back later.',
+    prop_clear_filters:   'Clear Filters',
+    prop_loading:         'Loading listings…',
+    prop_error_title:     'Failed to load properties',
+    prop_error_sub:       'Please check your connection and try again.',
+    prop_retry:           'Try Again',
+
+    /* ── PropertyCard ── */
+    card_available:       'Available',
+    card_occupied:        'Occupied',
+    card_per_month:       '/mo',
+    card_view:            'View Details',
+
+    /* ── PropertyFilter ── */
+    filter_title:         'Filters',
+    filter_clear:         'Clear All',
+    filter_active:        'active',
+    filter_type:          'Property Type',
+    filter_room:          'Room Type',
+    filter_furnish:       'Furnished Status',
+    filter_price:         'Price Range (RM)',
+    filter_min:           'Min',
+    filter_max:           'Max',
+    filter_apply:         'Apply Filters',
+
+    /* ── PropertyDetailsPage ── */
+    detail_back:          'Back to Properties',
+    detail_overview:      'Overview',
+    detail_about:         'About this Property',
+    detail_no_desc:       'No description provided.',
+    detail_amenities:     'Amenities',
+    detail_contact:       'Contact Owner',
+    detail_whatsapp:      'Contact via WhatsApp',
+    detail_directions:    'Get Directions',
+    detail_login_to_contact: 'Sign in to contact owner',
+    detail_rent:          'Monthly Rent',
+    detail_compatibility: 'Compatibility Score',
+    detail_compat_login:  'Sign in to see your match score',
+    detail_verified_trust: 'Verified Listing',
+    detail_pending_approval: 'Pending Approval',
+
+    /* ── HousematesPage ── */
+    hm_title:             'Find Housemates',
+    hm_subtitle:          'Browse UiTM Jasin students looking for compatible housemates.',
+    hm_stats_total:       'Listed Students',
+    hm_stats_great:       'Great Matches',
+    hm_stats_good:        'Good Matches',
+    hm_filter_all:        'All',
+    hm_filter_great:      'Great Match',
+    hm_filter_good:       'Good Match',
+    hm_no_results:        'No housemates found matching your criteria.',
+    hm_login_to_match:    'Sign in to see match scores',
+    hm_why_match:         'Why you match',
+    hm_match_score:       'Match Score',
+    hm_budget:            'Budget',
+    hm_sleep:             'Sleep',
+    hm_lifestyle:         'Lifestyle',
+    hm_priorities:        'Priorities',
+    hm_linked_property:   'Linked Property',
+    hm_no_property:       'No property linked',
+    hm_verified:          'UiTM Verified',
+    hm_listed:            'Listed',
+
+    /* ── ManageHousemateProfilePage ── */
+    pref_title:           'Housemate Profile',
+    pref_subtitle:        'Control how you appear in the matching system and set your compatibility criteria.',
+    pref_section_visibility: 'Listing Visibility',
+    pref_visibility_desc: 'Toggle this to appear on the housemate listing page.',
+    pref_listed_label:    'List me as a housemate',
+    pref_listed_desc:     "You'll appear in the housemate listing for others to find",
+    pref_section_prefs:   'Basic Preferences',
+    pref_budget:          'Monthly Budget (RM)',
+    pref_sleep:           'Sleep Pattern',
+    pref_lifestyle:       'Lifestyle Tags',
+    pref_lifestyle_hint:  'These tags describe your lifestyle, not your matching priorities.',
+    pref_section_priority: 'Compatibility Priorities',
+    pref_priority_desc:   'Choose 3 things in order of importance. These drive how your match score is calculated.',
+    pref_priority_1:      'Priority 1',
+    pref_priority_2:      'Priority 2',
+    pref_priority_3:      'Priority 3',
+    pref_priority_placeholder: 'Select a priority…',
+    pref_priority_error:  'Please select exactly 3 different priorities before saving.',
+    pref_priority_dupe:   'Each priority must be different. Please resolve the duplicate.',
+    pref_priority_ok:     'Priorities set',
+    pref_section_property: 'Linked Rental Property',
+    pref_property_desc:   'Link your profile to the property where you currently live or plan to stay.',
+    pref_no_property:     'No linked property',
+    pref_save:            'Save Preferences',
+    pref_discard:         'Discard Changes',
+    pref_saving:          'Saving…',
+    pref_saved:           'Saved! Redirecting to your profile…',
+    pref_tip_title:       'Matching Tip',
+
+    /* ── OwnerDashboard ── */
+    owner_title:          'My Properties',
+    owner_subtitle:       'Manage your listings and track approval status.',
+    owner_new_listing:    'Create New Listing',
+    owner_stat_total:     'Total Listings',
+    owner_stat_approved:  'Approved',
+    owner_stat_pending:   'Pending Review',
+    owner_stat_rejected:  'Rejected',
+    owner_no_listings_title: 'No listings yet',
+    owner_no_listings_sub:   'Start by creating your first property listing.',
+    owner_first_listing:  'Create First Listing',
+    owner_add_listing:    'Add New Listing',
+    owner_add_listing_sub: 'List your next property',
+    owner_view:           'View',
+    owner_edit:           'Edit',
+    owner_edit_resubmit:  'Edit & Resubmit',
+    owner_delete:         'Delete',
+    owner_reject_reason:  'Rejection Reason',
+    owner_verify_warning: 'Verification Required',
+    owner_verify_desc:    'Complete your profile verification to manage property listings.',
+    owner_modal_new:      'New Property Listing',
+    owner_modal_edit:     'Edit Listing',
+    owner_modal_resubmit: 'Edit & Resubmit',
+    owner_modal_resubmit_note: 'Saving will resubmit for admin approval.',
+    owner_modal_cancel:   'Cancel',
+    owner_modal_submit:   'Submit for Approval',
+    owner_modal_update:   'Update Listing',
+    owner_modal_uploading: 'Uploading…',
+    owner_approval_note:  'New properties require admin approval before going live.',
+    owner_delete_title:   'Delete Property',
+    owner_delete_msg:     'Are you sure you want to delete this property? This action cannot be undone.',
+    owner_field_title:    'Property Title',
+    owner_field_address:  'Street Address',
+    owner_field_city:     'City',
+    owner_field_state:    'State',
+    owner_field_rent:     'Monthly Rent (RM)',
+    owner_field_type:     'Property Type',
+    owner_field_room:     'Room Type',
+    owner_field_furnish:  'Furnished Status',
+    owner_field_desc:     'Description',
+    owner_field_images:   'Property Images',
+    owner_images_hint:    'JPG, PNG, or WebP. Max 5MB each.',
+    owner_existing_images: 'Current Images',
+    owner_new_images:     'New Images to Upload',
+
+    /* ── Common / Shared ── */
+    common_available:     'Available',
+    common_occupied:      'Occupied',
+    common_pending:       'Pending',
+    common_approved:      'Approved',
+    common_rejected:      'Rejected',
+    common_verified:      'Verified',
+    common_student:       'Student',
+    common_owner:         'Property Owner',
+    common_loading:       'Loading…',
+    common_error:         'Something went wrong. Please try again.',
+    common_cancel:        'Cancel',
+    common_save:          'Save',
+    common_edit:          'Edit',
+    common_delete:        'Delete',
+    common_close:         'Close',
+    common_back:          'Back',
+    common_per_month:     '/month',
+    common_no_image:      'No image',
+    common_cover:         'Cover',
+    common_all:           'All',
+  },
+
+  ms: {
+    /* ── Navbar ── */
+    nav_discover:      'Temui',
+    nav_properties:    'Hartanah',
+    nav_housemates:    'Padanan',
+    nav_preferences:   'Keutamaan',
+    nav_feedback:      'Maklum Balas',
+    nav_about:         'Tentang',
+    nav_dashboard:     'Papan Pemuka',
+    nav_admin:         'Pentadbir',
+    nav_profile:       'Profil Saya',
+    nav_sign_in:       'Log Masuk',
+    nav_get_started:   'Mulakan',
+    nav_sign_out:      'Log Keluar',
+    nav_notifications: 'Pemberitahuan',
+    nav_no_notif:      'Tiada pemberitahuan',
+
+    /* ── HomePage ── */
+    hero_badge:           'Platform Perumahan Pelajar UiTM Jasin',
+    hero_headline_start:  'Rakan Serumah Terbaik',
+    hero_headline_accent: 'Bermula Di Sini',
+    hero_sub:             'Dapatkan padanan dengan pelajar UiTM Jasin berdasarkan bajet, gaya hidup, dan jadual tidur. Cari sewa yang disahkan, hubungi dengan yakin.',
+    hero_cta_housemates:  'Cari Rakan Serumah',
+    hero_cta_listings:    'Semak Senarai',
+    hero_cta_register:    'Daftar Percuma',
+    hero_trust:           'Disahkan UiTM · Percuma untuk pelajar · Tiada spam',
+    stat_listings:        'Senarai Aktif',
+    stat_matched:         'Pelajar Dipadankan',
+    stat_verified:        'Disahkan UiTM',
+    hiw_label:            'Cara Bermula',
+    hiw_title:            'Cara Padanan Berfungsi',
+    hiw_step1_title:      'Buat Profil Anda',
+    hiw_step1_desc:       'Daftar dengan e-mel UiTM anda dan tetapkan pilihan rakan serumah.',
+    hiw_step2_title:      'Tetapkan Keutamaan',
+    hiw_step2_desc:       'Bajet, jadual tidur, gaya hidup — kriteria anda menentukan skor padanan.',
+    hiw_step3_title:      'Hubungi & Pindah Masuk',
+    hiw_step3_desc:       'Hubungi rakan serumah yang serasi dan amankan rumah pelajar ideal anda.',
+    feat_label:           'Platform',
+    feat_title:           'Dibina Untuk Pelajar UiTM',
+    feat_sub:             'Semua yang anda perlukan untuk mencari tempat tinggal yang selamat, selesa, dan serasi berhampiran kampus.',
+    cta_guest_title:      'Bersedia mencari rumah baru?',
+    cta_guest_sub:        'Sertai ratusan pelajar UiTM Jasin yang telah mendapat tempat tinggal sempurna mereka.',
+    cta_browse:           'Semak Hartanah',
+    cta_create_acc:       'Buka Akaun Percuma',
+    cta_student_listed_title:    'Cari Rakan Serumah Anda',
+    cta_student_listed_desc:     'Semak pelajar yang serasi berdasarkan keutamaan anda dan pindah bersama.',
+    cta_student_unlisted_title:  'Sertai Sebagai Rakan Serumah',
+    cta_student_unlisted_desc:   'Lengkapkan profil anda supaya pelajar lain dapat mencari dan memadankan anda.',
+    cta_browse_housemates:       'Semak Rakan Serumah',
+    cta_edit_profile:            'Edit Profil Saya',
+    cta_view_listings:           'Lihat Senarai',
+
+    /* ── PropertiesPage ── */
+    prop_title:           'Semak Hartanah',
+    prop_subtitle:        'Senarai sewa yang disahkan berhampiran kampus UiTM Jasin.',
+    prop_filter_toggle:   'Tapis',
+    prop_results:         '{count} hartanah dijumpai',
+    prop_results_filtered: 'menunjukkan hasil tapisan',
+    prop_no_results_title: 'Tiada hartanah dijumpai',
+    prop_no_results_sub:   'Cuba laraskan penapis anda atau semak semula kemudian.',
+    prop_clear_filters:   'Padam Penapis',
+    prop_loading:         'Memuatkan senarai…',
+    prop_error_title:     'Gagal memuatkan hartanah',
+    prop_error_sub:       'Sila semak sambungan anda dan cuba lagi.',
+    prop_retry:           'Cuba Lagi',
+
+    /* ── PropertyCard ── */
+    card_available:       'Tersedia',
+    card_occupied:        'Diduduki',
+    card_per_month:       '/bln',
+    card_view:            'Lihat Butiran',
+
+    /* ── PropertyFilter ── */
+    filter_title:         'Penapis',
+    filter_clear:         'Padam Semua',
+    filter_active:        'aktif',
+    filter_type:          'Jenis Hartanah',
+    filter_room:          'Jenis Bilik',
+    filter_furnish:       'Status Perabot',
+    filter_price:         'Julat Harga (RM)',
+    filter_min:           'Min',
+    filter_max:           'Maks',
+    filter_apply:         'Guna Penapis',
+
+    /* ── PropertyDetailsPage ── */
+    detail_back:          'Kembali ke Hartanah',
+    detail_overview:      'Gambaran Keseluruhan',
+    detail_about:         'Tentang Hartanah Ini',
+    detail_no_desc:       'Tiada keterangan diberikan.',
+    detail_amenities:     'Kemudahan',
+    detail_contact:       'Hubungi Pemilik',
+    detail_whatsapp:      'Hubungi via WhatsApp',
+    detail_directions:    'Dapatkan Arah',
+    detail_login_to_contact: 'Log masuk untuk hubungi pemilik',
+    detail_rent:          'Sewa Bulanan',
+    detail_compatibility: 'Skor Keserasian',
+    detail_compat_login:  'Log masuk untuk lihat skor padanan anda',
+    detail_verified_trust: 'Senarai Disahkan',
+    detail_pending_approval: 'Menunggu Kelulusan',
+
+    /* ── HousematesPage ── */
+    hm_title:             'Cari Rakan Serumah',
+    hm_subtitle:          'Semak pelajar UiTM Jasin yang mencari rakan serumah serasi.',
+    hm_stats_total:       'Pelajar Tersenarai',
+    hm_stats_great:       'Padanan Terbaik',
+    hm_stats_good:        'Padanan Baik',
+    hm_filter_all:        'Semua',
+    hm_filter_great:      'Padanan Terbaik',
+    hm_filter_good:       'Padanan Baik',
+    hm_no_results:        'Tiada rakan serumah dijumpai mengikut kriteria anda.',
+    hm_login_to_match:    'Log masuk untuk lihat skor padanan',
+    hm_why_match:         'Sebab padanan anda',
+    hm_match_score:       'Skor Padanan',
+    hm_budget:            'Bajet',
+    hm_sleep:             'Jadual Tidur',
+    hm_lifestyle:         'Gaya Hidup',
+    hm_priorities:        'Keutamaan',
+    hm_linked_property:   'Hartanah Berkaitan',
+    hm_no_property:       'Tiada hartanah berkaitan',
+    hm_verified:          'Disahkan UiTM',
+    hm_listed:            'Tersenarai',
+
+    /* ── ManageHousemateProfilePage ── */
+    pref_title:           'Profil Rakan Serumah',
+    pref_subtitle:        'Kawal bagaimana anda muncul dalam sistem padanan dan tetapkan kriteria keserasian anda.',
+    pref_section_visibility: 'Keterlihatan Senarai',
+    pref_visibility_desc: 'Togol ini untuk muncul di halaman senarai rakan serumah.',
+    pref_listed_label:    'Senaraikan saya sebagai rakan serumah',
+    pref_listed_desc:     'Anda akan muncul dalam senarai rakan serumah untuk orang lain jumpa',
+    pref_section_prefs:   'Pilihan Asas',
+    pref_budget:          'Bajet Bulanan (RM)',
+    pref_sleep:           'Corak Tidur',
+    pref_lifestyle:       'Tag Gaya Hidup',
+    pref_lifestyle_hint:  'Tag ini menggambarkan gaya hidup anda, bukan keutamaan padanan.',
+    pref_section_priority: 'Keutamaan Keserasian',
+    pref_priority_desc:   'Pilih 3 perkara mengikut urutan kepentingan. Ini menentukan cara skor padanan anda dikira.',
+    pref_priority_1:      'Keutamaan 1',
+    pref_priority_2:      'Keutamaan 2',
+    pref_priority_3:      'Keutamaan 3',
+    pref_priority_placeholder: 'Pilih keutamaan…',
+    pref_priority_error:  'Sila pilih tepat 3 keutamaan yang berbeza sebelum menyimpan.',
+    pref_priority_dupe:   'Setiap keutamaan mesti berbeza. Sila selesaikan pendua.',
+    pref_priority_ok:     'Keutamaan ditetapkan',
+    pref_section_property: 'Hartanah Sewa Berkaitan',
+    pref_property_desc:   'Kaitkan profil anda dengan hartanah di mana anda kini tinggal atau bercadang untuk menginap.',
+    pref_no_property:     'Tiada hartanah berkaitan',
+    pref_save:            'Simpan Pilihan',
+    pref_discard:         'Buang Perubahan',
+    pref_saving:          'Menyimpan…',
+    pref_saved:           'Disimpan! Mengarahkan ke profil anda…',
+    pref_tip_title:       'Petua Padanan',
+
+    /* ── OwnerDashboard ── */
+    owner_title:          'Hartanah Saya',
+    owner_subtitle:       'Urus senarai anda dan pantau status kelulusan.',
+    owner_new_listing:    'Cipta Senarai Baru',
+    owner_stat_total:     'Jumlah Senarai',
+    owner_stat_approved:  'Diluluskan',
+    owner_stat_pending:   'Menunggu Semakan',
+    owner_stat_rejected:  'Ditolak',
+    owner_no_listings_title: 'Tiada senarai lagi',
+    owner_no_listings_sub:   'Mulakan dengan mencipta senarai hartanah pertama anda.',
+    owner_first_listing:  'Cipta Senarai Pertama',
+    owner_add_listing:    'Tambah Senarai Baru',
+    owner_add_listing_sub: 'Senaraikan hartanah seterusnya',
+    owner_view:           'Lihat',
+    owner_edit:           'Edit',
+    owner_edit_resubmit:  'Edit & Hantar Semula',
+    owner_delete:         'Padam',
+    owner_reject_reason:  'Sebab Penolakan',
+    owner_verify_warning: 'Pengesahan Diperlukan',
+    owner_verify_desc:    'Lengkapkan pengesahan profil anda untuk mengurus senarai hartanah.',
+    owner_modal_new:      'Senarai Hartanah Baru',
+    owner_modal_edit:     'Edit Senarai',
+    owner_modal_resubmit: 'Edit & Hantar Semula',
+    owner_modal_resubmit_note: 'Menyimpan akan menghantar semula untuk kelulusan pentadbir.',
+    owner_modal_cancel:   'Batal',
+    owner_modal_submit:   'Hantar untuk Kelulusan',
+    owner_modal_update:   'Kemaskini Senarai',
+    owner_modal_uploading: 'Memuat naik…',
+    owner_approval_note:  'Hartanah baru memerlukan kelulusan pentadbir sebelum disiarkan.',
+    owner_delete_title:   'Padam Hartanah',
+    owner_delete_msg:     'Adakah anda pasti ingin memadamkan hartanah ini? Tindakan ini tidak boleh dibatalkan.',
+    owner_field_title:    'Tajuk Hartanah',
+    owner_field_address:  'Alamat Jalan',
+    owner_field_city:     'Bandar',
+    owner_field_state:    'Negeri',
+    owner_field_rent:     'Sewa Bulanan (RM)',
+    owner_field_type:     'Jenis Hartanah',
+    owner_field_room:     'Jenis Bilik',
+    owner_field_furnish:  'Status Perabot',
+    owner_field_desc:     'Keterangan',
+    owner_field_images:   'Gambar Hartanah',
+    owner_images_hint:    'JPG, PNG, atau WebP. Maks 5MB setiap satu.',
+    owner_existing_images: 'Gambar Semasa',
+    owner_new_images:     'Gambar Baru untuk Dimuat Naik',
+
+    /* ── Common / Shared ── */
+    common_available:     'Tersedia',
+    common_occupied:      'Diduduki',
+    common_pending:       'Menunggu',
+    common_approved:      'Diluluskan',
+    common_rejected:      'Ditolak',
+    common_verified:      'Disahkan',
+    common_student:       'Pelajar',
+    common_owner:         'Tuan Rumah',
+    common_loading:       'Memuatkan…',
+    common_error:         'Sesuatu telah berlaku. Sila cuba lagi.',
+    common_cancel:        'Batal',
+    common_save:          'Simpan',
+    common_edit:          'Edit',
+    common_delete:        'Padam',
+    common_close:         'Tutup',
+    common_back:          'Kembali',
+    common_per_month:     '/bulan',
+    common_no_image:      'Tiada gambar',
+    common_cover:         'Tutupan',
+    common_all:           'Semua',
+  },
+};
+
+const LanguageContext = createContext(null);
+
+export const LanguageProvider = ({ children }) => {
+  const [lang, setLang] = useState(() => {
+    try { return localStorage.getItem('rs-lang') || 'en'; }
+    catch { return 'en'; }
+  });
+
+  const toggle = useCallback(() => {
+    setLang(prev => {
+      const next = prev === 'en' ? 'ms' : 'en';
+      try { localStorage.setItem('rs-lang', next); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  /**
+   * Translate a key.
+   * Falls back to English, then returns the key itself if not found.
+   * Supports {count} interpolation: t('prop_results', { count: 5 })
+   */
+  const t = useCallback((key, vars) => {
+    let str = STRINGS[lang]?.[key] ?? STRINGS['en']?.[key] ?? key;
+    if (vars) {
+      Object.entries(vars).forEach(([k, v]) => {
+        str = str.replace(`{${k}}`, v);
+      });
+    }
+    return str;
+  }, [lang]);
+
+  return (
+    <LanguageContext.Provider value={{ lang, toggle, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const ctx = useContext(LanguageContext);
+  if (!ctx) throw new Error('useLanguage must be used inside LanguageProvider');
+  return ctx;
+};

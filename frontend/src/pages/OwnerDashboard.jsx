@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImages, deletePropertyImage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { useLanguage } from '../context/LanguageContext';
 
 /* ── Status badge helper ── */
 const StatusBadge = ({ status }) => {
@@ -21,6 +22,7 @@ const StatusBadge = ({ status }) => {
 
 const OwnerDashboard = () => {
   const { currentUser, isUitmVerified } = useAuth();
+  const { t } = useLanguage();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -486,18 +488,18 @@ const OwnerDashboard = () => {
 
               {/* Modal footer */}
               <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between flex-shrink-0 bg-gray-50 rounded-b-2xl">
-                <p className="text-xs text-on-surface-variant">New properties require admin approval before going live.</p>
+                <p className="text-xs text-on-surface-variant">{t('owner_approval_note')}</p>
                 <div className="flex gap-3">
                   <button type="button" onClick={resetForm} className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-on-surface font-semibold rounded-xl text-sm transition-colors">
-                    Cancel
+                    {t('common_cancel')}
                   </button>
                   <button type="submit" form="propertyForm" disabled={uploading} className="px-5 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all disabled:opacity-50 flex items-center gap-2">
                     {uploading ? (
                       <>
                         <span className="btn-spinner" />
-                        Uploading…
+                        {t('owner_modal_uploading')}
                       </>
-                    ) : editingId ? (editingWasRejected ? 'Resubmit for Approval' : 'Update Listing') : 'Submit for Approval'}
+                    ) : editingId ? (editingWasRejected ? t('owner_edit_resubmit') : t('owner_modal_update')) : t('owner_modal_submit')}
                   </button>
                 </div>
               </div>
@@ -508,8 +510,8 @@ const OwnerDashboard = () => {
         {/* ── Dashboard Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-on-surface font-headline">My Properties</h1>
-            <p className="text-on-surface-variant text-sm mt-0.5">Manage your listings and track approval status.</p>
+            <h1 className="text-2xl font-black tracking-tight text-on-surface font-headline">{t('owner_title')}</h1>
+            <p className="text-on-surface-variant text-sm mt-0.5">{t('owner_subtitle')}</p>
           </div>
           {isUitmVerified() ? (
             <button
@@ -517,12 +519,12 @@ const OwnerDashboard = () => {
               className="rs-btn-primary text-sm py-2.5 px-5 flex-shrink-0"
             >
               <span className="material-symbols-outlined text-base">add</span>
-              Create New Listing
+              {t('owner_new_listing')}
             </button>
           ) : (
             <button disabled className="inline-flex items-center gap-2 bg-gray-100 text-on-surface-variant font-bold py-2.5 px-5 rounded-full cursor-not-allowed opacity-60 text-sm" title="Verify your email to add properties">
               <span className="material-symbols-outlined text-base">add</span>
-              Create New Listing
+              {t('owner_new_listing')}
             </button>
           )}
         </div>
@@ -540,8 +542,8 @@ const OwnerDashboard = () => {
           <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
             <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
             <div>
-              <span className="font-bold block text-sm">Verification Required</span>
-              <span className="text-sm">Complete your profile verification to manage property listings.</span>
+              <span className="font-bold block text-sm">{t('owner_verify_warning')}</span>
+              <span className="text-sm">{t('owner_verify_desc')}</span>
             </div>
           </div>
         )}
@@ -549,10 +551,10 @@ const OwnerDashboard = () => {
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Listings', value: properties.length, color: 'text-on-surface', accent: 'border-gray-200', icon: 'home_work', iconBg: 'bg-gray-100', iconColor: 'text-on-surface-variant' },
-            { label: 'Approved', value: approvedCount, color: 'text-emerald-600', accent: 'border-emerald-200', icon: 'check_circle', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500', bg: '#f0fdf4' },
-            { label: 'Pending Review', value: pendingCount, color: 'text-amber-600', accent: 'border-amber-200', icon: 'schedule', iconBg: 'bg-amber-50', iconColor: 'text-amber-500', bg: '#fffbeb' },
-            { label: 'Rejected', value: rejectedCount, color: 'text-red-500', accent: 'border-red-200', icon: 'cancel', iconBg: 'bg-red-50', iconColor: 'text-red-500', bg: '#fef2f2' },
+            { label: t('owner_stat_total'),    value: properties.length, color: 'text-on-surface',   accent: 'border-gray-200',   icon: 'home_work',    iconBg: 'bg-gray-100',    iconColor: 'text-on-surface-variant' },
+            { label: t('owner_stat_approved'), value: approvedCount,     color: 'text-emerald-600', accent: 'border-emerald-200', icon: 'check_circle', iconBg: 'bg-emerald-50',  iconColor: 'text-emerald-500', bg: '#f0fdf4' },
+            { label: t('owner_stat_pending'),  value: pendingCount,      color: 'text-amber-600',   accent: 'border-amber-200',  icon: 'schedule',     iconBg: 'bg-amber-50',    iconColor: 'text-amber-500',  bg: '#fffbeb' },
+            { label: t('owner_stat_rejected'), value: rejectedCount,     color: 'text-red-500',     accent: 'border-red-200',    icon: 'cancel',       iconBg: 'bg-red-50',      iconColor: 'text-red-500',    bg: '#fef2f2' },
           ].map((stat, i) => (
             <div key={i} className="bg-white rounded-2xl border p-5 shadow-rs-sm" style={{ borderColor: stat.accent?.replace('border-', '') || '#e5e7eb', background: stat.bg || '#ffffff' }}>
               <div className="flex items-start justify-between">

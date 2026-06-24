@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { getAllUsers, getMatchesForUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const DEFAULT_PRIORITIES = ['Budget', 'Sleep Pattern', 'Cleanliness'];
 
@@ -133,7 +134,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
             {hm.budget && (
               <div className="text-right flex-shrink-0">
                 <span className="block text-sm font-black text-primary">RM {hm.budget}</span>
-                <span className="text-[10px] text-on-surface-variant font-medium">/month</span>
+                <span className="text-[10px] text-on-surface-variant font-medium">{t('common_per_month')}</span>
               </div>
             )}
           </div>
@@ -161,7 +162,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
         <div className="mb-4">
           <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1.5 flex items-center gap-1">
             <span className="material-symbols-outlined text-xs">home</span>
-            Linked Property
+            {t('hm_linked_property')}
           </p>
           {hm.linkedProperty ? (
             <Link
@@ -175,7 +176,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
               )}
             </Link>
           ) : (
-            <span className="text-xs text-on-surface-variant italic">No linked property</span>
+            <span className="text-xs text-on-surface-variant italic">{t('hm_no_property')}</span>
           )}
         </div>
 
@@ -238,7 +239,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
               className="w-full py-2.5 border border-gray-200 text-on-surface-variant text-sm font-bold rounded-xl hover:border-primary/40 hover:text-primary hover:bg-blue-50/30 transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">lock</span>
-              Sign In to Contact
+              {t('hm_login_to_match')}
             </Link>
           )}
         </div>
@@ -250,6 +251,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
 /* ── Main Page ── */
 const HousematesPage = () => {
   const { currentUser, isUitmVerified } = useAuth();
+  const { t } = useLanguage();
   const [housemates, setHousemates] = useState([]);
   const [backendMatches, setBackendMatches] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -330,12 +332,10 @@ const HousematesPage = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black tracking-tight text-on-surface font-headline mb-1">
-                Your Roommate Matches
+                {t('hm_title')}
               </h1>
               <p className="text-on-surface-variant text-sm">
-                {currentUser
-                  ? 'Ranked by compatibility based on your lifestyle preferences.'
-                  : 'Browse students looking for housemates near UiTM Jasin.'}
+                {currentUser ? t('hm_subtitle') : t('hm_subtitle')}
               </p>
             </div>
             {currentUser && (
@@ -355,15 +355,15 @@ const HousematesPage = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm text-center">
               <span className="text-3xl font-black text-on-surface">{filteredHousemates.length}</span>
-              <p className="text-xs text-on-surface-variant font-medium mt-0.5">Total Matches</p>
+              <p className="text-xs text-on-surface-variant font-medium mt-0.5">{t('hm_stats_total')}</p>
             </div>
             <div className="bg-white rounded-2xl border border-emerald-200 p-4 shadow-rs-sm text-center" style={{ background: '#f0fdf4' }}>
               <span className="text-3xl font-black text-emerald-600">{greatMatches}</span>
-              <p className="text-xs text-emerald-600/70 font-medium mt-0.5">Great Matches (75%+)</p>
+              <p className="text-xs text-emerald-600/70 font-medium mt-0.5">{t('hm_stats_great')} (75%+)</p>
             </div>
             <div className="bg-white rounded-2xl border border-blue-200 p-4 shadow-rs-sm text-center" style={{ background: '#eff6ff' }}>
               <span className="text-3xl font-black text-blue-600">{goodMatches}</span>
-              <p className="text-xs text-blue-600/70 font-medium mt-0.5">Good Matches (50%+)</p>
+              <p className="text-xs text-blue-600/70 font-medium mt-0.5">{t('hm_stats_good')} (50%+)</p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm text-center">
               <div className="flex items-center justify-center gap-1 mb-0.5">

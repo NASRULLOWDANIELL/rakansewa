@@ -3,6 +3,8 @@ import { getProperties, getUserFavourites, toggleFavourite } from '../services/a
 import PropertyList from '../components/PropertyList';
 import PropertyFilter from '../components/PropertyFilter';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+
 
 /* ── Skeleton loader ── */
 const CardSkeleton = () => (
@@ -24,6 +26,7 @@ const CardSkeleton = () => (
 
 const PropertiesPage = () => {
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
 
   const initialFilters = {
     search: '',
@@ -119,10 +122,10 @@ const PropertiesPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black tracking-tight text-on-surface font-headline mb-1">
-                Student Housing
+                {t('prop_title')}
               </h1>
               <p className="text-on-surface-variant text-sm">
-                Verified rental listings near UiTM Jasin
+                {t('prop_subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -132,7 +135,7 @@ const PropertiesPage = () => {
                 className="lg:hidden flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-on-surface hover:bg-gray-50 transition-colors shadow-rs-sm"
               >
                 <span className="material-symbols-outlined text-base">tune</span>
-                Filters
+                {t('prop_filter_toggle')}
                 {activeFilterCount > 0 && (
                   <span className="min-w-[18px] h-[18px] bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center px-1">
                     {activeFilterCount}
@@ -144,7 +147,7 @@ const PropertiesPage = () => {
               {!loading && (
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-100 rounded-xl shadow-rs-sm">
                   <span className="text-sm font-bold text-on-surface">{filteredProperties.length}</span>
-                  <span className="text-sm text-on-surface-variant">{filteredProperties.length === 1 ? 'property' : 'properties'}</span>
+                  <span className="text-sm text-on-surface-variant">{t('nav_properties').toLowerCase()}</span>
                 </div>
               )}
             </div>
@@ -193,8 +196,8 @@ const PropertiesPage = () => {
                 <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined text-red-400 text-2xl">error_outline</span>
                 </div>
-                <h3 className="font-bold text-on-surface text-lg mb-1">Connection Error</h3>
-                <p className="text-on-surface-variant text-sm max-w-xs">{error}</p>
+                <h3 className="font-bold text-on-surface text-lg mb-1">{t('prop_error_title')}</h3>
+                <p className="text-on-surface-variant text-sm max-w-xs">{error || t('prop_error_sub')}</p>
               </div>
             ) : filteredProperties.length === 0 ? (
               /* Empty State */
@@ -202,18 +205,16 @@ const PropertiesPage = () => {
                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined text-primary text-2xl">search_off</span>
                 </div>
-                <h3 className="font-bold text-on-surface text-lg mb-1">No properties found</h3>
+                <h3 className="font-bold text-on-surface text-lg mb-1">{t('prop_no_results_title')}</h3>
                 <p className="text-on-surface-variant text-sm mb-5 max-w-xs">
-                  {activeFilterCount > 0
-                    ? 'Try adjusting or clearing your filters to see more results.'
-                    : 'No approved listings are available right now. Check back soon!'}
+                  {activeFilterCount > 0 ? t('prop_results_filtered') : t('prop_no_results_sub')}
                 </p>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={() => setFilters(initialFilters)}
                     className="rs-btn-primary text-sm py-2.5 px-6"
                   >
-                    Clear Filters
+                    {t('prop_clear_filters')}
                   </button>
                 )}
               </div>
