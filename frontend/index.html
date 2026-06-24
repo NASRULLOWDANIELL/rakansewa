@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RakanSewa | Your Academic Sanctuary</title>
+    <title>RakanSewa — Find Your Home Near UiTM Jasin</title>
+    <meta name="description" content="RakanSewa is the trusted student housing and housemate matching platform for UiTM Jasin students. Browse verified rental listings, find compatible roommates, and secure your ideal living space." />
+    <meta name="keywords" content="student housing, UiTM Jasin, housemate matching, rental, Malaysia, student accommodation" />
+    <meta name="author" content="RakanSewa" />
     
-    <!-- Fonts and Icons (From Stitch UI) -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="RakanSewa — Student Housing Near UiTM Jasin" />
+    <meta property="og:description" content="Find verified rental listings and compatible housemates near UiTM Jasin." />
+    <meta property="og:type" content="website" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     
     <!-- Tailwind CDN + Plugins -->
@@ -20,6 +30,7 @@
         theme: {
           extend: {
             colors: {
+              /* Material Design 3 Tokens */
               "inverse-on-surface": "#eff1f3",
               "tertiary-container": "#b75b00",
               "on-tertiary-container": "#fffbff",
@@ -69,15 +80,32 @@
               "tertiary-fixed": "#ffdcc6"
             },
             borderRadius: {
-              DEFAULT: "1rem",
-              lg: "2rem",
-              xl: "3rem",
+              DEFAULT: "12px",
+              sm: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
               full: "9999px"
             },
             fontFamily: {
               headline: ["Plus Jakarta Sans", "sans-serif"],
               body: ["Inter", "sans-serif"],
               label: ["Inter", "sans-serif"]
+            },
+            boxShadow: {
+              "rs-sm": "0 1px 3px rgba(25,28,30,0.04), 0 4px 12px rgba(25,28,30,0.04)",
+              "rs-md": "0 2px 8px rgba(25,28,30,0.06), 0 8px 24px rgba(25,28,30,0.06)",
+              "rs-lg": "0 4px 16px rgba(25,28,30,0.08), 0 16px 48px rgba(0,88,190,0.08)",
+              "rs-blue": "0 4px 16px rgba(0,88,190,0.2)",
+            },
+            animation: {
+              "fade-in-up": "fadeInUp 0.4s ease-out both",
+              "fade-in": "fadeIn 0.3s ease-out both",
+              "scale-in": "scaleIn 0.25s ease-out both",
+              "slide-down": "slideDown 0.25s ease-out both",
+              "shimmer": "shimmer 1.4s infinite linear",
             }
           }
         }

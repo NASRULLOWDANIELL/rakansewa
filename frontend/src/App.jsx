@@ -19,7 +19,14 @@ import FeedbackPage from './pages/FeedbackPage';
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { currentUser, loading } = useAuth();
   
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-on-surface-variant font-medium">Loading…</p>
+      </div>
+    </div>
+  );
   if (!currentUser) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(currentUser.role)) return <Navigate to="/" replace />;
   

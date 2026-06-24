@@ -19,28 +19,33 @@ const PRIORITY_OPTIONS = [
 
 const DEFAULT_PRIORITIES = ['Budget', 'Sleep Pattern', 'Cleanliness'];
 
+const MATCHING_TIPS = [
+  'Honest preferences lead to better matches.',
+  'Setting a realistic budget improves compatibility.',
+  'Sleep schedule is the #1 source of housemate conflict.',
+  'More lifestyle tags = more precise matching.',
+  'Linked property helps others find you faster.',
+];
+
 const ManageHousemateProfilePage = () => {
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
 
-  const [saving, setSaving]           = useState(false);
-  const [saveSuccess, setSaveSuccess]  = useState(false);
-  const [saveError, setSaveError]      = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [priorityError, setPriorityError] = useState('');
-
   const [approvedProperties, setApprovedProperties] = useState([]);
-  const [linkedProperty, setLinkedProperty]         = useState(null);
+  const [linkedProperty, setLinkedProperty] = useState(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [activeTip] = useState(() => Math.floor(Math.random() * MATCHING_TIPS.length));
 
   const formSeeded = useRef(false);
 
-  const getLifestyleArray = (str) =>
-    (str || '').split(',').map(s => s.trim()).filter(Boolean);
+  const getLifestyleArray = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
 
   const resolvePriorities = (user) => {
-    const p1 = user?.priority1;
-    const p2 = user?.priority2;
-    const p3 = user?.priority3;
+    const p1 = user?.priority1, p2 = user?.priority2, p3 = user?.priority3;
     return (p1 && p2 && p3) ? [p1, p2, p3] : [...DEFAULT_PRIORITIES];
   };
 
@@ -48,12 +53,10 @@ const ManageHousemateProfilePage = () => {
     const [p1, p2, p3] = resolvePriorities(currentUser);
     return {
       isListedAsHousemate: currentUser?.isListedAsHousemate ?? false,
-      budget:              currentUser?.budget              ?? '',
-      sleepSchedule:       currentUser?.sleepSchedule       ?? '',
-      lifestyle:           currentUser?.lifestyle            ?? '',
-      priority1:           p1,
-      priority2:           p2,
-      priority3:           p3,
+      budget: currentUser?.budget ?? '',
+      sleepSchedule: currentUser?.sleepSchedule ?? '',
+      lifestyle: currentUser?.lifestyle ?? '',
+      priority1: p1, priority2: p2, priority3: p3,
     };
   });
 
@@ -63,14 +66,12 @@ const ManageHousemateProfilePage = () => {
     const [p1, p2, p3] = resolvePriorities(currentUser);
     setForm({
       isListedAsHousemate: currentUser.isListedAsHousemate ?? false,
-      budget:              currentUser.budget              ?? '',
-      sleepSchedule:       currentUser.sleepSchedule       ?? '',
-      lifestyle:           currentUser.lifestyle            ?? '',
-      priority1:           p1,
-      priority2:           p2,
-      priority3:           p3,
+      budget: currentUser.budget ?? '',
+      sleepSchedule: currentUser.sleepSchedule ?? '',
+      lifestyle: currentUser.lifestyle ?? '',
+      priority1: p1, priority2: p2, priority3: p3,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   useEffect(() => {
@@ -88,14 +89,12 @@ const ManageHousemateProfilePage = () => {
       }
     };
     fetchProps();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleLifestyle = (opt) => {
     const current = getLifestyleArray(form.lifestyle);
-    const updated = current.includes(opt)
-      ? current.filter(l => l !== opt)
-      : [...current, opt];
+    const updated = current.includes(opt) ? current.filter(l => l !== opt) : [...current, opt];
     setForm(prev => ({ ...prev, lifestyle: updated.join(', ') }));
   };
 
@@ -117,8 +116,7 @@ const ManageHousemateProfilePage = () => {
       return !others.map(s => form[s]).includes(opt.value);
     });
 
-  const getPriorityMeta = (value) =>
-    PRIORITY_OPTIONS.find(o => o.value === value);
+  const getPriorityMeta = (value) => PRIORITY_OPTIONS.find(o => o.value === value);
 
   const handleSave = async () => {
     setSaveError('');
@@ -143,42 +141,34 @@ const ManageHousemateProfilePage = () => {
           setLinkedProperty(linkResult?.linkedProperty || null);
         } catch (linkErr) {
           console.warn('Property link failed (non-fatal):', linkErr);
-          setSaveError('Note: property link could not be updated, but your other settings will still be saved.');
+          setSaveError('Note: property link could not be updated, but other settings will be saved.');
         }
       }
 
       const savedUser = await updateProfile({
-        name:                currentUser.name,
-        email:               currentUser.email,
-        role:                currentUser.role,
-        phoneNumber:         currentUser.phoneNumber,
-        matricNumber:        currentUser.matricNumber,
-        uitmEmail:           currentUser.uitmEmail,
-        authProvider:        currentUser.authProvider,
+        name: currentUser.name,
+        email: currentUser.email,
+        role: currentUser.role,
+        phoneNumber: currentUser.phoneNumber,
+        matricNumber: currentUser.matricNumber,
+        uitmEmail: currentUser.uitmEmail,
+        authProvider: currentUser.authProvider,
         isListedAsHousemate: form.isListedAsHousemate,
-        budget:              form.budget ? parseFloat(form.budget) : null,
-        sleepSchedule:       form.sleepSchedule  || null,
-        lifestyle:           form.lifestyle       || null,
-        priority1:           form.priority1,
-        priority2:           form.priority2,
-        priority3:           form.priority3,
+        budget: form.budget ? parseFloat(form.budget) : null,
+        sleepSchedule: form.sleepSchedule || null,
+        lifestyle: form.lifestyle || null,
+        priority1: form.priority1,
+        priority2: form.priority2,
+        priority3: form.priority3,
       });
 
       if (savedUser) {
         const [p1, p2, p3] = resolvePriorities(savedUser);
-        setForm(prev => ({
-          ...prev,
-          priority1: p1,
-          priority2: p2,
-          priority3: p3,
-        }));
+        setForm(prev => ({ ...prev, priority1: p1, priority2: p2, priority3: p3 }));
       }
 
       setSaveSuccess(true);
-      setTimeout(() => {
-        setSaveSuccess(false);
-        navigate('/profile');
-      }, 1800);
+      setTimeout(() => { setSaveSuccess(false); navigate('/profile'); }, 1800);
     } catch (err) {
       console.error('Save failed:', err);
       setSaveError(err?.response?.data?.message || err?.message || 'Failed to save. Please try again.');
@@ -191,379 +181,460 @@ const ManageHousemateProfilePage = () => {
 
   const selectedLifestyles = getLifestyleArray(form.lifestyle);
   const isStudent = currentUser.role === 'STUDENT' || currentUser.role === 'Student';
+  const matchedProp = approvedProperties.find(p => p.id.toString() === selectedPropertyId);
+
+  const PRIORITY_SLOTS = [
+    { slot: 'priority1', label: 'Priority 1', weight: '40%', barWidth: 'w-full', barColor: 'bg-primary' },
+    { slot: 'priority2', label: 'Priority 2', weight: '30%', barWidth: 'w-3/4', barColor: 'bg-primary/70' },
+    { slot: 'priority3', label: 'Priority 3', weight: '20%', barWidth: 'w-1/2', barColor: 'bg-primary/40' },
+  ];
 
   return (
-    <div className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-6">
-        <Link to="/profile" className="hover:text-primary transition-colors">Account</Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span className="font-semibold text-on-surface">Manage Housemate Profile</span>
-      </div>
+    <div className="rs-page pb-20">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-on-surface-variant mb-6">
+          <Link to="/profile" className="hover:text-primary transition-colors font-medium">Account</Link>
+          <span className="material-symbols-outlined text-sm text-gray-300">chevron_right</span>
+          <span className="font-semibold text-on-surface">Housemate Profile</span>
+        </nav>
 
-        {/* ── LEFT COLUMN: Profile Summary Sidebar ── */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Card 1: Avatar & Identity */}
-          <div className="glass p-6 rounded-2xl shadow-xl border border-white/40 flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center text-3xl text-on-primary-fixed font-bold shadow-inner uppercase mb-3">
-              {currentUser.name.charAt(0)}
-            </div>
-            <h2 className="text-lg font-extrabold font-headline text-on-surface break-all">{currentUser.name}</h2>
-            <p className="text-on-surface-variant text-xs break-all mb-3">{currentUser.email}</p>
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              <span className="inline-block px-2.5 py-0.5 bg-secondary-container text-on-secondary-container text-[11px] font-bold rounded-full uppercase tracking-wider">
-                {currentUser.role}
-              </span>
-              {isStudent && currentUser.isStudentVerified && (
-                <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-green-100 text-green-700 text-[11px] font-bold rounded-full uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                  Verified
-                </span>
-              )}
-            </div>
+        {/* Alerts */}
+        {saveSuccess && (
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 animate-fade-in">
+            <span className="material-symbols-outlined text-emerald-500" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <span className="font-semibold text-sm">Saved! Redirecting to your profile…</span>
           </div>
-
-          {/* Card 2: Profile Status Summary */}
-          <div className="glass p-5 rounded-2xl shadow-md border border-white/40 space-y-3">
-            <h3 className="text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2 pb-1 border-b border-surface-container-low">
-              Profile Status
-            </h3>
-            
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-on-surface-variant">Listing Visibility</span>
-              {form.isListedAsHousemate ? (
-                <span className="inline-flex items-center gap-1 text-green-600 font-bold">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-                  Listed & Active
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-on-surface-variant font-medium">
-                  <span className="w-2.5 h-2.5 rounded-full bg-outline-variant"></span>
-                  Hidden / Private
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-on-surface-variant">Verification</span>
-              {isStudent && currentUser.isStudentVerified ? (
-                <span className="text-green-600 font-bold inline-flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[14px]">verified</span>
-                  Verified Student
-                </span>
-              ) : (
-                <span className="text-on-surface-variant font-medium inline-flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[14px]">info</span>
-                  Unverified
-                </span>
-              )}
-            </div>
+        )}
+        {saveError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-800 animate-fade-in">
+            <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+            <span className="flex-1 text-sm">{saveError}</span>
+            <button onClick={() => setSaveError('')} className="text-red-500 hover:text-red-700">
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
           </div>
+        )}
 
-          {/* Card 3: Priority Summary (Real-time update) */}
-          <div className="glass p-5 rounded-2xl shadow-md border border-white/40 space-y-3">
-            <h3 className="text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2 pb-1 border-b border-surface-container-low">
-              Priority Summary
-            </h3>
-            <div className="space-y-2">
-              {[
-                { key: 'priority1', label: '1st Priority (40%)', bg: 'bg-primary/10 text-primary' },
-                { key: 'priority2', label: '2nd Priority (30%)', bg: 'bg-primary/5 text-primary/85' },
-                { key: 'priority3', label: '3rd Priority (20%)', bg: 'bg-surface-container-high text-on-surface-variant' }
-              ].map(({ key, label, bg }) => {
-                const val = form[key];
-                const meta = val ? getPriorityMeta(val) : null;
-                return (
-                  <div key={key} className="flex items-center justify-between p-2 rounded-lg bg-surface-container-low/50 text-sm">
-                    <span className="text-xs text-on-surface-variant font-medium">{label}</span>
-                    {meta ? (
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold ${bg}`}>
-                        <span className="material-symbols-outlined text-[12px]">{meta.icon}</span>
-                        {meta.label}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+          {/* ── RIGHT COLUMN: Live Preview Card ── */}
+          <div className="lg:col-span-1 lg:order-2 space-y-4">
+
+            {/* Live Profile Preview Card */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-md overflow-hidden">
+              {/* Card top gradient */}
+              <div className="bg-gradient-to-br from-primary to-blue-600 p-5 pb-8 relative">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Live Preview</p>
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-black border border-white/30">
+                      {currentUser.name.charAt(0)}
+                    </div>
+                  </div>
+                  {form.isListedAsHousemate ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-400/30 border border-emerald-300/50 text-white text-[10px] font-bold rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 border border-white/20 text-white/70 text-[10px] font-bold rounded-full">
+                      Hidden
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card body */}
+              <div className="px-5 -mt-4 pb-5">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-rs-sm px-4 py-3 mb-4">
+                  <h3 className="font-bold text-on-surface text-base font-headline">{currentUser.name}</h3>
+                  <p className="text-xs text-on-surface-variant">{currentUser.email}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-[10px] px-2 py-0.5 bg-primary/8 text-primary rounded-full font-bold" style={{ background: 'rgba(0,88,190,0.06)' }}>{currentUser.role}</span>
+                    {isStudent && currentUser.isStudentVerified && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-bold border border-emerald-200">
+                        <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                        Verified
                       </span>
-                    ) : (
-                      <span className="text-xs text-on-surface-variant italic">Not selected</span>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Card 4: Linked Property Summary (Real-time update) */}
-          <div className="glass p-5 rounded-2xl shadow-md border border-white/40 space-y-3">
-            <h3 className="text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2 pb-1 border-b border-surface-container-low">
-              Linked Property
-            </h3>
-            {(() => {
-              const matchedProp = approvedProperties.find(p => p.id.toString() === selectedPropertyId);
-              if (matchedProp) {
-                return (
-                  <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl space-y-1">
-                    <div className="flex items-center gap-1.5 text-primary">
-                      <span className="material-symbols-outlined text-sm">home</span>
-                      <span className="font-bold text-xs uppercase tracking-wider">Linked</span>
-                    </div>
-                    <p className="text-sm font-bold text-on-surface line-clamp-1">{matchedProp.title}</p>
-                    <p className="text-xs text-on-surface-variant line-clamp-1">{matchedProp.city}, {matchedProp.state}</p>
-                    <p className="text-xs font-semibold text-primary">RM {matchedProp.monthlyRent}/month</p>
-                  </div>
-                );
-              }
-              return (
-                <div className="p-3 bg-surface-container-low/50 border border-outline-variant/10 rounded-xl text-center">
-                  <span className="material-symbols-outlined text-on-surface-variant/30 text-lg mb-1 block">home_work</span>
-                  <p className="text-xs text-on-surface-variant italic">No property linked</p>
                 </div>
-              );
-            })()}
-          </div>
-        </div>
 
-        {/* ── RIGHT COLUMN: Preferences Forms ── */}
-        <div className="lg:col-span-2 space-y-6">
-          <div>
-            <h1 className="text-3xl font-extrabold font-headline text-on-surface mb-1">Housemate Profile</h1>
-            <p className="text-sm text-on-surface-variant">
-              Control how you appear on the housemate listing and how compatibility is calculated for you.
-            </p>
-          </div>
+                {/* Budget */}
+                {form.budget && (
+                  <div className="text-center py-2 mb-3 bg-primary/5 rounded-lg border border-primary/10">
+                    <span className="text-lg font-black text-primary">RM {form.budget}</span>
+                    <span className="text-xs text-on-surface-variant font-medium">/month budget</span>
+                  </div>
+                )}
 
-          {/* Alerts */}
-          {saveSuccess && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800 animate-[fadeIn_0.3s_ease-out]">
-              <span className="material-symbols-outlined text-green-600" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <span className="font-medium text-sm">Saved! Redirecting to your profile…</span>
-            </div>
-          )}
-          {saveError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-800 animate-[fadeIn_0.3s_ease-out]">
-              <span className="material-symbols-outlined mt-0.5 text-red-600">error</span>
-              <span className="flex-1 text-sm">{saveError}</span>
-              <button onClick={() => setSaveError('')}>
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-          )}
+                {/* Lifestyle tags preview */}
+                {selectedLifestyles.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {selectedLifestyles.map(tag => (
+                      <span key={tag} className="text-[10px] px-2.5 py-1 bg-primary/8 text-primary rounded-full font-bold" style={{ background: 'rgba(0,88,190,0.06)' }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-          {/* Section 1: Listing Status */}
-          <div className="glass p-6 md:p-8 rounded-2xl border border-white/40 shadow-lg">
-            <h2 className="text-base font-bold text-on-surface mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">visibility</span>
-              Listing Status
-            </h2>
-            <label className="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl cursor-pointer hover:bg-surface-container-high transition-colors border border-outline-variant/10">
-              <input
-                type="checkbox"
-                checked={form.isListedAsHousemate}
-                onChange={e => setForm({ ...form, isListedAsHousemate: e.target.checked })}
-                className="w-5 h-5 accent-primary rounded border-2 border-primary cursor-pointer"
-              />
-              <div>
-                <span className="font-bold text-on-surface block text-sm">List me as a housemate</span>
-                <span className="text-xs text-on-surface-variant">You'll appear on the housemate listing page for others to find</span>
-              </div>
-              {form.isListedAsHousemate && (
-                <span className="ml-auto px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Listed</span>
-              )}
-            </label>
-          </div>
+                {/* Sleep schedule */}
+                {form.sleepSchedule && (
+                  <div className="flex items-center gap-1.5 mb-3 text-xs text-on-surface-variant">
+                    <span className="material-symbols-outlined text-xs">bedtime</span>
+                    <span className="font-medium">{form.sleepSchedule}</span>
+                  </div>
+                )}
 
-          {/* Section 2: Basic Preferences */}
-          <div className="glass p-6 md:p-8 rounded-2xl border border-white/40 shadow-lg">
-            <h2 className="text-base font-bold text-on-surface mb-5 flex items-center gap-2 pb-3 border-b border-surface-container-low">
-              <span className="material-symbols-outlined text-primary">person</span>
-              Basic Preferences
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">
-                  Monthly Budget (RM)
-                </label>
-                <input
-                  type="number"
-                  value={form.budget}
-                  onChange={e => setForm({ ...form, budget: e.target.value })}
-                  placeholder="e.g. 500"
-                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-2">
-                  Sleep Pattern
-                </label>
-                <select
-                  value={form.sleepSchedule}
-                  onChange={e => setForm({ ...form, sleepSchedule: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20"
-                >
-                  <option value="">Select…</option>
-                  {SLEEP_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
+                {/* Priorities */}
+                <div className="space-y-1.5 mb-3">
+                  {PRIORITY_SLOTS.map(({ slot, label, barColor }) => {
+                    const val = form[slot];
+                    const meta = val ? getPriorityMeta(val) : null;
+                    return meta ? (
+                      <div key={slot} className="flex items-center gap-2 text-xs">
+                        <span className="material-symbols-outlined text-primary text-[12px]">{meta.icon}</span>
+                        <span className="text-on-surface-variant flex-1">{meta.label}</span>
+                        <div className={`w-8 h-1 rounded-full ${barColor}`} />
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+
+                {/* Linked property */}
+                {matchedProp ? (
+                  <div className="p-2.5 bg-primary/5 border border-primary/10 rounded-lg">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[10px]">home</span> Linked
+                    </p>
+                    <p className="text-xs font-semibold text-on-surface line-clamp-1">{matchedProp.title}</p>
+                    <p className="text-[10px] text-on-surface-variant">{matchedProp.city}</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-on-surface-variant italic text-center py-1">No property linked</p>
+                )}
               </div>
             </div>
 
-            {/* Lifestyle tags */}
-            <div className="mt-6 pt-4 border-t border-surface-container-low">
-              <label className="block text-xs uppercase tracking-widest font-bold text-on-surface-variant mb-3">
-                Lifestyle Tags <span className="normal-case font-normal">(describes you)</span>
+            {/* Profile Status Card */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Profile Status</h4>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-on-surface-variant">Visibility</span>
+                  {form.isListedAsHousemate ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Listed & Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-on-surface-variant">
+                      <span className="w-2 h-2 rounded-full bg-gray-300" />
+                      Hidden
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-on-surface-variant">Verification</span>
+                  {isStudent && currentUser.isStudentVerified ? (
+                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">verified</span>
+                      UiTM Verified
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">info</span>
+                      Unverified
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Matching Tips */}
+            <div className="bg-gradient-to-br from-primary/5 to-blue-50 rounded-2xl border border-primary/15 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
+                <p className="text-xs font-bold text-primary uppercase tracking-widest">Matching Tip</p>
+              </div>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                {MATCHING_TIPS[activeTip]}
+              </p>
+            </div>
+          </div>
+
+          {/* ── LEFT COLUMN: Forms ── */}
+          <div className="lg:col-span-2 lg:order-1 space-y-5">
+
+            <div>
+              <h1 className="text-2xl font-black font-headline text-on-surface mb-1">Housemate Profile</h1>
+              <p className="text-sm text-on-surface-variant">
+                Control how you appear in the matching system and set your compatibility criteria.
+              </p>
+            </div>
+
+            {/* Section 1: Listing Visibility */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
+              <h2 className="font-bold text-on-surface mb-1 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-base">visibility</span>
+                Listing Visibility
+              </h2>
+              <p className="text-xs text-on-surface-variant mb-4">Toggle this to appear on the housemate listing page.</p>
+              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100">
+                <div>
+                  <p className="font-semibold text-on-surface text-sm">List me as a housemate</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">You'll appear in the housemate listing for others to find</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {form.isListedAsHousemate && (
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Active</span>
+                  )}
+                  <label className="rs-toggle">
+                    <input
+                      type="checkbox"
+                      checked={form.isListedAsHousemate}
+                      onChange={e => setForm({ ...form, isListedAsHousemate: e.target.checked })}
+                    />
+                    <span className="rs-toggle-slider" />
+                  </label>
+                </div>
               </label>
-              <div className="flex flex-wrap gap-2">
-                {LIFESTYLE_OPTIONS.map(opt => {
-                  const selected = selectedLifestyles.includes(opt);
+            </div>
+
+            {/* Section 2: Basic Info */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
+              <h2 className="font-bold text-on-surface mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-base">person</span>
+                Basic Preferences
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                    Monthly Budget (RM)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-on-surface-variant">RM</span>
+                    <input
+                      type="number"
+                      value={form.budget}
+                      onChange={e => setForm({ ...form, budget: e.target.value })}
+                      placeholder="e.g. 500"
+                      className="rs-input pl-10 text-sm"
+                      style={{ paddingLeft: '40px' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                    Sleep Pattern
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {SLEEP_OPTIONS.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setForm({ ...form, sleepSchedule: form.sleepSchedule === opt ? '' : opt })}
+                        className={`py-2 px-2 rounded-xl text-xs font-bold transition-all text-center ${
+                          form.sleepSchedule === opt
+                            ? 'bg-primary text-white shadow-rs-blue'
+                            : 'bg-gray-100 text-on-surface-variant hover:bg-gray-200'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+                  Lifestyle Tags <span className="normal-case font-normal text-on-surface-variant">(select all that describe you)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {LIFESTYLE_OPTIONS.map(opt => {
+                    const selected = selectedLifestyles.includes(opt);
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => toggleLifestyle(opt)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                          selected
+                            ? 'bg-primary text-white shadow-rs-blue'
+                            : 'bg-gray-100 text-on-surface-variant hover:bg-gray-200'
+                        }`}
+                      >
+                        {selected && <span className="mr-1">✓</span>}
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-on-surface-variant mt-2 italic">
+                  These tags describe your lifestyle, not your matching priorities.
+                </p>
+              </div>
+            </div>
+
+            {/* Section 3: Matching Priorities */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
+              <h2 className="font-bold text-on-surface mb-1 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-base">bar_chart</span>
+                Compatibility Priorities
+              </h2>
+              <p className="text-xs text-on-surface-variant mb-5">
+                Choose 3 things in order of importance. These drive how your match score is calculated.
+              </p>
+
+              {/* Weight visual */}
+              <div className="flex gap-2 mb-5 flex-wrap">
+                {[['P1', '40%', 'bg-primary text-white'], ['P2', '30%', 'bg-primary/70 text-white'], ['P3', '20%', 'bg-primary/40 text-white'], ['Others', '10%', 'bg-gray-100 text-on-surface-variant']].map(([label, pct, style]) => (
+                  <div key={label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${style}`}>
+                    <span className="text-[10px] font-black">{label}</span>
+                    <span className="text-[10px] font-bold opacity-80">{pct}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {PRIORITY_SLOTS.map(({ slot, label, weight }) => {
+                  const selected = form[slot];
+                  const meta = selected ? getPriorityMeta(selected) : null;
+                  const colors = {
+                    priority1: 'border-primary/30 bg-primary/4',
+                    priority2: 'border-primary/20 bg-primary/2',
+                    priority3: 'border-gray-200 bg-gray-50/50',
+                  };
+                  const badgeColors = {
+                    priority1: 'bg-primary text-white',
+                    priority2: 'bg-primary/70 text-white',
+                    priority3: 'bg-primary/40 text-white',
+                  };
                   return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => toggleLifestyle(opt)}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${selected
-                        ? 'bg-primary text-white shadow-md shadow-primary/20'
-                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-                      }`}
+                    <div
+                      key={slot}
+                      className={`p-4 rounded-xl border transition-all`}
+                      style={{
+                        borderColor: slot === 'priority1' ? 'rgba(0,88,190,0.3)' : slot === 'priority2' ? 'rgba(0,88,190,0.2)' : '#e5e7eb',
+                        background: slot === 'priority1' ? 'rgba(0,88,190,0.03)' : '#f9fafb',
+                      }}
                     >
-                      {selected && <span className="mr-1">✓</span>}
-                      {opt}
-                    </button>
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${badgeColors[slot]}`}>
+                          {label}
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant font-medium">= {weight} of score</span>
+                        {meta && (
+                          <span className="ml-auto flex items-center gap-1 text-[11px] text-primary font-bold">
+                            <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>{meta.icon}</span>
+                            {meta.label}
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <select
+                          value={form[slot]}
+                          onChange={e => setPriority(slot, e.target.value)}
+                          className="rs-select text-sm pr-8"
+                          style={{ paddingRight: '32px' }}
+                        >
+                          <option value="">Select a priority…</option>
+                          {availableFor(slot).map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label} — {opt.desc}</option>
+                          ))}
+                          {selected && !availableFor(slot).find(o => o.value === selected) && (
+                            <option value={selected}>{selected}</option>
+                          )}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">expand_more</span>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
-              <p className="text-[11px] text-on-surface-variant mt-2 italic">
-                These tags <strong>describe your lifestyle</strong>, not your matching priorities.
-              </p>
-            </div>
-          </div>
 
-          {/* Section 3: Compatibility Priorities */}
-          <div className="glass p-6 md:p-8 rounded-2xl border border-white/40 shadow-lg">
-            <h2 className="text-base font-bold text-on-surface mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">bar_chart</span>
-              Compatibility Priorities
-            </h2>
-            <p className="text-xs text-on-surface-variant mb-5">
-              Select <strong>exactly 3 different priorities</strong> in order of importance.
-              These drive how your compatibility score is calculated.
-            </p>
-
-            {/* Weight legend */}
-            <div className="flex flex-wrap gap-2 mb-5">
-              {[['P1', '40%', 'bg-primary'], ['P2', '30%', 'bg-primary/70'], ['P3', '20%', 'bg-primary/40'], ['Rest', '10%', 'bg-surface-container-high']].map(([label, pct, bg]) => (
-                <div key={label} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${bg} ${label === 'Rest' ? 'text-on-surface-variant' : 'text-white'}`}>
-                  <span className="text-[10px] font-black">{label}</span>
-                  <span className="text-[10px] font-bold opacity-80">{pct}</span>
+              {priorityError && (
+                <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold animate-fade-in">
+                  <span className="material-symbols-outlined text-sm">warning</span>
+                  {priorityError}
                 </div>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { slot: 'priority1', label: 'Priority 1', weight: '40%', accent: 'border-primary/40 bg-primary/5', badge: 'bg-primary text-white' },
-                { slot: 'priority2', label: 'Priority 2', weight: '30%', accent: 'border-primary/30 bg-surface-container-low', badge: 'bg-primary/70 text-white' },
-                { slot: 'priority3', label: 'Priority 3', weight: '20%', accent: 'border-outline-variant bg-surface-container-low', badge: 'bg-primary/40 text-white' },
-              ].map(({ slot, label, weight, accent, badge }) => {
-                const selected = form[slot];
-                const meta = selected ? getPriorityMeta(selected) : null;
-                return (
-                  <div key={slot} className={`p-4 rounded-xl border ${accent} transition-all`}>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${badge}`}>
-                        {label}
-                      </span>
-                      <span className="text-[11px] text-on-surface-variant font-medium">= {weight} of score</span>
-                      {meta && (
-                        <span className="ml-auto flex items-center gap-1 text-[11px] text-primary font-bold">
-                          <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>{meta.icon}</span>
-                          {meta.label}
-                        </span>
-                      )}
-                    </div>
-                    <select
-                      value={form[slot]}
-                      onChange={e => setPriority(slot, e.target.value)}
-                      className="w-full px-3 py-2.5 bg-surface-container-lowest rounded-lg font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20 text-sm"
-                    >
-                      <option value="">Select a priority…</option>
-                      {availableFor(slot).map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label} — {opt.desc}</option>
-                      ))}
-                      {/* Always show currently selected even if "taken" by another slot */}
-                      {selected && !availableFor(slot).find(o => o.value === selected) && (
-                        <option value={selected}>{selected}</option>
-                      )}
-                    </select>
-                  </div>
-                );
-              })}
-            </div>
-
-            {priorityError && (
-              <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold">
-                <span className="material-symbols-outlined text-[16px]">warning</span>
-                {priorityError}
-              </div>
-            )}
-
-            {form.priority1 && form.priority2 && form.priority3 && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-xs flex items-center gap-2 font-medium">
-                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                <span>
-                  Your priorities: <strong>{form.priority1}</strong> → <strong>{form.priority2}</strong> → <strong>{form.priority3}</strong>
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Section 4: Linked Property */}
-          <div className="glass p-6 md:p-8 rounded-2xl border border-white/40 shadow-lg">
-            <h2 className="text-base font-bold text-on-surface mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">home</span>
-              Linked Rental Property
-            </h2>
-            <select
-              value={selectedPropertyId}
-              onChange={e => setSelectedPropertyId(e.target.value)}
-              className="w-full px-4 py-3 bg-surface-container-lowest rounded-xl font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20 text-sm"
-            >
-              <option value="">No linked property</option>
-              {approvedProperties.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.title} — {p.city}, {p.state} (RM {p.monthlyRent}/mo)
-                </option>
-              ))}
-            </select>
-            {linkedProperty && (
-              <p className="mt-2 text-xs text-on-surface-variant font-medium">
-                Currently linked: <strong>{linkedProperty.title}</strong>
-              </p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
-            <Link
-              to="/profile"
-              className="bg-surface-container hover:bg-surface-container-high text-on-surface px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-outline-variant/20"
-            >
-              Cancel
-            </Link>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-sm">save</span>
-                  Save Housemate Profile
-                </>
               )}
-            </button>
+
+              {form.priority1 && form.priority2 && form.priority3 && (
+                <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-medium animate-fade-in">
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  <span>Priorities set: <strong>{form.priority1}</strong> → <strong>{form.priority2}</strong> → <strong>{form.priority3}</strong></span>
+                </div>
+              )}
+            </div>
+
+            {/* Section 4: Linked Property */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
+              <h2 className="font-bold text-on-surface mb-1 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-base">home</span>
+                Linked Rental Property
+              </h2>
+              <p className="text-xs text-on-surface-variant mb-4">
+                Link your profile to the property where you currently live or plan to stay.
+              </p>
+              <div className="relative">
+                <select
+                  value={selectedPropertyId}
+                  onChange={e => setSelectedPropertyId(e.target.value)}
+                  className="rs-select text-sm pr-8"
+                  style={{ paddingRight: '32px' }}
+                >
+                  <option value="">No linked property</option>
+                  {approvedProperties.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} — {p.city}, {p.state} (RM {p.monthlyRent}/mo)
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">expand_more</span>
+              </div>
+
+              {matchedProp && (
+                <div className="mt-3 flex items-center gap-3 p-3 bg-primary/5 border border-primary/15 rounded-xl">
+                  <span className="material-symbols-outlined text-primary text-base">home</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-on-surface truncate">{matchedProp.title}</p>
+                    <p className="text-xs text-on-surface-variant">{matchedProp.city}, {matchedProp.state} · RM {matchedProp.monthlyRent}/mo</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Save Actions */}
+            <div className="flex items-center justify-between pt-2">
+              <Link
+                to="/profile"
+                className="rs-btn-ghost text-sm py-2.5 px-5"
+              >
+                Discard Changes
+              </Link>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="rs-btn-primary text-sm py-2.5 px-6 disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <span className="btn-spinner" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">save</span>
+                    Save Preferences
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
