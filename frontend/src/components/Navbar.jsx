@@ -130,7 +130,6 @@ const Navbar = () => {
       { path: '/', label: t('nav_discover') },
       { path: '/properties', label: t('nav_properties') },
       { path: '/housemates', label: t('nav_housemates') },
-      { path: '/profile/housemate', label: t('nav_preferences') },
       { path: '/feedback', label: t('nav_feedback') },
     ];
     if (currentUser.role === 'Owner') return [
@@ -203,15 +202,35 @@ const Navbar = () => {
             {/* ── Right Controls ── */}
             <div className="flex items-center gap-1 flex-shrink-0">
 
-              {/* Language Toggle */}
+              {/* Language Toggle Slider (Desktop) */}
               <button
                 onClick={toggleLang}
-                className={`${iconBtnClass} hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-black border border-gray-200 hover:border-primary/30 hover:bg-blue-50/30`}
-                title={lang === 'en' ? 'Switch to Bahasa Melayu' : 'Switch to English'}
+                className="relative w-16 h-8 bg-gray-100 dark:bg-gray-850 rounded-full border border-gray-200 dark:border-gray-700/80 transition-all hover:border-primary/30 hover:bg-blue-50/10 dark:hover:bg-blue-900/10 hidden md:flex items-center justify-between px-2 cursor-pointer focus:outline-none select-none shadow-inner"
+                title={lang === 'en' ? 'Tukar ke Bahasa Melayu' : 'Switch to English'}
                 aria-label="Toggle language"
               >
-                <span className="material-symbols-outlined text-[14px]">translate</span>
-                <span className="text-[11px] font-black tracking-wider">{lang === 'en' ? 'BM' : 'EN'}</span>
+                {/* BM Label */}
+                <span className={`text-[10px] font-black tracking-wider transition-colors duration-300 ${lang === 'ms' ? 'text-primary dark:text-primary-fixed-dim' : 'text-gray-400 dark:text-gray-500'}`}>
+                  BM
+                </span>
+
+                {/* EN Label */}
+                <span className={`text-[10px] font-black tracking-wider transition-colors duration-300 ${lang === 'en' ? 'text-primary dark:text-primary-fixed-dim' : 'text-gray-400 dark:text-gray-500'}`}>
+                  EN
+                </span>
+
+                {/* Sliding Flag Knob */}
+                <div
+                  className={`absolute top-0.5 left-0.5 w-[26px] h-[26px] bg-white rounded-full shadow-md overflow-hidden flex items-center justify-center transition-all duration-300 ease-out z-10 transform ${
+                    lang === 'en' ? 'translate-x-[34px]' : 'translate-x-0'
+                  }`}
+                >
+                  <img
+                    src={lang === 'en' ? 'https://flagcdn.com/w40/gb.png' : 'https://flagcdn.com/w40/my.png'}
+                    alt={lang === 'en' ? 'English' : 'Bahasa Melayu'}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
               </button>
 
               {/* Dark Mode Toggle */}
@@ -298,9 +317,19 @@ const Navbar = () => {
                       onClick={() => { setShowUserDropdown(!showUserDropdown); setShowNotifDropdown(false); }}
                       className="flex items-center gap-2 p-1.5 pr-3 rounded-full border border-gray-200 hover:border-primary/40 hover:bg-gray-50 transition-all duration-200"
                     >
-                      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black shadow-sm">
-                        {userInitial}
-                      </div>
+                      {currentUser.profileImageUrl ? (
+                        <img
+                          src={currentUser.profileImageUrl.startsWith('/uploads')
+                            ? `http://localhost:8080${currentUser.profileImageUrl}`
+                            : currentUser.profileImageUrl}
+                          alt={currentUser.name}
+                          className="w-7 h-7 rounded-full object-cover shadow-sm ring-1 ring-white/40"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black shadow-sm">
+                          {userInitial}
+                        </div>
+                      )}
                       <span className="text-sm font-semibold text-on-surface hidden lg:block">{currentFirstName}</span>
                       <span className={`material-symbols-outlined text-sm text-on-surface-variant transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`}>expand_more</span>
                     </button>
@@ -389,12 +418,35 @@ const Navbar = () => {
                   </span>
                   {isDark ? 'Light Mode' : 'Dark Mode'}
                 </button>
+                {/* Language Toggle Slider (Mobile) */}
                 <button
                   onClick={toggleLang}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm text-on-surface-variant hover:bg-gray-50 font-medium border border-gray-200"
+                  className="relative w-16 h-8 bg-gray-100 dark:bg-gray-850 rounded-full border border-gray-200 dark:border-gray-700/80 transition-all flex items-center justify-between px-2 cursor-pointer focus:outline-none select-none shadow-inner"
+                  title={lang === 'en' ? 'Tukar ke Bahasa Melayu' : 'Switch to English'}
+                  aria-label="Toggle language"
                 >
-                  <span className="material-symbols-outlined text-base">translate</span>
-                  <span className="text-xs font-black">{lang === 'en' ? 'BM' : 'EN'}</span>
+                  {/* BM Label */}
+                  <span className={`text-[10px] font-black tracking-wider transition-colors duration-300 ${lang === 'ms' ? 'text-primary dark:text-primary-fixed-dim' : 'text-gray-400 dark:text-gray-500'}`}>
+                    BM
+                  </span>
+
+                  {/* EN Label */}
+                  <span className={`text-[10px] font-black tracking-wider transition-colors duration-300 ${lang === 'en' ? 'text-primary dark:text-primary-fixed-dim' : 'text-gray-400 dark:text-gray-500'}`}>
+                    EN
+                  </span>
+
+                  {/* Sliding Flag Knob */}
+                  <div
+                    className={`absolute top-0.5 left-0.5 w-[26px] h-[26px] bg-white rounded-full shadow-md overflow-hidden flex items-center justify-center transition-all duration-300 ease-out z-10 transform ${
+                      lang === 'en' ? 'translate-x-[34px]' : 'translate-x-0'
+                    }`}
+                  >
+                    <img
+                      src={lang === 'en' ? 'https://flagcdn.com/w40/gb.png' : 'https://flagcdn.com/w40/my.png'}
+                      alt={lang === 'en' ? 'English' : 'Bahasa Melayu'}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  </div>
                 </button>
               </div>
 

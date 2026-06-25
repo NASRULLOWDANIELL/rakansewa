@@ -79,6 +79,10 @@ public class User {
     @Column
     private String priority3;
 
+    // Profile picture URL (uploaded via /upload/profile-image endpoint)
+    @Column
+    private String profileImageUrl;
+
     // Linked rental property (nullable — housemate may not be linked to any property)
     @ManyToOne
     @JoinColumn(name = "linked_property_id", nullable = true)

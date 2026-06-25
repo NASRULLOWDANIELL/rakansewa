@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { getProperties, approveProperty, rejectProperty, getAllUsers, getAllFeedbacks, resolveFeedback } from '../services/api';
 import RejectModal from '../components/RejectModal';
+import { useLanguage } from '../context/LanguageContext';
 
 const AdminDashboard = () => {
+   const { t } = useLanguage();
    const [properties, setProperties] = useState([]);
    const [users, setUsers] = useState([]);
    const [feedbacks, setFeedbacks] = useState([]);
@@ -67,7 +69,7 @@ const AdminDashboard = () => {
    const userMap = {};
    users.forEach(u => { userMap[u.id] = u; });
 
-   if (loading) return <div className="text-center py-32 text-on-surface">Loading data...</div>;
+   if (loading) return <div className="text-center py-32 text-on-surface">{t('common_loading')}</div>;
 
    const pendingApprovals = properties.filter(p => p.approvalStatus === 'Pending');
    const approvedCount = properties.filter(p => p.approvalStatus === 'Approved').length;
@@ -91,26 +93,26 @@ const AdminDashboard = () => {
 
          {/* Page header */}
          <div className="pb-2 border-b border-outline-variant/20">
-            <h1 className="text-3xl font-extrabold font-headline tracking-tight text-on-surface">Admin Dashboard</h1>
-            <p className="text-on-surface-variant text-sm mt-1">System overview, property approvals, and user management.</p>
+            <h1 className="text-3xl font-extrabold font-headline tracking-tight text-on-surface">{t('admin_title')}</h1>
+            <p className="text-on-surface-variant text-sm mt-1">{t('admin_subtitle')}</p>
          </div>
 
          {/* Stats row */}
          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-primary">
-               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Total Users</p>
+               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_users')}</p>
                <p className="text-3xl font-extrabold text-on-surface">{users.length}</p>
             </div>
             <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-tertiary">
-               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Total Listings</p>
+               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_listings')}</p>
                <p className="text-3xl font-extrabold text-on-surface">{properties.length}</p>
             </div>
             <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-orange-400">
-               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Pending Approvals</p>
+               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_pending')}</p>
                <p className="text-3xl font-extrabold text-orange-500">{pendingApprovals.length}</p>
             </div>
             <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-red-400">
-               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Unresolved Feedback</p>
+               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_feedback')}</p>
                <p className="text-3xl font-extrabold text-red-500">{unresolvedFeedbacks}</p>
             </div>
          </div>
@@ -118,9 +120,9 @@ const AdminDashboard = () => {
          {/* Tab navigation */}
          <div className="flex gap-1 border-b border-outline-variant/20">
             {[
-               { key: 'properties', label: 'Property Listings', icon: 'home_work' },
-               { key: 'users', label: 'User Management', icon: 'people' },
-               { key: 'feedbacks', label: 'User Feedback', icon: 'feedback', badge: unresolvedFeedbacks },
+               { key: 'properties', label: t('admin_tab_listings'), icon: 'home_work' },
+               { key: 'users', label: t('admin_tab_users'), icon: 'people' },
+               { key: 'feedbacks', label: t('admin_tab_feedback'), icon: 'feedback', badge: unresolvedFeedbacks },
             ].map(tab => (
                <button
                   key={tab.key}
@@ -147,24 +149,24 @@ const AdminDashboard = () => {
                <div>
                   <h2 className="text-lg font-bold font-headline mb-4 flex items-center gap-2">
                      <span className="material-symbols-outlined text-orange-500">pending</span>
-                     Pending Approvals
+                     {t('admin_stat_pending')}
                      <span className="ml-1 px-2 py-0.5 rounded bg-orange-100 text-orange-700 text-xs font-bold">{pendingApprovals.length}</span>
                   </h2>
                   {pendingApprovals.length === 0 ? (
                      <div className="bg-green-50 border border-green-200 rounded-lg p-5 flex items-center gap-3 text-green-700">
                         <span className="material-symbols-outlined">check_circle</span>
-                        <span className="font-medium text-sm">All caught up! No pending approvals.</span>
+                        <span className="font-medium text-sm">{t('admin_caught_up')}</span>
                      </div>
                   ) : (
                      <div className="bg-white rounded-xl border border-outline-variant/20 overflow-hidden shadow-sm">
                         <table className="w-full text-left text-sm">
                            <thead className="bg-surface-container-low border-b border-outline-variant/20">
                               <tr>
-                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Property</th>
-                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden md:table-cell">Location</th>
-                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden lg:table-cell">Type</th>
-                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Rent</th>
-                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant text-right">Actions</th>
+                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_property')}</th>
+                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden md:table-cell">{t('admin_table_location')}</th>
+                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden lg:table-cell">{t('admin_table_type')}</th>
+                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_rent')}</th>
+                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant text-right">{t('admin_table_actions')}</th>
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-outline-variant/10">
@@ -210,14 +212,14 @@ const AdminDashboard = () => {
                                              className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                                           >
                                              <span className="material-symbols-outlined text-[14px]">check</span>
-                                             Approve
+                                             {t('admin_action_approve')}
                                           </button>
                                           <button
                                              onClick={() => setRejectTarget(p)}
                                              className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                                           >
                                              <span className="material-symbols-outlined text-[14px]">close</span>
-                                             Reject
+                                             {t('admin_action_reject')}
                                           </button>
                                        </div>
                                     </td>
@@ -233,18 +235,18 @@ const AdminDashboard = () => {
                <div>
                   <h2 className="text-lg font-bold font-headline mb-4 flex items-center gap-2">
                      <span className="material-symbols-outlined text-on-surface-variant">list</span>
-                     All Listings
+                     {t('admin_all_listings')}
                      <span className="ml-1 text-on-surface-variant font-normal text-sm">({properties.length})</span>
                   </h2>
                   <div className="bg-white rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden text-sm">
                      <table className="w-full text-left">
                         <thead className="bg-surface-container-low text-on-surface-variant text-xs font-bold tracking-widest border-b border-outline-variant/20">
                            <tr>
-                              <th className="px-6 py-4 uppercase">Title</th>
-                              <th className="px-6 py-4 uppercase hidden md:table-cell">Location</th>
-                              <th className="px-6 py-4 uppercase">Rent</th>
-                              <th className="px-6 py-4 uppercase">Status</th>
-                              <th className="px-6 py-4 uppercase hidden lg:table-cell">Rejection Reason</th>
+                              <th className="px-6 py-4 uppercase">{t('admin_table_property')}</th>
+                              <th className="px-6 py-4 uppercase hidden md:table-cell">{t('admin_table_location')}</th>
+                              <th className="px-6 py-4 uppercase">{t('admin_table_rent')}</th>
+                              <th className="px-6 py-4 uppercase">{t('admin_table_status')}</th>
+                              <th className="px-6 py-4 uppercase hidden lg:table-cell">{t('admin_table_reason')}</th>
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/10">
@@ -279,16 +281,16 @@ const AdminDashboard = () => {
             <div>
                <h2 className="text-lg font-bold font-headline mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-on-surface-variant">people</span>
-                  All Users
+                  {t('admin_all_users')}
                   <span className="ml-1 text-on-surface-variant font-normal text-sm">({users.length})</span>
                </h2>
                <div className="bg-white rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden text-sm">
                   <table className="w-full text-left">
                      <thead className="bg-surface-container-low text-on-surface-variant text-xs font-bold tracking-widest border-b border-outline-variant/20 uppercase">
                         <tr>
-                           <th className="px-6 py-4">Name</th>
-                           <th className="px-6 py-4 hidden md:table-cell">Email</th>
-                           <th className="px-6 py-4">Role</th>
+                           <th className="px-6 py-4">{t('admin_table_name')}</th>
+                           <th className="px-6 py-4 hidden md:table-cell">{t('admin_table_email')}</th>
+                           <th className="px-6 py-4">{t('admin_table_role')}</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-outline-variant/10">
@@ -321,13 +323,13 @@ const AdminDashboard = () => {
             <div>
                <h2 className="text-lg font-bold font-headline mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-on-surface-variant">feedback</span>
-                  User Feedback
+                  {t('admin_tab_feedback')}
                   <span className="ml-1 text-on-surface-variant font-normal text-sm">({feedbacks.length})</span>
                </h2>
                {feedbacks.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-xl border border-outline-variant/20">
                      <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">feedback</span>
-                     <p className="text-on-surface-variant text-sm">No feedback submitted yet.</p>
+                     <p className="text-on-surface-variant text-sm">{t('admin_no_feedback')}</p>
                   </div>
                ) : (
                   <div className="space-y-3">
@@ -362,7 +364,7 @@ const AdminDashboard = () => {
                                     <span className="material-symbols-outlined text-[14px]">
                                        {f.isResolved ? 'check_circle' : 'pending'}
                                     </span>
-                                    {f.isResolved ? 'Resolved' : 'Pending'}
+                                    {f.isResolved ? t('common_approved') : t('common_pending')}
                                  </span>
                                  <span className="text-xs text-on-surface-variant flex items-center gap-1">
                                     <span className="material-symbols-outlined text-[14px]">schedule</span>
@@ -377,7 +379,7 @@ const AdminDashboard = () => {
                                           className="text-xs bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg font-bold transition-colors whitespace-nowrap flex items-center gap-1.5"
                                        >
                                           <span className="material-symbols-outlined text-[14px]">check</span>
-                                          Mark Resolved
+                                          {t('admin_action_resolve')}
                                        </button>
                                     )}
                                  </div>

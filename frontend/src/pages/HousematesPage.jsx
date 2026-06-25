@@ -97,8 +97,11 @@ const FILTER_OPTIONS = [
 
 /* ── Match Card ── */
 const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
-  const sc = getScoreConfig(hm.matchScore || 0);
-  const lifestyles = (hm.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
+  const { t } = useLanguage(); // ← MUST be here: MatchCard is its own component
+  const sc = getScoreConfig(hm?.matchScore || 0);
+  const lifestyles = (hm?.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  if (!hm) return null; // null-safety guard
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm hover:shadow-rs-lg hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden group">
@@ -114,9 +117,19 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
         )}
 
         {/* Avatar */}
-        <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-black border border-white/30 shadow-lg">
-          {hm.name?.charAt(0)?.toUpperCase() || '?'}
-        </div>
+        {hm.profileImageUrl ? (
+          <img
+            src={hm.profileImageUrl.startsWith('/uploads')
+              ? `http://localhost:8080${hm.profileImageUrl}`
+              : hm.profileImageUrl}
+            alt={hm.name}
+            className="w-16 h-16 rounded-2xl object-cover border-2 border-white/40 shadow-lg"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-black border border-white/30 shadow-lg">
+            {hm.name?.charAt(0)?.toUpperCase() || '?'}
+          </div>
+        )}
       </div>
 
       {/* Content — overlapping the header */}
@@ -181,10 +194,10 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
         </div>
 
         {/* ── Why You Match Section ── */}
-        {currentUser && hm.matchReasons && hm.matchReasons.length > 0 && (
+        {currentUser && hm.matchReasons?.length > 0 && (
           <div className={`mb-4 p-3 rounded-xl border ${sc.border} ${sc.lightBg}`}>
             <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${sc.textColor}`}>
-              Why you match
+              {t('hm_why_match')}
             </p>
             <div className="space-y-1.5">
               {hm.matchReasons.slice(0, 3).map((reason, idx) => (
@@ -203,7 +216,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
         {currentUser && hm.matchScore > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Compatibility</span>
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('detail_compatibility')}</span>
               <span className={`text-[10px] font-black ${sc.textColor}`}>{hm.matchScore}%</span>
             </div>
             <div className="rs-progress">
@@ -221,7 +234,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
             isUitmVerified() ? (
               <button className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-all hover:shadow-rs-blue flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-sm">chat</span>
-                Contact Housemate
+                {t('detail_contact')}
               </button>
             ) : (
               <button
@@ -230,7 +243,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
                 title="Complete UiTM verification to contact housemates"
               >
                 <span className="material-symbols-outlined text-sm">warning</span>
-                Verify to Contact
+                {t('owner_verify_warning')}
               </button>
             )
           ) : (
@@ -250,36 +263,45 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
 
 /* ── Main Page ── */
 const HousematesPage = () => {
-  const { currentUser, isUitmVerified } = useAuth();
+  const { currentUser, isUitmVerified, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [housemates, setHousemates] = useState([]);
   const [backendMatches, setBackendMatches] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
+  // Use currentUser?.id as dependency — avoids infinite loop from object reference changes
+  const currentUserId = currentUser?.id ?? null;
+
   useEffect(() => {
+    // Wait for auth to finish resolving before fetching
+    if (authLoading) return;
+
     const fetchHousemates = async () => {
+      setLoading(true);
       try {
         const users = await getAllUsers();
-        const listed = (users || []).filter(u => u.isListedAsHousemate === true && u.id !== currentUser?.id);
+        const listed = (users || []).filter(u => u.isListedAsHousemate === true && u.id !== currentUserId);
         setHousemates(listed);
 
-        if (currentUser?.id && currentUser.id !== 999) {
+        if (currentUserId && currentUserId !== 999) {
           try {
-            const matches = await getMatchesForUser(currentUser.id);
-            setBackendMatches(matches || []);
+            const matches = await getMatchesForUser(currentUserId);
+            setBackendMatches(Array.isArray(matches) ? matches : []);
           } catch {
             setBackendMatches(null);
           }
         }
       } catch (err) {
         console.error('Error fetching housemates:', err);
+        setHousemates([]);
       } finally {
         setLoading(false);
       }
     };
     fetchHousemates();
-  }, [currentUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, currentUserId]);
 
   const backendMatchMap = useMemo(() => {
     if (!backendMatches) return {};
@@ -323,6 +345,28 @@ const HousematesPage = () => {
   const greatMatches = filteredHousemates.filter(h => h.matchScore >= 75).length;
   const goodMatches = filteredHousemates.filter(h => h.matchScore >= 50).length;
 
+  // Show loading skeleton while auth is resolving — prevents blank flash
+  if (authLoading) {
+    return (
+      <div className="rs-page pb-20">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div className="skeleton h-28 w-full" />
+                <div className="p-5 space-y-3">
+                  <div className="skeleton h-4 w-2/3" />
+                  <div className="skeleton h-3 w-1/2" />
+                  <div className="skeleton h-10 w-full rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rs-page pb-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
@@ -338,15 +382,7 @@ const HousematesPage = () => {
                 {currentUser ? t('hm_subtitle') : t('hm_subtitle')}
               </p>
             </div>
-            {currentUser && (
-              <Link
-                to="/profile/housemate"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-on-surface hover:border-primary/40 hover:text-primary hover:bg-blue-50/30 transition-all shadow-rs-sm flex-shrink-0"
-              >
-                <span className="material-symbols-outlined text-base">tune</span>
-                Edit Preferences
-              </Link>
-            )}
+
           </div>
         </div>
 
@@ -371,7 +407,7 @@ const HousematesPage = () => {
                   <span key={i} className="material-symbols-outlined text-primary text-sm" title={p}>{PRIORITY_ICONS[p] || 'star'}</span>
                 ))}
               </div>
-              <p className="text-xs text-on-surface-variant font-medium">Your Priorities</p>
+            <p className="text-xs text-on-surface-variant font-medium">{t('hm_priorities')}</p>
             </div>
           </div>
         )}
@@ -380,7 +416,7 @@ const HousematesPage = () => {
         {currentUser && currentUser.id !== 999 && (
           <div className="mb-6 flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-rs-sm flex-wrap">
             <span className="material-symbols-outlined text-primary text-base">bar_chart</span>
-            <span className="text-sm font-bold text-on-surface">Matching priorities:</span>
+              <span className="text-sm font-bold text-on-surface">{t('hm_priorities')}:</span>
             <div className="flex items-center gap-2 flex-wrap">
               {priorities.map((p, idx) => (
                 <span key={idx} className="flex items-center gap-1">
@@ -392,16 +428,9 @@ const HousematesPage = () => {
                 </span>
               ))}
             </div>
-            {!currentUser.priority1 && (
-              <span className="text-xs text-on-surface-variant italic">(default priorities)</span>
+            {!currentUser?.priority1 && (
+              <span className="text-xs text-on-surface-variant italic">({t('common_all')})</span>
             )}
-            <Link
-              to="/profile/housemate"
-              className="ml-auto text-xs font-bold text-primary hover:underline flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[13px]">edit</span>
-              Change
-            </Link>
           </div>
         )}
 
@@ -445,18 +474,18 @@ const HousematesPage = () => {
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
               <span className="material-symbols-outlined text-primary text-2xl">group_off</span>
             </div>
-            <h3 className="font-bold text-on-surface text-lg mb-1">No housemates found</h3>
+            <h3 className="font-bold text-on-surface text-lg mb-1">{t('prop_no_results_title')}</h3>
             <p className="text-on-surface-variant text-sm max-w-xs mb-5">
               {filter !== 'all'
-                ? `No housemates with "${filter}" lifestyle. Try a different filter.`
-                : 'No students have listed themselves as housemates yet.'}
+                ? `${t('hm_no_results')}`
+                : t('hm_no_results')}
             </p>
             {filter !== 'all' && (
               <button
                 onClick={() => setFilter('all')}
                 className="rs-btn-primary text-sm py-2.5 px-6"
               >
-                Show All
+              {t('hm_filter_all')}
               </button>
             )}
           </div>
@@ -464,8 +493,7 @@ const HousematesPage = () => {
           <>
             <div className="flex items-center justify-between mb-5">
               <p className="text-sm text-on-surface-variant font-medium">
-                Showing <span className="font-bold text-on-surface">{filteredHousemates.length}</span> {filteredHousemates.length === 1 ? 'student' : 'students'}
-                {filter !== 'all' ? ` · ${filter}` : ''}
+                {t('prop_results', { count: filteredHousemates.length })}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

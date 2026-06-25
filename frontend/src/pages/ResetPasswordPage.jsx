@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const { t } = useLanguage();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -13,17 +15,30 @@ const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
     setError('');
 
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
+    const tempErrors = {};
+    if (!newPassword) {
+      tempErrors.newPassword = t('val_err_required');
+    } else if (newPassword.length < 6) {
+      tempErrors.newPassword = t('val_err_password_len');
+    } else if (newPassword.length > 100) {
+      tempErrors.newPassword = t('val_err_too_long', { max: 100 });
     }
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+
+    if (!confirmPassword) {
+      tempErrors.confirmPassword = t('val_err_required');
+    } else if (newPassword !== confirmPassword) {
+      tempErrors.confirmPassword = t('reset_mismatch');
+    }
+
+    if (Object.keys(tempErrors).length > 0) {
+      setFormErrors(tempErrors);
       return;
     }
 
@@ -32,7 +47,7 @@ const ResetPasswordPage = () => {
       await resetPassword(token, newPassword);
       setSuccess(true);
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to reset password. The link may be invalid or expired.';
+      const message = err.response?.data?.message || t('common_error');
       setError(message);
     } finally {
       setLoading(false);
@@ -48,15 +63,15 @@ const ResetPasswordPage = () => {
           <span className="text-white font-extrabold text-2xl font-headline tracking-tight">RakanSewa</span>
         </div>
         <h2 className="text-3xl font-extrabold text-white font-headline leading-tight mb-4">
-          Set a new password<br />for your account.
+          {t('reset_left_title_1')}<br />{t('reset_left_title_2')}
         </h2>
         <p className="text-white/80 text-sm leading-relaxed mb-8">
-          Choose a strong password to keep your RakanSewa account secure. Your password should be at least 6 characters long.
+          {t('reset_left_desc')}
         </p>
         <div className="p-5 bg-white/10 rounded-xl border border-white/20">
           <div className="flex items-center gap-3 text-white/90 text-sm">
             <span className="material-symbols-outlined text-white/70">shield</span>
-            Use a unique password you don&apos;t use on other websites.
+            {t('reset_left_priority')}
           </div>
         </div>
       </div>
@@ -71,15 +86,15 @@ const ResetPasswordPage = () => {
         <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-white">
           <div className="w-full max-w-md text-center">
             <span className="material-symbols-outlined text-error text-5xl mb-4 block">link_off</span>
-            <h1 className="text-2xl font-extrabold font-headline text-on-surface mb-2">Invalid Reset Link</h1>
+            <h1 className="text-2xl font-extrabold font-headline text-on-surface mb-2">{t('reset_invalid_title')}</h1>
             <p className="text-on-surface-variant text-sm mb-8">
-              This password reset link is missing or invalid. Please request a new reset link.
+              {t('reset_invalid_desc')}
             </p>
             <Link
               to="/forgot-password"
               className="inline-flex items-center gap-2 bg-primary text-white py-2.5 px-8 rounded-lg font-bold hover:opacity-90 transition-opacity text-sm"
             >
-              Request New Link
+              {t('reset_request_new')}
             </Link>
           </div>
         </div>
@@ -100,15 +115,15 @@ const ResetPasswordPage = () => {
             <span className="text-primary font-extrabold text-xl font-headline">RakanSewa</span>
           </div>
 
-          <h1 className="text-2xl font-extrabold font-headline text-on-surface mb-1">Reset Password</h1>
-          <p className="text-on-surface-variant text-sm mb-8">Enter your new password below.</p>
+          <h1 className="text-2xl font-extrabold font-headline text-on-surface mb-1">{t('reset_title')}</h1>
+          <p className="text-on-surface-variant text-sm mb-8">{t('reset_sub')}</p>
 
           {success ? (
             <div className="space-y-6">
               <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-center">
                 <span className="material-symbols-outlined text-green-600 text-4xl block mb-3">check_circle</span>
                 <p className="text-sm text-green-800 font-medium">
-                  Your password has been reset successfully!
+                  {t('reset_success')}
                 </p>
               </div>
               <Link
@@ -116,7 +131,7 @@ const ResetPasswordPage = () => {
                 className="flex items-center justify-center gap-2 w-full bg-primary text-white py-2.5 rounded-lg font-bold hover:opacity-90 transition-opacity text-sm"
               >
                 <span className="material-symbols-outlined text-[16px]">login</span>
-                Sign In
+                {t('login_btn_signin')}
               </Link>
             </div>
           ) : (
@@ -128,14 +143,14 @@ const ResetPasswordPage = () => {
               )}
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">New Password</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('reset_new_label')}</label>
                   <div className="relative">
                     <input
                       type={showNew ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm pr-11"
-                      placeholder="At least 6 characters"
+                      placeholder={t('reset_new_placeholder')}
                       required
                       minLength={6}
                     />
@@ -143,17 +158,23 @@ const ResetPasswordPage = () => {
                       <span className="material-symbols-outlined text-[18px]">{showNew ? 'visibility_off' : 'visibility'}</span>
                     </button>
                   </div>
+                  {formErrors.newPassword && (
+                    <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">error</span>
+                      {formErrors.newPassword}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Confirm Password</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('reset_confirm_label')}</label>
                   <div className="relative">
                     <input
                       type={showConfirm ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm pr-11"
-                      placeholder="Re-enter your password"
+                      placeholder={t('reset_confirm_placeholder')}
                       required
                       minLength={6}
                     />
@@ -161,16 +182,22 @@ const ResetPasswordPage = () => {
                       <span className="material-symbols-outlined text-[18px]">{showConfirm ? 'visibility_off' : 'visibility'}</span>
                     </button>
                   </div>
-                  {confirmPassword && newPassword !== confirmPassword && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">error</span>
-                      Passwords do not match.
+                  {formErrors.confirmPassword && (
+                    <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">error</span>
+                      {formErrors.confirmPassword}
                     </p>
                   )}
-                  {confirmPassword && newPassword === confirmPassword && newPassword.length >= 6 && (
+                  {!formErrors.confirmPassword && confirmPassword && newPassword !== confirmPassword && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">error</span>
+                      {t('reset_mismatch')}
+                    </p>
+                  )}
+                  {!formErrors.confirmPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6 && (
                     <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      Passwords match.
+                      {t('reset_match')}
                     </p>
                   )}
                 </div>
@@ -183,15 +210,15 @@ const ResetPasswordPage = () => {
                   {loading ? (
                     <>
                       <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                      Resetting...
+                      {t('reset_btn_resetting')}
                     </>
-                  ) : 'Reset Password'}
+                  ) : t('reset_btn')}
                 </button>
               </form>
               <p className="text-center text-sm text-on-surface-variant mt-8">
                 <Link to="/login" className="text-primary font-bold hover:underline flex items-center gap-1 justify-center">
                   <span className="material-symbols-outlined text-[14px]">arrow_back</span>
-                  Back to Login
+                  {t('reset_back')}
                 </Link>
               </p>
             </>

@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, Link, useBlocker } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getApprovedProperties, linkUserToProperty, getPropertiesByOwner, getProperties, getAllUsers } from '../services/api';
+import { getApprovedProperties, linkUserToProperty, getPropertiesByOwner, getProperties, getAllUsers, uploadProfileImage } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
+import UnsavedChangesModal from '../components/UnsavedChangesModal';
 
 const DEFAULT_PRIORITIES = ['Budget', 'Sleep Pattern', 'Cleanliness'];
 
@@ -12,6 +14,24 @@ const ProfilePage = () => {
   const [searchParams] = useSearchParams();
   const [showGoogleWelcome, setShowGoogleWelcome] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const { t } = useLanguage();
+  const [isDirty, setIsDirty] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
+  const blocker = useBlocker(
+    ({ nextLocation }) => isDirty && isEditing && !saving
+  );
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty && isEditing) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, isEditing]);
 
   // Property linking state (Student)
   const [approvedProperties, setApprovedProperties] = useState([]);
@@ -96,20 +116,130 @@ const ProfilePage = () => {
     sleepSchedule: currentUser?.sleepSchedule || '',
   });
 
+  /* ── Avatar upload state ── */
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(currentUser?.profileImageUrl || null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const avatarInputRef = useRef(null);
+
   if (!currentUser) return null;
 
   const getLifestyleArray = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
 
+  /* ── Avatar file change handler ── */
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError('');
+
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please select an image file (JPG, PNG, WebP).');
+      return;
+    }
+    // Validate size (2 MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('Image must be under 2 MB.');
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setIsDirty(true);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    setIsDirty(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (proceedAfterSave = null) => {
+    setFormErrors({});
+    const tempErrors = {};
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedPhone = formData.phoneNumber.trim();
+    const trimmedMatric = formData.matricNumber.trim();
+    const trimmedUitmEmail = formData.uitmEmail.trim();
+
+    if (!trimmedName) {
+      tempErrors.name = t('val_err_required');
+    } else if (trimmedName.length > 100) {
+      tempErrors.name = t('val_err_too_long', { max: 100 });
+    }
+
+    if (!trimmedEmail) {
+      tempErrors.email = t('val_err_required');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      tempErrors.email = t('val_err_email_invalid');
+    } else if (trimmedEmail.length > 100) {
+      tempErrors.email = t('val_err_too_long', { max: 100 });
+    }
+
+    if (!trimmedPhone) {
+      tempErrors.phoneNumber = t('val_err_phone_empty');
+    } else if (!/^[0-9]+$/.test(trimmedPhone)) {
+      tempErrors.phoneNumber = t('val_err_phone_numeric');
+    } else if (trimmedPhone.length > 15) {
+      tempErrors.phoneNumber = t('val_err_too_long', { max: 15 });
+    }
+
+    if (isStudent) {
+      if (!trimmedMatric) {
+        tempErrors.matricNumber = t('val_err_required');
+      } else if (!/^[0-9]+$/.test(trimmedMatric)) {
+        tempErrors.matricNumber = t('val_err_phone_numeric');
+      } else if (trimmedMatric.length > 20) {
+        tempErrors.matricNumber = t('val_err_too_long', { max: 20 });
+      }
+
+      if (!trimmedUitmEmail) {
+        tempErrors.uitmEmail = t('val_err_required');
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedUitmEmail)) {
+        tempErrors.uitmEmail = t('val_err_email_invalid');
+      } else if (!trimmedUitmEmail.toLowerCase().endsWith('@student.uitm.edu.my')) {
+        tempErrors.uitmEmail = t('reg_uitm_email_placeholder');
+      } else if (trimmedUitmEmail.length > 100) {
+        tempErrors.uitmEmail = t('val_err_too_long', { max: 100 });
+      }
+
+      if (trimmedMatric && trimmedUitmEmail && trimmedUitmEmail.toLowerCase().endsWith('@student.uitm.edu.my')) {
+        const prefix = trimmedUitmEmail.toLowerCase().split('@')[0];
+        if (trimmedMatric.toLowerCase() !== prefix) {
+          tempErrors.matricNumber = t('reg_warning_mismatch');
+        }
+      }
+    }
+
+    if (Object.keys(tempErrors).length > 0) {
+      setFormErrors(tempErrors);
+      return;
+    }
+
     try {
       setSaving(true);
       setSaveSuccess(false);
       setSaveError('');
+
+      // ── Upload avatar first if a new file was selected ──────────────────
+      let resolvedProfileImageUrl = currentUser.profileImageUrl || null;
+      if (avatarFile) {
+        setAvatarUploading(true);
+        try {
+          const uploadResult = await uploadProfileImage(avatarFile);
+          resolvedProfileImageUrl = uploadResult.imageUrl;
+          setAvatarFile(null); // clear pending file
+        } catch {
+          setSaveError('Profile image upload failed. Your other changes were not saved.');
+          setSaving(false);
+          setAvatarUploading(false);
+          return;
+        } finally {
+          setAvatarUploading(false);
+        }
+      }
 
       if (currentUser.id !== 999 && isStudent) {
         try {
@@ -131,16 +261,31 @@ const ProfilePage = () => {
 
       await updateProfile({
         ...formData,
+        name: trimmedName,
+        email: trimmedEmail,
+        phoneNumber: trimmedPhone,
+        matricNumber: isStudent ? trimmedMatric : '',
+        uitmEmail: isStudent ? trimmedUitmEmail : '',
         budget: formData.budget ? parseFloat(formData.budget) : null,
+        profileImageUrl: resolvedProfileImageUrl,
       });
 
       setIsEditing(false);
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setIsDirty(false);
+
+      if (proceedAfterSave && typeof proceedAfterSave === 'function') {
+        proceedAfterSave();
+      } else {
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
     } catch (err) {
       console.error('Save failed:', err);
       const errorMsg = err?.response?.data?.message || err?.message || 'Failed to save profile.';
       setSaveError(errorMsg);
+      if (blocker && blocker.state === 'blocked') {
+        blocker.reset();
+      }
     } finally {
       setSaving(false);
     }
@@ -169,8 +314,8 @@ const ProfilePage = () => {
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3 text-blue-800 animate-[fadeIn_0.3s_ease-out]">
           <span className="material-symbols-outlined text-blue-600 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
           <div>
-            <span className="font-bold block text-sm">Google account created successfully!</span>
-            <span className="text-xs">Please complete your profile — add your phone number, matric number, and lifestyle preferences.</span>
+            <span className="font-bold block text-sm">{t('profile_google_success')}</span>
+            <span className="text-xs">{t('profile_google_success_sub')}</span>
           </div>
           <button onClick={() => setShowGoogleWelcome(false)} className="ml-auto text-blue-400 hover:text-blue-600">
             <span className="material-symbols-outlined text-lg">close</span>
@@ -183,9 +328,9 @@ const ProfilePage = () => {
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-amber-600 mt-0.5">warning</span>
             <div className="flex-1">
-              <span className="font-bold block text-sm">Not Verified — Complete UiTM Student Verification</span>
-              <span className="text-xs">Your matric number must match your UiTM student email, e.g. <strong>2022456146@student.uitm.edu.my</strong>.</span>
-              <p className="text-xs mt-1">Fill in your matric number and UiTM email in your profile to get verified automatically.</p>
+              <span className="font-bold block text-sm">{t('profile_not_verified')}</span>
+              <span className="text-xs">{t('profile_not_verified_sub')}</span>
+              <p className="text-xs mt-1">{t('profile_not_verified_hint')}</p>
             </div>
           </div>
         </div>
@@ -194,7 +339,7 @@ const ProfilePage = () => {
       {saveSuccess && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800 animate-[fadeIn_0.3s_ease-out]">
           <span className="material-symbols-outlined text-green-600" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-          <span className="font-medium text-sm">Profile saved successfully!</span>
+          <span className="font-medium text-sm">{t('profile_saved')}</span>
         </div>
       )}
 
@@ -210,40 +355,103 @@ const ProfilePage = () => {
 
       {/* ── SECTION 1: Profile Header Card ── */}
       <div className="bg-white border border-outline-variant/20 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-5">
-        {/* Avatar */}
-        <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-2xl text-on-primary-fixed font-black shadow-inner uppercase flex-shrink-0">
-          {currentUser.name.charAt(0)}
+
+        {/* ── Avatar with upload ── */}
+        <div className="relative flex-shrink-0">
+          {/* Hidden file input */}
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleAvatarChange}
+            disabled={!isEditing}
+          />
+
+          {/* Avatar circle */}
+          <div
+            className={`w-20 h-20 rounded-full overflow-hidden shadow-md flex-shrink-0 relative ${isEditing ? 'cursor-pointer group' : ''}`}
+            onClick={() => isEditing && avatarInputRef.current?.click()}
+            title={isEditing ? 'Click to change profile photo' : ''}
+          >
+            {avatarPreview
+              ? (
+                <img
+                  src={avatarPreview.startsWith('/uploads')
+                    ? `http://localhost:8080${avatarPreview}`
+                    : avatarPreview}
+                  alt={currentUser.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-primary-fixed flex items-center justify-center text-3xl text-on-primary-fixed font-black uppercase">
+                  {currentUser.name.charAt(0)}
+                </div>
+              )
+            }
+
+            {/* Edit overlay (edit mode only) */}
+            {isEditing && (
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                {avatarUploading ? (
+                  <span className="material-symbols-outlined text-white text-xl animate-spin">progress_activity</span>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                    <span className="text-white text-[9px] font-bold mt-0.5">CHANGE</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Avatar error */}
+          {avatarError && (
+            <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-red-500 font-medium">{avatarError}</p>
+          )}
         </div>
+
         {/* Name + details */}
         <div className="flex-1 text-center sm:text-left min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
             <h1 className="text-xl font-extrabold font-headline text-on-surface truncate">{currentUser.name}</h1>
             <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 mt-1 sm:mt-0">
               <span className="inline-block px-2.5 py-0.5 bg-secondary-container text-on-secondary-container text-[11px] font-bold rounded-full uppercase tracking-wider">
-                {currentUser.role}
+                {currentUser.role === 'Owner' ? t('common_owner') : currentUser.role === 'Admin' ? t('nav_admin') : t('common_student')}
               </span>
               {currentUser.isListedAsHousemate && (
                 <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase tracking-wider">
                   <span className="material-symbols-outlined text-[12px]">groups</span>
-                  Housemate
+                  {t('profile_role_housemate')}
                 </span>
               )}
               {isStudent && (
                 currentUser.isStudentVerified ? (
                   <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-green-100 text-green-700 text-[11px] font-bold rounded-full uppercase tracking-wider">
                     <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                    Verified Student
+                    {t('profile_role_verified_student')}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] font-bold rounded-full uppercase tracking-wider">
                     <span className="material-symbols-outlined text-[12px]">info</span>
-                    Not Verified
+                    {t('profile_role_not_verified')}
                   </span>
                 )
               )}
             </div>
           </div>
           <p className="text-on-surface-variant text-sm truncate mt-1">{currentUser.email}</p>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              className="mt-2 inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+              disabled={avatarUploading}
+            >
+              <span className="material-symbols-outlined text-[13px]">photo_camera</span>
+              {avatarPreview ? 'Change photo' : 'Add profile photo'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -252,7 +460,7 @@ const ProfilePage = () => {
         <div className="flex items-center justify-between mb-5 pb-4 border-b border-surface-container-low">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">manage_accounts</span>
-            <h2 className="text-base font-bold text-on-surface font-headline">Account Information</h2>
+            <h2 className="text-base font-bold text-on-surface font-headline">{t('profile_acc_info')}</h2>
           </div>
           {!isEditing ? (
             <button
@@ -260,15 +468,15 @@ const ProfilePage = () => {
               className="flex items-center gap-1.5 px-4 py-2 bg-surface-container hover:bg-primary/10 hover:text-primary text-on-surface text-xs font-bold rounded-lg transition-all border border-outline-variant/20"
             >
               <span className="material-symbols-outlined text-sm">edit</span>
-              Edit Profile
+              {t('profile_btn_edit')}
             </button>
           ) : (
             <div className="flex gap-2">
               <button
-                onClick={() => { setIsEditing(false); setSaveError(''); }}
+                onClick={() => { setIsEditing(false); setSaveError(''); setIsDirty(false); }}
                 className="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold rounded-lg transition-all border border-outline-variant/20"
               >
-                Cancel
+                {t('profile_btn_cancel')}
               </button>
               <button
                 onClick={handleSave}
@@ -278,9 +486,9 @@ const ProfilePage = () => {
                 {saving ? (
                   <>
                     <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                    Saving...
+                    {t('profile_btn_saving')}
                   </>
-                ) : 'Save Changes'}
+                ) : t('profile_btn_save')}
               </button>
             </div>
           )}
@@ -290,32 +498,62 @@ const ProfilePage = () => {
           // ── EDIT MODE: existing form layout unchanged ──
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">Full Name</label>
+              <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_fullname')}</label>
               <input type="text" name="name" value={formData.name} onChange={handleChange}
                 className="w-full px-3 py-2 bg-surface-container-lowest rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20" />
+              {formErrors.name && (
+                <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {formErrors.name}
+                </p>
+              )}
             </div>
             <div>
-              <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">Email Address</label>
+              <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_email')}</label>
               <input type="email" name="email" value={formData.email} onChange={handleChange}
                 className="w-full px-3 py-2 bg-surface-container-lowest rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20" />
+              {formErrors.email && (
+                <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {formErrors.email}
+                </p>
+              )}
             </div>
             <div>
-              <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">Phone Number</label>
-              <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 0123456789"
+              <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_phone')}</label>
+              <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder={t('profile_label_phone_placeholder')}
                 className="w-full px-3 py-2 bg-surface-container-lowest rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20" />
+              {formErrors.phoneNumber && (
+                <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {formErrors.phoneNumber}
+                </p>
+              )}
             </div>
             {isStudent && (
               <>
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">Matric Number</label>
-                  <input type="text" name="matricNumber" value={formData.matricNumber} onChange={handleChange} placeholder="e.g. 2022456146"
+                  <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_matric')}</label>
+                  <input type="text" name="matricNumber" value={formData.matricNumber} onChange={handleChange} placeholder={t('profile_label_matric_placeholder')}
                     className="w-full px-3 py-2 bg-surface-container-lowest rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20" />
+                  {formErrors.matricNumber && (
+                    <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">error</span>
+                      {formErrors.matricNumber}
+                    </p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">UiTM Email</label>
-                  <input type="email" name="uitmEmail" value={formData.uitmEmail} onChange={handleChange} placeholder="e.g. 2022456146@student.uitm.edu.my"
+                  <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_uitm_email')}</label>
+                  <input type="email" name="uitmEmail" value={formData.uitmEmail} onChange={handleChange} placeholder={t('profile_label_uitm_email_placeholder')}
                     className="w-full px-3 py-2 bg-surface-container-lowest rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20" />
-                  <p className="text-[10px] text-on-surface-variant mt-1">Must match your matric number, e.g. 2022456146@student.uitm.edu.my</p>
+                  {formErrors.uitmEmail && (
+                    <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">error</span>
+                      {formErrors.uitmEmail}
+                    </p>
+                  )}
+                  {!formErrors.uitmEmail && <p className="text-[10px] text-on-surface-variant mt-1">{t('profile_uitm_email_hint')}</p>}
                 </div>
               </>
             )}
@@ -328,7 +566,7 @@ const ProfilePage = () => {
             <div className="md:col-span-2 p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[14px] text-on-surface-variant">badge</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Full Name</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_fullname')}</span>
               </div>
               <span className="text-sm font-bold text-on-surface">{currentUser.name}</span>
             </div>
@@ -337,7 +575,7 @@ const ProfilePage = () => {
             <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[14px] text-on-surface-variant">mail</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Email Address</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_email')}</span>
               </div>
               <span className="text-sm font-bold text-on-surface truncate">{currentUser.email}</span>
             </div>
@@ -346,10 +584,10 @@ const ProfilePage = () => {
             <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[14px] text-on-surface-variant">phone</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Phone Number</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_phone')}</span>
               </div>
               <span className="text-sm font-bold text-on-surface">
-                {currentUser.phoneNumber || <span className="text-on-surface-variant italic font-normal text-xs">Not provided</span>}
+                {currentUser.phoneNumber || <span className="text-on-surface-variant italic font-normal text-xs">{t('profile_not_provided')}</span>}
               </span>
             </div>
 
@@ -358,9 +596,11 @@ const ProfilePage = () => {
               <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[14px] text-on-surface-variant">verified_user</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Account Role</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_acc_role')}</span>
                 </div>
-                <span className="text-sm font-bold text-primary">{currentUser.role}</span>
+                <span className="text-sm font-bold text-primary">
+                  {currentUser.role === 'Owner' ? t('common_owner') : currentUser.role === 'Admin' ? t('nav_admin') : currentUser.role}
+                </span>
               </div>
             )}
 
@@ -370,19 +610,19 @@ const ProfilePage = () => {
                 <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[14px] text-on-surface-variant">tag</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Matric Number</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_matric')}</span>
                   </div>
                   <span className="text-sm font-bold text-on-surface">
-                    {currentUser.matricNumber || <span className="text-on-surface-variant italic font-normal text-xs">Not provided</span>}
+                    {currentUser.matricNumber || <span className="text-on-surface-variant italic font-normal text-xs">{t('profile_not_provided')}</span>}
                   </span>
                 </div>
                 <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[14px] text-on-surface-variant">school</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">UiTM Email</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_uitm_email')}</span>
                   </div>
                   <span className="text-sm font-bold text-on-surface truncate">
-                    {currentUser.uitmEmail || <span className="text-on-surface-variant italic font-normal text-xs">Not provided</span>}
+                    {currentUser.uitmEmail || <span className="text-on-surface-variant italic font-normal text-xs">{t('profile_not_provided')}</span>}
                   </span>
                 </div>
               </>
@@ -398,14 +638,14 @@ const ProfilePage = () => {
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-surface-container-low">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">groups</span>
-              <h2 className="text-base font-bold text-on-surface font-headline">Housemate Profile</h2>
+              <h2 className="text-base font-bold text-on-surface font-headline">{t('profile_housemate_profile')}</h2>
             </div>
             <Link
               to="/profile/housemate"
               className="flex items-center gap-1.5 px-4 py-2 bg-surface-container hover:bg-primary/10 hover:text-primary text-on-surface text-xs font-bold rounded-lg transition-all border border-outline-variant/20"
             >
               <span className="material-symbols-outlined text-sm">manage_accounts</span>
-              Manage Housemate Profile
+              {t('profile_btn_manage_housemate')}
             </Link>
           </div>
 
@@ -414,28 +654,28 @@ const ProfilePage = () => {
               {/* Top Row: Listing Status, Budget, Sleep Pattern, Total Lifestyles */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">Listing Status</span>
+                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('pref_section_visibility')}</span>
                   <span className="inline-flex items-center gap-1 mt-1.5 text-sm font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
-                    Listed & Visible
+                    {t('profile_status_visible')}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">Monthly Budget</span>
+                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('profile_label_budget')}</span>
                   <span className="text-sm font-bold text-on-surface block mt-1.5">
                     {currentUser.budget ? `RM ${currentUser.budget}` : '—'}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">Sleep Schedule</span>
+                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('profile_label_sleep')}</span>
                   <span className="text-sm font-bold text-on-surface block mt-1.5">
-                    {currentUser.sleepSchedule || '—'}
+                    {currentUser.sleepSchedule ? t(currentUser.sleepSchedule) : '—'}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">Total Lifestyles</span>
+                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('profile_label_lifestyles')}</span>
                   <span className="text-sm font-bold text-on-surface block mt-1.5">
-                    {displayLifestyles.length > 0 ? `${displayLifestyles.length} tag(s)` : '—'}
+                    {displayLifestyles.length > 0 ? t('profile_lifestyles_tags', { count: displayLifestyles.length }) : '—'}
                   </span>
                 </div>
               </div>
@@ -443,11 +683,11 @@ const ProfilePage = () => {
               {/* Middle Row: Lifestyle Tags */}
               {displayLifestyles.length > 0 && (
                 <div className="pt-4 border-t border-surface-container-low">
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-2.5">Lifestyle Tags</span>
+                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-2.5">{t('profile_label_lifestyle_tags_section')}</span>
                   <div className="flex flex-wrap gap-1.5">
                     {displayLifestyles.map(tag => (
                       <span key={tag} className="px-2.5 py-1 bg-primary/5 text-primary text-xs font-semibold rounded-lg border border-primary/10">
-                        {tag}
+                        {t(tag)}
                       </span>
                     ))}
                   </div>
@@ -456,22 +696,22 @@ const ProfilePage = () => {
 
               {/* Bottom Row: Matching Priorities */}
               <div className="pt-4 border-t border-surface-container-low">
-                <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-3">Matching Priorities</span>
+                <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-3">{t('profile_label_priorities_section')}</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {(() => {
                     const p1 = currentUser.priority1 || DEFAULT_PRIORITIES[0];
                     const p2 = currentUser.priority2 || DEFAULT_PRIORITIES[1];
                     const p3 = currentUser.priority3 || DEFAULT_PRIORITIES[2];
                     return [
-                      { label: p1, title: 'Priority 1 (40%)', icon: 'looks_one' },
-                      { label: p2, title: 'Priority 2 (30%)', icon: 'looks_two' },
-                      { label: p3, title: 'Priority 3 (20%)', icon: 'looks_3' }
+                      { label: p1, title: `${t('pref_priority_1')} (40%)`, icon: 'looks_one' },
+                      { label: p2, title: `${t('pref_priority_2')} (30%)`, icon: 'looks_two' },
+                      { label: p3, title: `${t('pref_priority_3')} (20%)`, icon: 'looks_3' }
                     ].map((item, idx) => (
                       <div key={idx} className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant/10">
                         <span className="material-symbols-outlined text-primary text-lg">{item.icon}</span>
                         <div>
                           <span className="block text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">{item.title}</span>
-                          <span className="text-sm font-bold text-on-surface">{item.label}</span>
+                          <span className="text-sm font-bold text-on-surface">{t(item.label)}</span>
                         </div>
                       </div>
                     ));
@@ -482,8 +722,8 @@ const ProfilePage = () => {
           ) : (
             <div className="text-center py-8">
               <span className="material-symbols-outlined text-4xl text-on-surface-variant/20 mb-2 block">person_off</span>
-              <p className="text-on-surface-variant font-semibold text-sm">Not listed as a housemate</p>
-              <p className="text-xs text-on-surface-variant/60 mt-1">Your profile is currently hidden from housemate searches.</p>
+              <p className="text-on-surface-variant font-semibold text-sm">{t('profile_not_listed')}</p>
+              <p className="text-xs text-on-surface-variant/60 mt-1">{t('profile_not_listed_desc')}</p>
             </div>
           )}
         </div>
@@ -495,40 +735,40 @@ const ProfilePage = () => {
           <div className="flex items-center justify-between mb-5 pb-4 border-b border-surface-container-low">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">home_work</span>
-              <h2 className="text-base font-bold text-on-surface font-headline">Property Summary</h2>
+              <h2 className="text-base font-bold text-on-surface font-headline">{t('profile_property_summary')}</h2>
             </div>
             <Link
               to="/owner"
               className="flex items-center gap-1.5 px-4 py-2 bg-surface-container hover:bg-primary/10 hover:text-primary text-on-surface text-xs font-bold rounded-lg transition-all border border-outline-variant/20"
             >
               <span className="material-symbols-outlined text-sm">tune</span>
-              Manage Properties
+              {t('profile_btn_manage_properties')}
             </Link>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/20 text-center">
               <span className="block text-2xl font-extrabold text-on-surface">{ownerProperties.length}</span>
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Total</span>
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{t('profile_total')}</span>
             </div>
             <div className="p-4 bg-green-50 rounded-xl border border-green-200 text-center">
               <span className="block text-2xl font-extrabold text-green-600">{ownerApproved}</span>
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-green-700 mt-1">Approved</span>
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-green-700 mt-1">{t('profile_approved')}</span>
             </div>
             <div className="p-4 bg-orange-50 rounded-xl border border-orange-200 text-center">
               <span className="block text-2xl font-extrabold text-orange-500">{ownerPending}</span>
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-orange-600 mt-1">Pending</span>
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-orange-600 mt-1">{t('profile_pending')}</span>
             </div>
             <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-center">
               <span className="block text-2xl font-extrabold text-red-500">{ownerRejected}</span>
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-red-600 mt-1">Rejected</span>
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-red-600 mt-1">{t('profile_rejected')}</span>
             </div>
           </div>
 
           {ownerProperties.length === 0 && (
             <div className="text-center py-6 mt-4 border-t border-surface-container-low">
               <span className="material-symbols-outlined text-3xl text-on-surface-variant/20 mb-2 block">home_work</span>
-              <p className="text-xs text-on-surface-variant italic">No listings yet. Go to Manage Properties to add your first property.</p>
+              <p className="text-xs text-on-surface-variant italic">{t('profile_no_listings_yet')}</p>
             </div>
           )}
         </div>
@@ -540,14 +780,14 @@ const ProfilePage = () => {
           <div className="flex items-center justify-between mb-5 pb-4 border-b border-surface-container-low">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">admin_panel_settings</span>
-              <h2 className="text-base font-bold text-on-surface font-headline">System Summary</h2>
+              <h2 className="text-base font-bold text-on-surface font-headline">{t('profile_system_summary')}</h2>
             </div>
             <Link
               to="/admin"
               className="flex items-center gap-1.5 px-4 py-2 bg-surface-container hover:bg-primary/10 hover:text-primary text-on-surface text-xs font-bold rounded-lg transition-all border border-outline-variant/20"
             >
               <span className="material-symbols-outlined text-sm">dashboard</span>
-              Open Admin Dashboard
+              {t('profile_btn_open_admin')}
             </Link>
           </div>
 
@@ -557,22 +797,22 @@ const ProfilePage = () => {
               <Link to="/admin" className="flex items-center gap-3 p-4 bg-primary/5 hover:bg-primary/10 rounded-xl border border-primary/10 transition-colors group">
                 <span className="material-symbols-outlined text-primary text-xl">home_work</span>
                 <div>
-                  <span className="block text-xs font-bold text-primary">Property Approvals</span>
-                  <span className="block text-[10px] text-on-surface-variant mt-0.5">Review pending listings</span>
+                  <span className="block text-xs font-bold text-primary">{t('profile_admin_prop_approvals')}</span>
+                  <span className="block text-[10px] text-on-surface-variant mt-0.5">{t('profile_admin_prop_approvals_sub')}</span>
                 </div>
               </Link>
               <Link to="/admin" className="flex items-center gap-3 p-4 bg-surface-container-lowest hover:bg-primary/10 rounded-xl border border-outline-variant/20 transition-colors group">
                 <span className="material-symbols-outlined text-on-surface-variant text-xl group-hover:text-primary">people</span>
                 <div>
-                  <span className="block text-xs font-bold text-on-surface group-hover:text-primary">User Management</span>
-                  <span className="block text-[10px] text-on-surface-variant mt-0.5">View all registered users</span>
+                  <span className="block text-xs font-bold text-on-surface group-hover:text-primary">{t('profile_admin_user_mgmt')}</span>
+                  <span className="block text-[10px] text-on-surface-variant mt-0.5">{t('profile_admin_user_mgmt_sub')}</span>
                 </div>
               </Link>
               <Link to="/admin" className="flex items-center gap-3 p-4 bg-surface-container-lowest hover:bg-primary/10 rounded-xl border border-outline-variant/20 transition-colors group">
                 <span className="material-symbols-outlined text-on-surface-variant text-xl group-hover:text-primary">feedback</span>
                 <div>
-                  <span className="block text-xs font-bold text-on-surface group-hover:text-primary">User Feedback</span>
-                  <span className="block text-[10px] text-on-surface-variant mt-0.5">Manage reports & suggestions</span>
+                  <span className="block text-xs font-bold text-on-surface group-hover:text-primary">{t('profile_admin_feedback')}</span>
+                  <span className="block text-[10px] text-on-surface-variant mt-0.5">{t('profile_admin_feedback_sub')}</span>
                 </div>
               </Link>
             </div>
@@ -581,27 +821,27 @@ const ProfilePage = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 text-center">
                 <span className="block text-2xl font-extrabold text-primary">{adminUsers.length}</span>
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-primary/70 mt-1">Total Users</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-primary/70 mt-1">{t('profile_admin_total_users')}</span>
               </div>
               <div className="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/20 text-center">
                 <span className="block text-2xl font-extrabold text-on-surface">{adminStudents}</span>
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Students</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{t('profile_admin_students')}</span>
               </div>
               <div className="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/20 text-center">
                 <span className="block text-2xl font-extrabold text-on-surface">{adminOwners}</span>
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Owners</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{t('profile_admin_owners')}</span>
               </div>
               <div className="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/20 text-center">
                 <span className="block text-2xl font-extrabold text-on-surface">{adminProperties.length}</span>
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Total Listings</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{t('profile_admin_total_listings')}</span>
               </div>
               <div className="p-4 bg-orange-50 rounded-xl border border-orange-200 text-center">
                 <span className="block text-2xl font-extrabold text-orange-500">{adminPending}</span>
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-orange-600 mt-1">Pending Approvals</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-orange-600 mt-1">{t('profile_admin_pending_approvals')}</span>
               </div>
               <div className="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/20 text-center">
                 <span className="block text-2xl font-extrabold text-on-surface">{adminProperties.filter(p => p.approvalStatus !== 'Pending').length}</span>
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Processed</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{t('profile_admin_processed')}</span>
               </div>
             </div>
           )}
@@ -613,7 +853,7 @@ const ProfilePage = () => {
         <div className="bg-white border border-outline-variant/20 rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-surface-container-low">
             <span className="material-symbols-outlined text-primary">home</span>
-            <h2 className="text-base font-bold text-on-surface font-headline">Linked Rental Property</h2>
+            <h2 className="text-base font-bold text-on-surface font-headline">{t('profile_linked_property')}</h2>
           </div>
 
           {linkedProperty ? (
@@ -627,24 +867,33 @@ const ProfilePage = () => {
               </div>
               <div className="flex items-center gap-6 self-stretch md:self-auto justify-between border-t md:border-t-0 pt-3 md:pt-0 border-surface-container-low">
                 <div>
-                  <span className="block text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Monthly Rent</span>
+                  <span className="block text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">{t('detail_rent')}</span>
                   <span className="text-sm font-extrabold text-primary">RM {linkedProperty.monthlyRent || '—'}</span>
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
-                  Linked
+                  {t('pref_linked')}
                 </span>
               </div>
             </div>
           ) : (
             <div className="text-center py-6">
               <span className="material-symbols-outlined text-3xl text-on-surface-variant/20 mb-2 block">home_work</span>
-              <p className="text-xs text-on-surface-variant italic">No property linked currently</p>
+              <p className="text-xs text-on-surface-variant italic">{t('profile_no_property_linked')}</p>
             </div>
           )}
         </div>
       )}
 
+      <UnsavedChangesModal
+        isOpen={blocker.state === 'blocked'}
+        onSave={() => handleSave(() => blocker.proceed())}
+        onDiscard={() => {
+          setIsDirty(false);
+          blocker.proceed();
+        }}
+        onCancel={() => blocker.reset()}
+      />
     </div>
   );
 };

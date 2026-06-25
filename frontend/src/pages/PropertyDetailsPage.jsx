@@ -177,15 +177,6 @@ const PropertyDetailsPage = () => {
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Back to listings
           </Link>
-          <a
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined text-base">map</span>
-            View in Maps
-          </a>
         </div>
 
         {/* ── Gallery ── */}
@@ -392,15 +383,7 @@ const PropertyDetailsPage = () => {
                     </p>
                   )}
                 </div>
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-all hover:shadow-rs-blue flex-shrink-0"
-                >
-                  <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  Maps
-                </a>
+
               </div>
             </div>
           </div>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useBlocker } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import UnsavedChangesModal from '../components/UnsavedChangesModal';
 import { getApprovedProperties, linkUserToProperty } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
 const SLEEP_OPTIONS = ['Early Bird', 'Night Owl', 'Flexible'];
@@ -30,17 +32,35 @@ const MATCHING_TIPS = [
 const ManageHousemateProfilePage = () => {
   const { currentUser, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [priorityError, setPriorityError] = useState('');
+  const [formErrors, setFormErrors] = useState({});
   const [approvedProperties, setApprovedProperties] = useState([]);
   const [linkedProperty, setLinkedProperty] = useState(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [activeTip] = useState(() => Math.floor(Math.random() * MATCHING_TIPS.length));
+  const [isDirty, setIsDirty] = useState(false);
 
   const formSeeded = useRef(false);
+
+  const blocker = useBlocker(
+    ({ nextLocation }) => isDirty && !saving
+  );
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const getLifestyleArray = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -96,6 +116,7 @@ const ManageHousemateProfilePage = () => {
     const current = getLifestyleArray(form.lifestyle);
     const updated = current.includes(opt) ? current.filter(l => l !== opt) : [...current, opt];
     setForm(prev => ({ ...prev, lifestyle: updated.join(', ') }));
+    setIsDirty(true);
   };
 
   const setPriority = (slot, value) => {
@@ -108,6 +129,7 @@ const ManageHousemateProfilePage = () => {
       next[slot] = value;
       return next;
     });
+    setIsDirty(true);
   };
 
   const availableFor = (slot) =>
@@ -118,16 +140,38 @@ const ManageHousemateProfilePage = () => {
 
   const getPriorityMeta = (value) => PRIORITY_OPTIONS.find(o => o.value === value);
 
-  const handleSave = async () => {
+  const handleSave = async (proceedAfterSave = null) => {
     setSaveError('');
     setPriorityError('');
+    setFormErrors({});
+
+    const tempErrors = {};
+    const budgetVal = form.budget !== null && form.budget !== undefined ? form.budget.toString().trim() : '';
+
+    if (form.isListedAsHousemate && !budgetVal) {
+      tempErrors.budget = t('val_err_required');
+    } else if (budgetVal) {
+      const budgetNum = Number(budgetVal);
+      if (isNaN(budgetNum)) {
+        tempErrors.budget = t('val_err_numeric_only');
+      } else if (budgetNum <= 0) {
+        tempErrors.budget = t('val_err_numeric_positive');
+      } else if (budgetNum > 10000) {
+        tempErrors.budget = t('val_err_max_value', { max: '10000 RM' });
+      }
+    }
+
+    if (Object.keys(tempErrors).length > 0) {
+      setFormErrors(tempErrors);
+      return;
+    }
 
     if (!form.priority1 || !form.priority2 || !form.priority3) {
-      setPriorityError('Please select exactly 3 different priorities before saving.');
+      setPriorityError(t('pref_priority_error'));
       return;
     }
     if (new Set([form.priority1, form.priority2, form.priority3]).size !== 3) {
-      setPriorityError('Each priority must be different. Please resolve the duplicate.');
+      setPriorityError(t('pref_priority_dupe'));
       return;
     }
 
@@ -168,10 +212,19 @@ const ManageHousemateProfilePage = () => {
       }
 
       setSaveSuccess(true);
-      setTimeout(() => { setSaveSuccess(false); navigate('/profile'); }, 1800);
+      setIsDirty(false);
+
+      if (proceedAfterSave && typeof proceedAfterSave === 'function') {
+        proceedAfterSave();
+      } else {
+        setTimeout(() => { setSaveSuccess(false); navigate('/profile'); }, 1800);
+      }
     } catch (err) {
       console.error('Save failed:', err);
       setSaveError(err?.response?.data?.message || err?.message || 'Failed to save. Please try again.');
+      if (blocker && blocker.state === 'blocked') {
+        blocker.reset();
+      }
     } finally {
       setSaving(false);
     }
@@ -195,16 +248,16 @@ const ManageHousemateProfilePage = () => {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-on-surface-variant mb-6">
-          <Link to="/profile" className="hover:text-primary transition-colors font-medium">Account</Link>
+          <Link to="/profile" className="hover:text-primary transition-colors font-medium">{t('nav_profile')}</Link>
           <span className="material-symbols-outlined text-sm text-gray-300">chevron_right</span>
-          <span className="font-semibold text-on-surface">Housemate Profile</span>
+          <span className="font-semibold text-on-surface">{t('pref_title')}</span>
         </nav>
 
         {/* Alerts */}
         {saveSuccess && (
           <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 animate-fade-in">
             <span className="material-symbols-outlined text-emerald-500" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-            <span className="font-semibold text-sm">Saved! Redirecting to your profile…</span>
+            <span className="font-semibold text-sm">{t('pref_saved')}</span>
           </div>
         )}
         {saveError && (
@@ -228,7 +281,7 @@ const ManageHousemateProfilePage = () => {
               <div className="bg-gradient-to-br from-primary to-blue-600 p-5 pb-8 relative">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">Live Preview</p>
+                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">{t('pref_live_preview')}</p>
                     <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-black border border-white/30">
                       {currentUser.name.charAt(0)}
                     </div>
@@ -236,11 +289,11 @@ const ManageHousemateProfilePage = () => {
                   {form.isListedAsHousemate ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-400/30 border border-emerald-300/50 text-white text-[10px] font-bold rounded-full">
                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      Active
+                      {t('pref_active')}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 border border-white/20 text-white/70 text-[10px] font-bold rounded-full">
-                      Hidden
+                      {t('pref_hidden')}
                     </span>
                   )}
                 </div>
@@ -252,11 +305,11 @@ const ManageHousemateProfilePage = () => {
                   <h3 className="font-bold text-on-surface text-base font-headline">{currentUser.name}</h3>
                   <p className="text-xs text-on-surface-variant">{currentUser.email}</p>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    <span className="text-[10px] px-2 py-0.5 bg-primary/8 text-primary rounded-full font-bold" style={{ background: 'rgba(0,88,190,0.06)' }}>{currentUser.role}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-primary/8 text-primary rounded-full font-bold" style={{ background: 'rgba(0,88,190,0.06)' }}>{t(currentUser.role)}</span>
                     {isStudent && currentUser.isStudentVerified && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-bold border border-emerald-200">
                         <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                        Verified
+                        {t('common_verified')}
                       </span>
                     )}
                   </div>
@@ -266,7 +319,7 @@ const ManageHousemateProfilePage = () => {
                 {form.budget && (
                   <div className="text-center py-2 mb-3 bg-primary/5 rounded-lg border border-primary/10">
                     <span className="text-lg font-black text-primary">RM {form.budget}</span>
-                    <span className="text-xs text-on-surface-variant font-medium">/month budget</span>
+                    <span className="text-xs text-on-surface-variant font-medium">{t('pref_budget_suffix')}</span>
                   </div>
                 )}
 
@@ -275,7 +328,7 @@ const ManageHousemateProfilePage = () => {
                   <div className="flex flex-wrap gap-1 mb-3">
                     {selectedLifestyles.map(tag => (
                       <span key={tag} className="text-[10px] px-2.5 py-1 bg-primary/8 text-primary rounded-full font-bold" style={{ background: 'rgba(0,88,190,0.06)' }}>
-                        {tag}
+                        {t(tag)}
                       </span>
                     ))}
                   </div>
@@ -285,7 +338,7 @@ const ManageHousemateProfilePage = () => {
                 {form.sleepSchedule && (
                   <div className="flex items-center gap-1.5 mb-3 text-xs text-on-surface-variant">
                     <span className="material-symbols-outlined text-xs">bedtime</span>
-                    <span className="font-medium">{form.sleepSchedule}</span>
+                    <span className="font-medium">{t(form.sleepSchedule)}</span>
                   </div>
                 )}
 
@@ -297,7 +350,7 @@ const ManageHousemateProfilePage = () => {
                     return meta ? (
                       <div key={slot} className="flex items-center gap-2 text-xs">
                         <span className="material-symbols-outlined text-primary text-[12px]">{meta.icon}</span>
-                        <span className="text-on-surface-variant flex-1">{meta.label}</span>
+                        <span className="text-on-surface-variant flex-1">{t(meta.value)}</span>
                         <div className={`w-8 h-1 rounded-full ${barColor}`} />
                       </div>
                     ) : null;
@@ -308,46 +361,46 @@ const ManageHousemateProfilePage = () => {
                 {matchedProp ? (
                   <div className="p-2.5 bg-primary/5 border border-primary/10 rounded-lg">
                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[10px]">home</span> Linked
+                      <span className="material-symbols-outlined text-[10px]">home</span> {t('pref_linked')}
                     </p>
                     <p className="text-xs font-semibold text-on-surface line-clamp-1">{matchedProp.title}</p>
                     <p className="text-[10px] text-on-surface-variant">{matchedProp.city}</p>
                   </div>
                 ) : (
-                  <p className="text-xs text-on-surface-variant italic text-center py-1">No property linked</p>
+                  <p className="text-xs text-on-surface-variant italic text-center py-1">{t('pref_no_property')}</p>
                 )}
               </div>
             </div>
 
             {/* Profile Status Card */}
             <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Profile Status</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">{t('pref_profile_status')}</h4>
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-on-surface-variant">Visibility</span>
+                  <span className="text-sm text-on-surface-variant">{t('pref_section_visibility')}</span>
                   {form.isListedAsHousemate ? (
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Listed & Active
+                      {t('profile_status_visible')}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-on-surface-variant">
                       <span className="w-2 h-2 rounded-full bg-gray-300" />
-                      Hidden
+                      {t('pref_hidden')}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-on-surface-variant">Verification</span>
+                  <span className="text-sm text-on-surface-variant">{t('pref_verification')}</span>
                   {isStudent && currentUser.isStudentVerified ? (
                     <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
                       <span className="material-symbols-outlined text-xs">verified</span>
-                      UiTM Verified
+                      {t('hm_verified')}
                     </span>
                   ) : (
                     <span className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
                       <span className="material-symbols-outlined text-xs">info</span>
-                      Unverified
+                      {t('pref_unverified')}
                     </span>
                   )}
                 </div>
@@ -358,10 +411,10 @@ const ManageHousemateProfilePage = () => {
             <div className="bg-gradient-to-br from-primary/5 to-blue-50 rounded-2xl border border-primary/15 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
-                <p className="text-xs font-bold text-primary uppercase tracking-widest">Matching Tip</p>
+                <p className="text-xs font-bold text-primary uppercase tracking-widest">{t('pref_tip_title')}</p>
               </div>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                {MATCHING_TIPS[activeTip]}
+                {t(MATCHING_TIPS[activeTip])}
               </p>
             </div>
           </div>
@@ -370,9 +423,9 @@ const ManageHousemateProfilePage = () => {
           <div className="lg:col-span-2 lg:order-1 space-y-5">
 
             <div>
-              <h1 className="text-2xl font-black font-headline text-on-surface mb-1">Housemate Profile</h1>
+              <h1 className="text-2xl font-black font-headline text-on-surface mb-1">{t('pref_title')}</h1>
               <p className="text-sm text-on-surface-variant">
-                Control how you appear in the matching system and set your compatibility criteria.
+                {t('pref_subtitle')}
               </p>
             </div>
 
@@ -380,23 +433,23 @@ const ManageHousemateProfilePage = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
               <h2 className="font-bold text-on-surface mb-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-base">visibility</span>
-                Listing Visibility
+                {t('pref_section_visibility')}
               </h2>
-              <p className="text-xs text-on-surface-variant mb-4">Toggle this to appear on the housemate listing page.</p>
+              <p className="text-xs text-on-surface-variant mb-4">{t('pref_visibility_desc')}</p>
               <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100">
                 <div>
-                  <p className="font-semibold text-on-surface text-sm">List me as a housemate</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">You'll appear in the housemate listing for others to find</p>
+                  <p className="font-semibold text-on-surface text-sm">{t('pref_listed_label')}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">{t('pref_listed_desc')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {form.isListedAsHousemate && (
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Active</span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">{t('pref_active')}</span>
                   )}
                   <label className="rs-toggle">
                     <input
                       type="checkbox"
                       checked={form.isListedAsHousemate}
-                      onChange={e => setForm({ ...form, isListedAsHousemate: e.target.checked })}
+                      onChange={e => { setForm({ ...form, isListedAsHousemate: e.target.checked }); setIsDirty(true); }}
                     />
                     <span className="rs-toggle-slider" />
                   </label>
@@ -408,42 +461,48 @@ const ManageHousemateProfilePage = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
               <h2 className="font-bold text-on-surface mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-base">person</span>
-                Basic Preferences
+                {t('pref_section_prefs')}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                    Monthly Budget (RM)
+                    {t('pref_budget')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-on-surface-variant">RM</span>
                     <input
                       type="number"
                       value={form.budget}
-                      onChange={e => setForm({ ...form, budget: e.target.value })}
+                      onChange={e => { setForm({ ...form, budget: e.target.value }); setFormErrors(prev => ({ ...prev, budget: '' })); setIsDirty(true); }}
                       placeholder="e.g. 500"
                       className="rs-input pl-10 text-sm"
                       style={{ paddingLeft: '40px' }}
                     />
                   </div>
+                  {formErrors.budget && (
+                    <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">error</span>
+                      {formErrors.budget}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                    Sleep Pattern
+                    {t('pref_sleep')}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {SLEEP_OPTIONS.map(opt => (
                       <button
                         key={opt}
                         type="button"
-                        onClick={() => setForm({ ...form, sleepSchedule: form.sleepSchedule === opt ? '' : opt })}
+                        onClick={() => { setForm({ ...form, sleepSchedule: form.sleepSchedule === opt ? '' : opt }); setIsDirty(true); }}
                         className={`py-2 px-2 rounded-xl text-xs font-bold transition-all text-center ${
                           form.sleepSchedule === opt
                             ? 'bg-primary text-white shadow-rs-blue'
                             : 'bg-gray-100 text-on-surface-variant hover:bg-gray-200'
                         }`}
                       >
-                        {opt}
+                        {t(opt)}
                       </button>
                     ))}
                   </div>
@@ -452,7 +511,7 @@ const ManageHousemateProfilePage = () => {
 
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">
-                  Lifestyle Tags <span className="normal-case font-normal text-on-surface-variant">(select all that describe you)</span>
+                  {t('pref_lifestyle')} <span className="normal-case font-normal text-on-surface-variant">{t('pref_lifestyle_select')}</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {LIFESTYLE_OPTIONS.map(opt => {
@@ -469,13 +528,13 @@ const ManageHousemateProfilePage = () => {
                         }`}
                       >
                         {selected && <span className="mr-1">✓</span>}
-                        {opt}
+                        {t(opt)}
                       </button>
                     );
                   })}
                 </div>
                 <p className="text-[11px] text-on-surface-variant mt-2 italic">
-                  These tags describe your lifestyle, not your matching priorities.
+                  {t('pref_lifestyle_hint')}
                 </p>
               </div>
             </div>
@@ -484,15 +543,15 @@ const ManageHousemateProfilePage = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
               <h2 className="font-bold text-on-surface mb-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-base">bar_chart</span>
-                Compatibility Priorities
+                {t('pref_section_priority')}
               </h2>
               <p className="text-xs text-on-surface-variant mb-5">
-                Choose 3 things in order of importance. These drive how your match score is calculated.
+                {t('pref_priority_desc')}
               </p>
 
               {/* Weight visual */}
               <div className="flex gap-2 mb-5 flex-wrap">
-                {[['P1', '40%', 'bg-primary text-white'], ['P2', '30%', 'bg-primary/70 text-white'], ['P3', '20%', 'bg-primary/40 text-white'], ['Others', '10%', 'bg-gray-100 text-on-surface-variant']].map(([label, pct, style]) => (
+                {[['P1', '40%', 'bg-primary text-white'], ['P2', '30%', 'bg-primary/70 text-white'], ['P3', '20%', 'bg-primary/40 text-white'], [t('pref_priority_others'), '10%', 'bg-gray-100 text-on-surface-variant']].map(([label, pct, style]) => (
                   <div key={label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${style}`}>
                     <span className="text-[10px] font-black">{label}</span>
                     <span className="text-[10px] font-bold opacity-80">{pct}</span>
@@ -514,24 +573,25 @@ const ManageHousemateProfilePage = () => {
                     priority2: 'bg-primary/70 text-white',
                     priority3: 'bg-primary/40 text-white',
                   };
+                  const localizedLabel = slot === 'priority1' ? t('pref_priority_1') : slot === 'priority2' ? t('pref_priority_2') : t('pref_priority_3');
                   return (
                     <div
                       key={slot}
                       className={`p-4 rounded-xl border transition-all`}
                       style={{
-                        borderColor: slot === 'priority1' ? 'rgba(0,88,190,0.3)' : slot === 'priority2' ? 'rgba(0,88,190,0.2)' : '#e5e7eb',
-                        background: slot === 'priority1' ? 'rgba(0,88,190,0.03)' : '#f9fafb',
+                        borderColor: slot === 'priority1' ? 'rgba(0,88,190,0.3)' : slot === 'priority2' ? 'rgba(0,88,190,0.2)' : 'var(--rs-border-strong)',
+                        background: slot === 'priority1' ? 'rgba(0,88,190,0.03)' : 'var(--rs-surface-2)',
                       }}
                     >
                       <div className="flex items-center gap-3 mb-2.5">
                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${badgeColors[slot]}`}>
-                          {label}
+                          {localizedLabel}
                         </span>
-                        <span className="text-[11px] text-on-surface-variant font-medium">= {weight} of score</span>
+                        <span className="text-[11px] text-on-surface-variant font-medium">{t('pref_priority_weight', { weight })}</span>
                         {meta && (
                           <span className="ml-auto flex items-center gap-1 text-[11px] text-primary font-bold">
                             <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>{meta.icon}</span>
-                            {meta.label}
+                            {t(meta.value)}
                           </span>
                         )}
                       </div>
@@ -542,12 +602,12 @@ const ManageHousemateProfilePage = () => {
                           className="rs-select text-sm pr-8"
                           style={{ paddingRight: '32px' }}
                         >
-                          <option value="">Select a priority…</option>
+                          <option value="">{t('pref_priority_placeholder')}</option>
                           {availableFor(slot).map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label} — {opt.desc}</option>
+                            <option key={opt.value} value={opt.value}>{t(opt.value)} — {t(opt.desc)}</option>
                           ))}
                           {selected && !availableFor(slot).find(o => o.value === selected) && (
-                            <option value={selected}>{selected}</option>
+                            <option value={selected}>{t(selected)}</option>
                           )}
                         </select>
                         <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">expand_more</span>
@@ -567,7 +627,7 @@ const ManageHousemateProfilePage = () => {
               {form.priority1 && form.priority2 && form.priority3 && (
                 <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-medium animate-fade-in">
                   <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <span>Priorities set: <strong>{form.priority1}</strong> → <strong>{form.priority2}</strong> → <strong>{form.priority3}</strong></span>
+                  <span>{t('pref_priority_ok')}: <strong>{t(form.priority1)}</strong> → <strong>{t(form.priority2)}</strong> → <strong>{t(form.priority3)}</strong></span>
                 </div>
               )}
             </div>
@@ -576,22 +636,22 @@ const ManageHousemateProfilePage = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-sm p-6">
               <h2 className="font-bold text-on-surface mb-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-base">home</span>
-                Linked Rental Property
+                {t('pref_section_property')}
               </h2>
               <p className="text-xs text-on-surface-variant mb-4">
-                Link your profile to the property where you currently live or plan to stay.
+                {t('pref_property_desc')}
               </p>
               <div className="relative">
                 <select
                   value={selectedPropertyId}
-                  onChange={e => setSelectedPropertyId(e.target.value)}
+                  onChange={e => { setSelectedPropertyId(e.target.value); setIsDirty(true); }}
                   className="rs-select text-sm pr-8"
                   style={{ paddingRight: '32px' }}
                 >
-                  <option value="">No linked property</option>
+                  <option value="">{t('pref_no_property')}</option>
                   {approvedProperties.map(p => (
                     <option key={p.id} value={p.id}>
-                      {p.title} — {p.city}, {p.state} (RM {p.monthlyRent}/mo)
+                      {p.title} — {p.city}, {p.state} (RM {p.monthlyRent}{t('card_per_month')})
                     </option>
                   ))}
                 </select>
@@ -603,7 +663,7 @@ const ManageHousemateProfilePage = () => {
                   <span className="material-symbols-outlined text-primary text-base">home</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-on-surface truncate">{matchedProp.title}</p>
-                    <p className="text-xs text-on-surface-variant">{matchedProp.city}, {matchedProp.state} · RM {matchedProp.monthlyRent}/mo</p>
+                    <p className="text-xs text-on-surface-variant">{matchedProp.city}, {matchedProp.state} · RM {matchedProp.monthlyRent}{t('card_per_month')}</p>
                   </div>
                 </div>
               )}
@@ -615,7 +675,7 @@ const ManageHousemateProfilePage = () => {
                 to="/profile"
                 className="rs-btn-ghost text-sm py-2.5 px-5"
               >
-                Discard Changes
+                {t('pref_discard')}
               </Link>
               <button
                 onClick={handleSave}
@@ -625,12 +685,12 @@ const ManageHousemateProfilePage = () => {
                 {saving ? (
                   <>
                     <span className="btn-spinner" />
-                    Saving…
+                    {t('pref_saving')}
                   </>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-sm">save</span>
-                    Save Preferences
+                    {t('pref_save')}
                   </>
                 )}
               </button>
@@ -638,6 +698,15 @@ const ManageHousemateProfilePage = () => {
           </div>
         </div>
       </div>
+      <UnsavedChangesModal
+        isOpen={blocker.state === 'blocked'}
+        onSave={() => handleSave(() => blocker.proceed())}
+        onDiscard={() => {
+          setIsDirty(false);
+          blocker.proceed();
+        }}
+        onCancel={() => blocker.reset()}
+      />
     </div>
   );
 };

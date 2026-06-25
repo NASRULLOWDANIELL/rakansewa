@@ -2,11 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─────────────────────────────────────────
-   RakanSewa Design System — Global Utilities
-   ───────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   RakanSewa Design System â€” Global Utilities
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @layer utilities {
+
   /* Glass morphism */
   .glass {
     background: rgba(255, 255, 255, 0.72);
@@ -25,14 +26,31 @@
   }
 
   /* Line clamp helpers */
-  .line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
-  .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Loading Spinner
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn-spinner {
   display: inline-block;
   width: 18px;
@@ -45,17 +63,20 @@
 }
 
 @keyframes btn-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Entry Animations
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -63,28 +84,52 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Skeleton Loading
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .skeleton {
   background: linear-gradient(90deg, #f0f2f4 25%, #e8ebee 50%, #f0f2f4 75%);
   background-size: 800px 100%;
@@ -92,29 +137,29 @@
   border-radius: 8px;
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Card System
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .rs-card {
-  background: #ffffff;
+  background: var(--rs-card);
   border-radius: 16px;
-  border: 1px solid rgba(194, 198, 214, 0.3);
-  box-shadow: 0 1px 3px rgba(25, 28, 30, 0.04), 0 8px 24px rgba(25, 28, 30, 0.04);
+  border: 1px solid var(--rs-border);
+  box-shadow: var(--rs-shadow-sm);
   transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .rs-card:hover {
-  box-shadow: 0 4px 12px rgba(25, 28, 30, 0.06), 0 16px 40px rgba(0, 88, 190, 0.08);
+  box-shadow: var(--rs-shadow-md);
 }
 
 .rs-card-lift:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(25, 28, 30, 0.08), 0 24px 56px rgba(0, 88, 190, 0.10);
+  box-shadow: var(--rs-shadow-md);
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Badge System
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .rs-badge {
   display: inline-flex;
   align-items: center;
@@ -168,9 +213,9 @@
   border: 1px solid #bfdbfe;
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Button System
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .rs-btn-primary {
   display: inline-flex;
   align-items: center;
@@ -240,9 +285,9 @@
   color: #0058be;
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Toggle Switch
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .rs-toggle {
   position: relative;
   display: inline-block;
@@ -276,20 +321,20 @@
   background: white;
   border-radius: 50%;
   transition: transform 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.rs-toggle input:checked + .rs-toggle-slider {
+.rs-toggle input:checked+.rs-toggle-slider {
   background: #0058be;
 }
 
-.rs-toggle input:checked + .rs-toggle-slider:before {
+.rs-toggle input:checked+.rs-toggle-slider:before {
   transform: translateX(20px);
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Score Ring (for match percentage)
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .rs-score-ring {
   position: relative;
   display: inline-flex;
@@ -297,22 +342,24 @@
   justify-content: center;
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Section Spacing
-   ───────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .rs-page {
-  padding-top: 88px; /* navbar clearance */
+  padding-top: 88px;
+  /* navbar clearance */
   min-height: 100vh;
-  background: #f7f9fb;
+  background: var(--rs-bg);
 }
 
 .rs-section {
   padding: 64px 0;
 }
 
-/* ─────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ──────────────────────────────────────────
    Input System
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 .rs-input {
   width: 100%;
   padding: 10px 16px;
@@ -355,20 +402,25 @@
   box-shadow: 0 0 0 3px rgba(0, 88, 190, 0.12);
 }
 
-/* ─────────────────────────────────────────
+/* ──────────────────────────────────────────
    Stat Card
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 .rs-stat-card {
-  background: #ffffff;
+  background: var(--rs-card);
   border-radius: 16px;
-  border: 1px solid rgba(194, 198, 214, 0.3);
+  border: 1px solid var(--rs-border);
   padding: 20px 24px;
-  box-shadow: 0 1px 3px rgba(25, 28, 30, 0.04);
+  box-shadow: var(--rs-shadow-sm);
+  transition: box-shadow 0.25s ease;
 }
 
-/* ─────────────────────────────────────────
+.rs-stat-card:hover {
+  box-shadow: var(--rs-shadow-md);
+}
+
+/* ──────────────────────────────────────────
    Pill Filter
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 .rs-pill {
   display: inline-flex;
   align-items: center;
@@ -401,9 +453,9 @@
   box-shadow: 0 4px 12px rgba(0, 88, 190, 0.25);
 }
 
-/* ─────────────────────────────────────────
+/* ──────────────────────────────────────────
    Progress Bar
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 .rs-progress {
   height: 6px;
   background: #e5e7eb;
@@ -417,18 +469,18 @@
   transition: width 0.5s ease;
 }
 
-/* ─────────────────────────────────────────
+/* ──────────────────────────────────────────
    Divider
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 .rs-divider {
   border: none;
-  border-top: 1px solid rgba(194, 198, 214, 0.4);
+  border-top: 1px solid var(--rs-border);
   margin: 24px 0;
 }
 
-/* ─────────────────────────────────────────
+/* ──────────────────────────────────────────
    Empty State
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 .rs-empty-state {
   display: flex;
   flex-direction: column;
@@ -436,14 +488,15 @@
   justify-content: center;
   padding: 80px 24px;
   text-align: center;
-  background: #ffffff;
+  background: var(--rs-card);
   border-radius: 16px;
-  border: 1px dashed rgba(194, 198, 214, 0.6);
+  border: 1.5px dashed var(--rs-border-strong);
+  box-shadow: var(--rs-shadow-sm);
 }
 
-/* ─────────────────────────────────────────
+/* ──────────────────────────────────────────
    Scrollbar (Webkit)
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -462,115 +515,267 @@
   background: rgba(114, 119, 133, 0.7);
 }
 
-/* ─────────────────────────────────────────
+/* ──────────────────────────────────────────
    DESIGN TOKENS (CSS Variables)
    Light values live on :root, dark overrides on .dark
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 
 :root {
-  --rs-bg:           #f7f9fb;
-  --rs-surface:      #ffffff;
-  --rs-surface-2:    #f2f4f6;
-  --rs-card:         #ffffff;
-  --rs-card-2:       #f9fafb;
-  --rs-border:       rgba(194, 198, 214, 0.35);
-  --rs-border-strong:rgba(194, 198, 214, 0.6);
-  --rs-text:         #191c1e;
-  --rs-text-2:       #424754;
-  --rs-text-3:       #6b7280;
-  --rs-accent:       #0058be;
-  --rs-accent-soft:  rgba(0, 88, 190, 0.08);
-  --rs-shadow-sm:    0 1px 3px rgba(25,28,30,0.04), 0 4px 12px rgba(25,28,30,0.04);
-  --rs-shadow-md:    0 2px 8px rgba(25,28,30,0.06), 0 8px 24px rgba(25,28,30,0.06);
-  --rs-shadow-lg:    0 4px 16px rgba(25,28,30,0.08), 0 16px 48px rgba(0,88,190,0.08);
+  --rs-bg: #f6f7fb;
+  --rs-surface: #ffffff;
+  --rs-surface-2: #f1f3f8;
+  --rs-card: #ffffff;
+  --rs-card-2: #f9fafc;
+  --rs-border: #e5e7eb;
+  --rs-border-strong: #d1d5db;
+  --rs-text: #111827;
+  --rs-text-2: #4b5563;
+  --rs-text-3: #6b7280;
+  --rs-accent: #0058be;
+  --rs-accent-soft: rgba(0, 88, 190, 0.08);
+  --rs-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --rs-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --rs-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.11), 0 4px 12px rgba(0, 0, 0, 0.07);
+  --rs-login-bg: linear-gradient(135deg, #f0f4ff 0%, #f6f7fb 50%, #eef2ff 100%);
+  --rs-homepage-bg: linear-gradient(135deg, #f0f3ff 0%, #fafbff 40%, #f5f3ff 75%, #e0f2fe 100%);
 }
 
 .dark {
-  --rs-bg:           #0d0f14;
-  --rs-surface:      #161920;
-  --rs-surface-2:    #1e2128;
-  --rs-card:         #1e2128;
-  --rs-card-2:       #252930;
-  --rs-border:       rgba(255, 255, 255, 0.07);
-  --rs-border-strong:rgba(255, 255, 255, 0.12);
-  --rs-text:         #e4e8f0;
-  --rs-text-2:       #9ba3b8;
-  --rs-text-3:       #6b7a96;
-  --rs-accent:       #4d8ef7;
-  --rs-accent-soft:  rgba(77, 142, 247, 0.12);
-  --rs-shadow-sm:    0 1px 3px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.2);
-  --rs-shadow-md:    0 2px 8px rgba(0,0,0,0.3),  0 8px 24px rgba(0,0,0,0.25);
-  --rs-shadow-lg:    0 4px 16px rgba(0,0,0,0.35), 0 16px 48px rgba(0,0,0,0.3);
+  --rs-bg: #0b0f17;
+  --rs-surface: #0b0f17;
+  --rs-surface-2: #0f172a;
+  --rs-card: #111827;
+  --rs-card-2: #0f172a;
+  --rs-border: #1f2937;
+  --rs-border-strong: #1f2937;
+  --rs-text: #e5e7eb;
+  --rs-text-2: #9ca3af;
+  --rs-text-3: #6b7280;
+  --rs-accent: #4d8ef7;
+  --rs-accent-soft: rgba(77, 142, 247, 0.12);
+  --rs-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2);
+  --rs-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --rs-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.35), 0 16px 48px rgba(0, 0, 0, 0.3);
+  --rs-login-bg: #0b0f17;
+  --rs-homepage-bg: var(--rs-bg);
 }
 
-/* ─────────────────────────────────────────
+.homepage-gradient-bg {
+  background: var(--rs-homepage-bg) !important;
+}
+
+/* ──────────────────────────────────────────
    DARK MODE — GLOBAL COVERAGE
    Targets every Tailwind utility used in the app.
    No JSX changes required.
-   ───────────────────────────────────────── */
+   ────────────────────────────────────────── */
 
 /* ── Body & page backgrounds ── */
-.dark body                       { background-color: var(--rs-bg); color: var(--rs-text); }
-.dark .bg-background             { background-color: var(--rs-bg) !important; }
-.dark .bg-white                  { background-color: var(--rs-card) !important; }
-.dark .bg-gray-50                { background-color: var(--rs-surface-2) !important; }
-.dark .bg-gray-100               { background-color: var(--rs-surface-2) !important; }
-.dark .bg-gray-200               { background-color: #2a2e38 !important; }
-.dark .bg-surface-container-low  { background-color: var(--rs-surface) !important; }
-.dark .bg-surface-container-lowest { background-color: var(--rs-card) !important; }
-.dark .bg-surface-container      { background-color: var(--rs-surface-2) !important; }
-.dark .bg-surface-container-high { background-color: var(--rs-surface-2) !important; }
-.dark .bg-surface-container-highest { background-color: #2a2e38 !important; }
-.dark .bg-surface               { background-color: var(--rs-surface) !important; }
+.dark body {
+  background-color: var(--rs-bg) !important;
+  color: var(--rs-text) !important;
+}
+
+.dark .bg-background {
+  background-color: var(--rs-bg) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--rs-card) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--rs-surface-2) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: var(--rs-surface-2) !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: var(--rs-border) !important;
+}
+
+.dark .bg-gray-300 {
+  background-color: var(--rs-border) !important;
+}
+
+.dark .bg-gray-400 {
+  background-color: #2a3547 !important;
+}
+
+.dark .bg-gray-500 {
+  background-color: #3f4e68 !important;
+}
+
+.dark .bg-surface-container-low {
+  background-color: var(--rs-surface) !important;
+}
+
+.dark .bg-surface-container-lowest {
+  background-color: var(--rs-card) !important;
+}
+
+.dark .bg-surface-container {
+  background-color: var(--rs-surface-2) !important;
+}
+
+.dark .bg-surface-container-high {
+  background-color: var(--rs-surface-2) !important;
+}
+
+.dark .bg-surface-container-highest {
+  background-color: var(--rs-border) !important;
+}
+
+.dark .bg-surface {
+  background-color: var(--rs-surface) !important;
+}
 
 /* ── Text colors ── */
-.dark .text-on-surface           { color: var(--rs-text) !important; }
-.dark .text-on-surface-variant   { color: var(--rs-text-2) !important; }
-.dark .text-on-background        { color: var(--rs-text) !important; }
-.dark .text-gray-900             { color: var(--rs-text) !important; }
-.dark .text-gray-800             { color: var(--rs-text) !important; }
-.dark .text-gray-700             { color: var(--rs-text-2) !important; }
-.dark .text-gray-600             { color: var(--rs-text-2) !important; }
-.dark .text-gray-500             { color: var(--rs-text-3) !important; }
-.dark .text-gray-400             { color: var(--rs-text-3) !important; }
+.dark .text-on-surface {
+  color: var(--rs-text) !important;
+}
+
+.dark .text-on-surface-variant {
+  color: var(--rs-text-2) !important;
+}
+
+.dark .text-on-background {
+  color: var(--rs-text) !important;
+}
+
+.dark .text-black {
+  color: var(--rs-text) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--rs-text) !important;
+}
+
+.dark .text-gray-800 {
+  color: var(--rs-text) !important;
+}
+
+.dark .text-gray-700 {
+  color: var(--rs-text-2) !important;
+}
+
+.dark .text-gray-600 {
+  color: var(--rs-text-2) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--rs-text-3) !important;
+}
+
+.dark .text-gray-400 {
+  color: var(--rs-text-3) !important;
+}
+
+.dark .text-gray-300 {
+  color: var(--rs-text-3) !important;
+}
 
 /* ── Borders ── */
-.dark .border-gray-100           { border-color: var(--rs-border) !important; }
-.dark .border-gray-200           { border-color: var(--rs-border) !important; }
-.dark .border-gray-300           { border-color: var(--rs-border-strong) !important; }
-.dark .border-outline-variant\/30 { border-color: var(--rs-border) !important; }
-.dark .divide-gray-100 > * + *   { border-color: var(--rs-border) !important; }
-.dark .divide-gray-200 > * + *   { border-color: var(--rs-border) !important; }
+.dark .border-gray-100 {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: var(--rs-border-strong) !important;
+}
+
+.dark .border-gray-400 {
+  border-color: var(--rs-border-strong) !important;
+}
+
+.dark .border-outline-variant\/20 {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .border-outline-variant\/30 {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .border-white\/40 {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .divide-gray-100>*+* {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .divide-gray-200>*+* {
+  border-color: var(--rs-border) !important;
+}
 
 /* ── Hover backgrounds that turn white/gray ── */
-.dark .hover\:bg-white:hover     { background-color: var(--rs-card-2) !important; }
-.dark .hover\:bg-gray-50:hover   { background-color: var(--rs-surface-2) !important; }
-.dark .hover\:bg-gray-100:hover  { background-color: var(--rs-surface-2) !important; }
-.dark .hover\:bg-gray-200:hover  { background-color: #2a2e38 !important; }
+.dark .hover\:bg-white:hover {
+  background-color: var(--rs-card-2) !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--rs-surface-2) !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--rs-surface-2) !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: var(--rs-border) !important;
+}
+
+.dark .hover\:border-gray-300:hover {
+  border-color: var(--rs-border) !important;
+}
 
 /* ── Navbar ── */
 .dark nav {
-  background: rgba(22, 25, 32, 0.92) !important;
+  background: rgba(11, 15, 23, 0.92) !important;
   border-bottom-color: var(--rs-border) !important;
   backdrop-filter: blur(24px) saturate(120%);
 }
 
-/* ── Design system card ── */
-.dark .rs-card {
-  background: var(--rs-card);
-  border-color: var(--rs-border);
-  box-shadow: var(--rs-shadow-sm);
-}
-.dark .rs-card:hover,
 .dark .rs-card-lift:hover {
   box-shadow: var(--rs-shadow-md);
 }
 
-/* ── Design system page wrapper ── */
-.dark .rs-page              { background: var(--rs-bg); }
-.dark .rs-stat-card         { background: var(--rs-card); border-color: var(--rs-border); }
-.dark .rs-empty-state       { background: var(--rs-card); border-color: var(--rs-border); }
-.dark .rs-divider           { border-top-color: var(--rs-border); }
+.dark .shadow-rs-sm {
+  box-shadow: var(--rs-shadow-sm) !important;
+}
+
+.dark .shadow-rs-md {
+  box-shadow: var(--rs-shadow-md) !important;
+}
+
+.dark .shadow-rs-lg {
+  box-shadow: var(--rs-shadow-lg) !important;
+}
+
+/* â”€â”€ Design system page wrapper â”€â”€ */
+.dark .rs-page {
+  background: var(--rs-bg);
+}
+
+.dark .rs-stat-card {
+  background: var(--rs-card);
+  border-color: var(--rs-border);
+}
+
+.dark .rs-empty-state {
+  background: var(--rs-card);
+  border-color: var(--rs-border);
+}
+
+.dark .rs-divider {
+  border-top-color: var(--rs-border);
+}
 
 /* ── Inputs and selects ── */
 .dark .rs-input,
@@ -579,7 +784,11 @@
   border-color: var(--rs-border-strong);
   color: var(--rs-text);
 }
-.dark .rs-input::placeholder  { color: var(--rs-text-3); }
+
+.dark .rs-input::placeholder {
+  color: var(--rs-text-3);
+}
+
 .dark .rs-input:focus,
 .dark .rs-select:focus {
   border-color: var(--rs-accent);
@@ -592,6 +801,7 @@
   color: var(--rs-text-2);
   border-color: var(--rs-border-strong);
 }
+
 .dark .rs-pill-inactive:hover {
   border-color: var(--rs-accent);
   color: var(--rs-accent);
@@ -599,13 +809,16 @@
 }
 
 /* ── Progress bar track ── */
-.dark .rs-progress { background: #2a2e38; }
+.dark .rs-progress {
+  background: #1f2937;
+}
 
 /* ── Ghost button ── */
 .dark .rs-btn-ghost {
   color: var(--rs-text-2);
   border-color: var(--rs-border-strong);
 }
+
 .dark .rs-btn-ghost:hover {
   background: var(--rs-surface-2);
   color: var(--rs-accent);
@@ -619,236 +832,560 @@
 
 /* ── Skeleton loading ── */
 .dark .skeleton {
-  background: linear-gradient(90deg, #1e2128 25%, #252930 50%, #1e2128 75%);
+  background: linear-gradient(90deg, #161920 25%, #1e2128 50%, #161920 75%);
   background-size: 800px 100%;
 }
 
 /* ── Badge system dark overrides ── */
 .dark .rs-badge-available {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
 }
+
 .dark .rs-badge-occupied {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
 }
+
 .dark .rs-badge-pending {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
 }
+
 .dark .rs-badge-approved {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
 }
+
 .dark .rs-badge-rejected {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
 }
+
 .dark .rs-badge-verified {
-  background: rgba(77, 142, 247, 0.12);
-  color: #7ab3ff;
-  border-color: rgba(77, 142, 247, 0.2);
+  background: rgba(77, 142, 247, 0.12) !important;
+  color: #7ab3ff !important;
+  border-color: rgba(77, 142, 247, 0.2) !important;
 }
+
 .dark .rs-badge-primary {
-  background: rgba(77, 142, 247, 0.12);
-  color: #7ab3ff;
-  border-color: rgba(77, 142, 247, 0.2);
+  background: rgba(77, 142, 247, 0.12) !important;
+  color: #7ab3ff !important;
+  border-color: rgba(77, 142, 247, 0.2) !important;
 }
 
 /* ── Inline color tokens used in JSX ── */
-/* Soft emerald boxes (verification, success states) */
-.dark .bg-emerald-50  { background-color: rgba(16, 185, 129, 0.1) !important; }
-.dark .bg-red-50      { background-color: rgba(239, 68, 68, 0.1) !important; }
-.dark .bg-amber-50    { background-color: rgba(245, 158, 11, 0.1) !important; }
-.dark .bg-blue-50     { background-color: rgba(77, 142, 247, 0.1) !important; }
-.dark .bg-purple-50   { background-color: rgba(139, 92, 246, 0.1) !important; }
-.dark .bg-teal-50     { background-color: rgba(20, 184, 166, 0.1) !important; }
+.dark .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+.dark .bg-green-50\/50 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+.dark .border-green-100,
+.dark .border-green-200 {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark .text-green-600,
+.dark .text-green-700,
+.dark .text-green-800 {
+  color: #34d399 !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(77, 142, 247, 0.12) !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(139, 92, 246, 0.12) !important;
+}
+
+.dark .bg-teal-50 {
+  background-color: rgba(20, 184, 166, 0.12) !important;
+}
+
+.dark .bg-blue-50\/50 {
+  background-color: rgba(77, 142, 247, 0.08) !important;
+}
+
+.dark .bg-gray-50\/50 {
+  background-color: rgba(249, 250, 251, 0.05) !important;
+}
+
+.dark .bg-gray-800\/80 {
+  background-color: rgba(31, 41, 55, 0.8) !important;
+}
 
 /* Soft colored borders */
 .dark .border-emerald-100,
-.dark .border-emerald-200  { border-color: rgba(16, 185, 129, 0.2) !important; }
+.dark .border-emerald-200 {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
 .dark .border-red-100,
-.dark .border-red-200      { border-color: rgba(239, 68, 68, 0.2) !important; }
+.dark .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
 .dark .border-amber-100,
-.dark .border-amber-200    { border-color: rgba(245, 158, 11, 0.2) !important; }
+.dark .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
 .dark .border-blue-100,
-.dark .border-blue-200     { border-color: rgba(77, 142, 247, 0.2) !important; }
+.dark .border-blue-200 {
+  border-color: rgba(77, 142, 247, 0.2) !important;
+}
 
 /* Text colors in soft boxes */
 .dark .text-emerald-600,
 .dark .text-emerald-700,
-.dark .text-emerald-800  { color: #34d399 !important; }
+.dark .text-emerald-800 {
+  color: #34d399 !important;
+}
+
 .dark .text-red-600,
 .dark .text-red-700,
-.dark .text-red-800      { color: #f87171 !important; }
+.dark .text-red-800 {
+  color: #f87171 !important;
+}
+
 .dark .text-amber-600,
 .dark .text-amber-700,
-.dark .text-amber-800    { color: #fbbf24 !important; }
+.dark .text-amber-800 {
+  color: #fbbf24 !important;
+}
+
 .dark .text-blue-600,
-.dark .text-blue-700     { color: #60a5fa !important; }
+.dark .text-blue-700 {
+  color: #60a5fa !important;
+}
+
+.dark .text-emerald-600\/70 {
+  color: rgba(52, 211, 153, 0.7) !important;
+}
+
+.dark .text-blue-600\/70 {
+  color: rgba(96, 165, 250, 0.7) !important;
+}
 
 /* ── Glass morphism dark ── */
 .dark .glass {
-  background: rgba(22, 25, 32, 0.7);
+  background: rgba(11, 15, 23, 0.7);
   backdrop-filter: blur(24px) saturate(120%);
 }
-
-/* ── Inline white/gray backgrounds commonly inlined in JSX ── */
-/* Targets style={{ background: '...' }} usage cannot be auto-overridden,
-   but class-based ones are all captured above.                         */
 
 /* ── Drop-down menus and modals ── */
 .dark [role="menu"],
 .dark [role="dialog"] {
-  background: var(--rs-card);
-  border-color: var(--rs-border);
+  background: var(--rs-card) !important;
+  border-color: var(--rs-border) !important;
 }
 
 /* ── Tables (AdminDashboard) ── */
-.dark table                { color: var(--rs-text); }
-.dark thead                { background: var(--rs-surface-2); }
-.dark thead th             { color: var(--rs-text-2); border-color: var(--rs-border); }
-.dark tbody td             { border-color: var(--rs-border); color: var(--rs-text); }
-.dark tbody tr:hover       { background: var(--rs-surface-2); }
-.dark .border-b            { border-color: var(--rs-border) !important; }
-.dark .border-t            { border-color: var(--rs-border) !important; }
+.dark table {
+  color: var(--rs-text);
+}
+
+.dark thead {
+  background: var(--rs-surface-2);
+}
+
+.dark thead th {
+  color: var(--rs-text-2);
+  border-color: var(--rs-border);
+}
+
+.dark tbody td {
+  border-color: var(--rs-border);
+  color: var(--rs-text);
+}
+
+.dark tbody tr:hover {
+  background: var(--rs-surface-2);
+}
+
+.dark .border-b {
+  border-color: var(--rs-border) !important;
+}
+
+.dark .border-t {
+  border-color: var(--rs-border) !important;
+}
 
 /* ── Form label text ── */
-.dark label                { color: var(--rs-text-2); }
+.dark label {
+  color: var(--rs-text-2);
+}
 
 /* ── Scrollbar dark ── */
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(100, 110, 130, 0.5);
 }
+
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 150, 170, 0.6);
 }
 
+/* ── Specific layout components overrides ── */
+.dark .from-blue-50\/70.via-white\/60.to-background {
+  background-image: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), #0b0f17 60%, #0b0f17) !important;
+}
+
+.dark .from-primary\/5.to-blue-50 {
+  background-image: linear-gradient(to bottom right, rgba(0, 88, 190, 0.15), #0f172a) !important;
+  border-color: rgba(77, 142, 247, 0.2) !important;
+}
 
 /* Dark mode is fully implemented above via CSS tokens and utility class overrides. */
 
+/* ══════════════════════════════════════════════════════════
+   LIGHT MODE ENHANCEMENT SYSTEM
+   Selector: html.light  (DarkModeContext adds .light to <html>)
+   All rules below apply ONLY when light mode is active.
+   Dark mode is never affected.
+   ══════════════════════════════════════════════════════════ */
 
-
-
-
-  /* Text tokens */
-  --rs-text-primary: #e8ecf4;
-  --rs-text-secondary: #9ba3b8;
-
-  /* Primary accent stays consistent */
-  --rs-accent: #4d8ef7;
-}
-
-/* Dark mode card */
-.dark .rs-card {
-  background: var(--rs-card);
-  border-color: var(--rs-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-/* Dark mode page background */
-.dark body {
+/* ── Body & page base ── */
+html.light body {
   background-color: var(--rs-bg);
-  color: var(--rs-text-primary);
+  color: var(--rs-text);
 }
 
-/* Dark mode input */
-.dark .rs-input,
-.dark .rs-select {
-  background: var(--rs-surface);
+/* ── Navbar — frosted glass in light mode ── */
+html.light nav {
+  background: rgba(246, 247, 251, 0.88) !important;
+  border-bottom: 1px solid var(--rs-border) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── bg-white elements gain border + shadow in light mode ── */
+html.light .bg-white {
   border-color: var(--rs-border);
-  color: var(--rs-text-primary);
 }
 
-.dark .rs-input::placeholder {
-  color: var(--rs-text-secondary);
+html.light article.bg-white,
+html.light div.bg-white {
+  box-shadow: var(--rs-shadow-sm);
 }
 
-/* Dark mode navbar */
-.dark nav {
-  background: rgba(26, 29, 35, 0.85);
+html.light article.bg-white:hover {
+  box-shadow: var(--rs-shadow-md);
+}
+
+/* ── Section backgrounds — layered tinting ── */
+html.light .bg-gray-50 {
+  background-color: var(--rs-surface-2) !important;
+}
+
+html.light .bg-gray-100 {
+  background-color: #edf0f5 !important;
+}
+
+html.light .bg-gray-200 {
+  background-color: #e2e6ed !important;
+}
+
+/* ── Typography hierarchy ── */
+html.light .text-gray-900 {
+  color: var(--rs-text) !important;
+}
+
+html.light .text-gray-800 {
+  color: #1f2937 !important;
+}
+
+html.light .text-gray-700 {
+  color: #374151 !important;
+}
+
+html.light .text-gray-600 {
+  color: var(--rs-text-2) !important;
+}
+
+html.light .text-gray-500 {
+  color: var(--rs-text-3) !important;
+}
+
+html.light .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+/* Material Design surface tokens — light mode map */
+html.light .text-on-surface {
+  color: var(--rs-text) !important;
+}
+
+html.light .text-on-surface-variant {
+  color: var(--rs-text-2) !important;
+}
+
+html.light .text-on-background {
+  color: var(--rs-text) !important;
+}
+
+/* ── Surface container tokens — light mode map ── */
+html.light .bg-surface-container-low {
+  background-color: #f0f2f7 !important;
+}
+
+html.light .bg-surface-container-lowest {
+  background-color: var(--rs-card) !important;
+}
+
+html.light .bg-surface-container {
+  background-color: var(--rs-surface-2) !important;
+}
+
+html.light .bg-surface-container-high {
+  background-color: #eaecf2 !important;
+}
+
+html.light .bg-surface-container-highest {
+  background-color: #e2e5ee !important;
+}
+
+html.light .bg-surface {
+  background-color: var(--rs-surface) !important;
+}
+
+html.light .bg-background {
+  background-color: var(--rs-bg) !important;
+}
+
+/* ── Borders ── */
+html.light .border-gray-100 {
+  border-color: #ebebee !important;
+}
+
+html.light .border-gray-200 {
+  border-color: var(--rs-border) !important;
+}
+
+html.light .border-gray-300 {
+  border-color: var(--rs-border-strong) !important;
+}
+
+html.light .divide-gray-100>*+* {
+  border-color: #ebebee !important;
+}
+
+html.light .divide-gray-200>*+* {
+  border-color: var(--rs-border) !important;
+}
+
+/* ── Amenity chips (bg-gray-100 in PropertyCard) ── */
+html.light .bg-gray-100.rounded-full,
+html.light span.bg-gray-100 {
+  background-color: #eef0f5 !important;
+  border: 1px solid #e2e6eb;
+  color: var(--rs-text-2) !important;
+}
+
+/* ── Hover states ── */
+html.light .hover\:bg-gray-50:hover {
+  background-color: var(--rs-surface-2) !important;
+}
+
+html.light .hover\:bg-gray-100:hover {
+  background-color: #edf0f5 !important;
+}
+
+html.light .hover\:border-gray-300:hover {
+  border-color: var(--rs-border-strong) !important;
+}
+
+/* ── Shadow utilities ── */
+html.light .shadow-rs-sm {
+  box-shadow: var(--rs-shadow-sm) !important;
+}
+
+html.light .shadow-rs-md {
+  box-shadow: var(--rs-shadow-md) !important;
+}
+
+html.light .shadow-rs-lg {
+  box-shadow: var(--rs-shadow-lg) !important;
+}
+
+/* ── Table light mode ── */
+html.light table {
+  color: var(--rs-text);
+}
+
+html.light thead {
+  background-color: var(--rs-surface-2);
+  border-bottom: 1px solid var(--rs-border);
+}
+
+html.light thead th {
+  color: var(--rs-text-2);
+  border-color: var(--rs-border);
+}
+
+html.light tbody td {
+  border-color: var(--rs-border);
+}
+
+html.light tbody tr:hover {
+  background-color: #f5f7fc;
+}
+
+html.light .border-b {
   border-bottom-color: var(--rs-border);
 }
 
-/* Dark mode badges */
-.dark .rs-badge-primary {
-  background: rgba(77, 142, 247, 0.15);
-  color: #7ab3ff;
-  border-color: rgba(77, 142, 247, 0.25);
+html.light .border-t {
+  border-top-color: var(--rs-border);
 }
 
-.dark .rs-badge-available {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.2);
+/* ── Modal / dropdown panels ── */
+html.light [role="dialog"] {
+  background: var(--rs-card) !important;
+  border-color: var(--rs-border) !important;
+  box-shadow: var(--rs-shadow-lg) !important;
 }
 
-.dark .rs-badge-pending {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.2);
+html.light [role="menu"] {
+  background: var(--rs-card) !important;
+  border-color: var(--rs-border) !important;
+  box-shadow: var(--rs-shadow-md) !important;
 }
 
-.dark .rs-badge-rejected {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.2);
+/* ── Skeleton shimmer — cooler tones in light mode ── */
+html.light .skeleton {
+  background: linear-gradient(90deg, #eef0f5 25%, #e5e8f0 50%, #eef0f5 75%);
+  background-size: 800px 100%;
 }
 
-/*
-  NOTE: Dark mode toggle logic is NOT yet wired up.
-  To activate: add 'dark' class to <html lang="en" class="light dark">
-  and implement a toggle button that switches it via JS.
-  All CSS variables above will take effect automatically.
-*/
+/* ── rs-card light mode ── */
+html.light .rs-card {
+  background: var(--rs-card);
+  border-color: var(--rs-border);
+  box-shadow: var(--rs-shadow-sm);
+}
 
-/* ─────────────────────────────────────────
-   i18n READINESS STRUCTURE
-   Bahasa Melayu / language support preparation.
-   When BM toggle is implemented, swap [data-lang="ms"] text content
-   via a context/provider, keeping the same component structure.
-   ───────────────────────────────────────── */
+html.light .rs-card:hover {
+  box-shadow: var(--rs-shadow-md);
+}
 
-/*
-  i18n Strategy for RakanSewa:
-  ─────────────────────────────
-  1. No page duplication needed.
-  2. Use a lightweight LanguageContext that returns translated strings.
-  3. Components consume: const { t } = useLanguage();
-  4. Example usage: t('hero.headline') → "Cari Rakan Serumah Anda"
+/* ── Input & select refinement ── */
+html.light .rs-input,
+html.light .rs-select {
+  background: var(--rs-card);
+  border-color: var(--rs-border-strong);
+  color: var(--rs-text);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
 
-  Key label map (EN → BM reference):
-  ─────────────────────────────────────────────────────────
-  Find Housemates       → Cari Rakan Serumah
-  Browse Listings       → Semak Senarai Hartanah
-  Matching-first        → Padanan Pertama
-  Create Account        → Daftar Akaun
-  Sign In               → Log Masuk
-  My Profile            → Profil Saya
-  Preferences           → Keutamaan
-  Dashboard             → Papan Pemuka
-  Available             → Tersedia
-  Occupied              → Diduduki
-  Pending               → Menunggu Kelulusan
-  Approved              → Diluluskan
-  Rejected              → Ditolak
-  Monthly Rent          → Sewa Bulanan
-  Great Match           → Padanan Terbaik
-  Good Match            → Padanan Baik
-  Why you match         → Sebab padanan anda
-  Student               → Pelajar
-  Property Owner        → Tuan Rumah
-  ─────────────────────────────────────────────────────────
+html.light .rs-input:focus,
+html.light .rs-select:focus {
+  border-color: var(--rs-accent);
+  box-shadow: 0 0 0 3px rgba(0, 88, 190, 0.10), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
 
-  Implementation TODO (future sprint):
-  1. Create src/context/LanguageContext.jsx
-  2. Add a LanguageProvider wrapping App
-  3. Create src/locales/en.js and src/locales/ms.js
-  4. Add a language toggle button to Navbar
-  5. No routing changes needed.
-*/
+/* ── Pill filter ── */
+html.light .rs-pill-inactive {
+  background: var(--rs-card);
+  border-color: var(--rs-border-strong);
+  color: var(--rs-text-2);
+  box-shadow: var(--rs-shadow-sm);
+}
+
+html.light .rs-pill-inactive:hover {
+  background: #eff6ff;
+  border-color: var(--rs-accent);
+  color: var(--rs-accent);
+}
+
+/* ── Progress bar track ── */
+html.light .rs-progress {
+  background: #e5e9f0;
+}
+
+/* ── Divider ── */
+html.light .rs-divider {
+  border-top-color: var(--rs-border);
+}
+
+/* ── Glass util ── */
+html.light .glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+/* ── Colored icon bg chips (HomePage features) ── */
+html.light .bg-blue-50 {
+  background-color: #eff6ff !important;
+}
+
+html.light .bg-teal-50 {
+  background-color: #f0fdfa !important;
+}
+
+html.light .bg-purple-50 {
+  background-color: #faf5ff !important;
+}
+
+html.light .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+}
+
+html.light .bg-red-50 {
+  background-color: #fef2f2 !important;
+}
+
+html.light .bg-amber-50 {
+  background-color: #fffbeb !important;
+}
+
+/* ── Scrollbar light mode ── */
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.55);
+}
+
+/* ── Button refinements ── */
+html.light .rs-btn-secondary {
+  background: var(--rs-card);
+  border-color: var(--rs-accent);
+  box-shadow: var(--rs-shadow-sm);
+}
+
+html.light .rs-btn-ghost {
+  background: var(--rs-card);
+  border-color: var(--rs-border-strong);
+  box-shadow: var(--rs-shadow-sm);
+}
+
+html.light .rs-btn-ghost:hover {
+  background: var(--rs-surface-2);
+  border-color: var(--rs-accent);
+  color: var(--rs-accent);
+}

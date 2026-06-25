@@ -1,3 +1,5 @@
+import { useLanguage } from '../context/LanguageContext';
+
 const PropertyFilter = ({
   filters,
   setFilters,
@@ -7,6 +9,7 @@ const PropertyFilter = ({
   availableFurnished,
   onReset
 }) => {
+  const { t } = useLanguage();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,7 +35,7 @@ const PropertyFilter = ({
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="font-bold text-on-surface text-sm">Filters</h3>
+          <h3 className="font-bold text-on-surface text-sm">{t('filter_title')}</h3>
           {activeCount > 0 && (
             <span className="min-w-[20px] h-5 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center px-1">
               {activeCount}
@@ -44,7 +47,7 @@ const PropertyFilter = ({
             onClick={onReset}
             className="text-xs font-semibold text-primary hover:text-primary/70 transition-colors"
           >
-            Clear all
+            {t('filter_clear')}
           </button>
         )}
       </div>
@@ -52,13 +55,13 @@ const PropertyFilter = ({
       <div className="p-5 space-y-6">
 
         {/* Search */}
-        <FilterSection icon="search" title="Search">
+        <FilterSection icon="search" title={t('pfilter_search')}>
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-on-surface-variant/60">search</span>
             <input
               type="text"
               name="search"
-              placeholder="Title or city..."
+              placeholder={t('pfilter_search_placeholder')}
               value={filters.search}
               onChange={handleChange}
               className="rs-input pl-9 text-sm"
@@ -71,14 +74,14 @@ const PropertyFilter = ({
         <hr className="border-gray-100" />
 
         {/* Price Range */}
-        <FilterSection icon="payments" title="Price Range (RM)">
+        <FilterSection icon="payments" title={t('filter_price')}>
           <div className="flex gap-2">
             <input
               type="number"
               name="minPrice"
               value={filters.minPrice}
               onChange={handleChange}
-              placeholder="Min"
+              placeholder={t('filter_min')}
               className="rs-input text-sm w-full"
             />
             <div className="flex items-center text-on-surface-variant flex-shrink-0">
@@ -89,7 +92,7 @@ const PropertyFilter = ({
               name="maxPrice"
               value={filters.maxPrice}
               onChange={handleChange}
-              placeholder="Max"
+              placeholder={t('filter_max')}
               className="rs-input text-sm w-full"
             />
           </div>
@@ -100,7 +103,7 @@ const PropertyFilter = ({
         {/* Location */}
         {availableStates.length > 0 && (
           <>
-            <FilterSection icon="location_on" title="State / Location">
+            <FilterSection icon="location_on" title={t('filter_location')}>
               <div className="relative">
                 <select
                   name="state"
@@ -109,9 +112,9 @@ const PropertyFilter = ({
                   className="rs-select text-sm pr-8"
                   style={{ paddingRight: '32px' }}
                 >
-                  <option value="">All Locations</option>
+                  <option value="">{t('filter_all_locations')}</option>
                   {availableStates.map(state => (
-                    <option key={state} value={state}>{state}</option>
+                    <option key={state} value={state}>{t(state)}</option>
                   ))}
                 </select>
                 <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">expand_more</span>
@@ -124,7 +127,7 @@ const PropertyFilter = ({
         {/* Property Type */}
         {availablePropertyTypes.length > 0 && (
           <>
-            <FilterSection icon="home_work" title="Property Type">
+            <FilterSection icon="home_work" title={t('filter_type')}>
               <div className="relative">
                 <select
                   name="propertyType"
@@ -133,9 +136,9 @@ const PropertyFilter = ({
                   className="rs-select text-sm pr-8"
                   style={{ paddingRight: '32px' }}
                 >
-                  <option value="">All Types</option>
+                  <option value="">{t('filter_all_types')}</option>
                   {availablePropertyTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>{t(type)}</option>
                   ))}
                 </select>
                 <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">expand_more</span>
@@ -148,13 +151,13 @@ const PropertyFilter = ({
         {/* Room Type */}
         {availableRoomTypes.length > 0 && (
           <>
-            <FilterSection icon="bed" title="Room Type">
+            <FilterSection icon="bed" title={t('filter_room')}>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setFilters(prev => ({ ...prev, roomType: '' }))}
                   className={`rs-pill text-xs ${!filters.roomType ? 'rs-pill-active' : 'rs-pill-inactive'}`}
                 >
-                  All
+                  {t('common_all')}
                 </button>
                 {availableRoomTypes.map(type => (
                   <button
@@ -162,7 +165,7 @@ const PropertyFilter = ({
                     onClick={() => setFilters(prev => ({ ...prev, roomType: prev.roomType === type ? '' : type }))}
                     className={`rs-pill text-xs ${filters.roomType === type ? 'rs-pill-active' : 'rs-pill-inactive'}`}
                   >
-                    {type}
+                    {t(type)}
                   </button>
                 ))}
               </div>
@@ -173,7 +176,7 @@ const PropertyFilter = ({
 
         {/* Furnished Status */}
         {availableFurnished.length > 0 && (
-          <FilterSection icon="chair" title="Furnishing">
+          <FilterSection icon="chair" title={t('pfilter_furnishing')}>
             <div className="space-y-2">
               <button
                 onClick={() => setFilters(prev => ({ ...prev, furnishedStatus: '' }))}
@@ -183,7 +186,7 @@ const PropertyFilter = ({
                     : 'text-on-surface-variant hover:bg-gray-50'
                 }`}
               >
-                All
+                {t('common_all')}
               </button>
               {availableFurnished.map(status => (
                 <button
@@ -195,7 +198,7 @@ const PropertyFilter = ({
                       : 'text-on-surface-variant hover:bg-gray-50'
                   }`}
                 >
-                  {status}
+                  {t(status)}
                 </button>
               ))}
             </div>
@@ -211,7 +214,7 @@ const PropertyFilter = ({
             onClick={onReset}
             className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-on-surface-variant hover:bg-gray-50 hover:text-primary hover:border-primary/30 transition-all"
           >
-            Clear All Filters
+            {t('filter_clear')}
           </button>
         </div>
       )}

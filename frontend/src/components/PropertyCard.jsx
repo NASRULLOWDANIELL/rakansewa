@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => {
+  const { t } = useLanguage();
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=70`;
   const rawImage = property.imageUrl || placeholderImage;
   const displayImage = rawImage.startsWith('/uploads') ? `http://localhost:8080${rawImage}` : rawImage;
@@ -36,7 +38,7 @@ const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => 
               : 'bg-gray-700/80 text-white'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
-            {isAvailable ? 'Available' : property.availabilityStatus}
+            {isAvailable ? t('common_available') : (property.availabilityStatus === 'Occupied' ? t('common_occupied') : property.availabilityStatus)}
           </span>
         </div>
 
@@ -48,7 +50,7 @@ const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => 
               ? 'bg-red-500 text-white shadow-lg scale-110'
               : 'bg-white/80 text-gray-500 hover:bg-white hover:text-red-400 hover:scale-105'
           }`}
-          title={isFavourited ? 'Remove from saved' : 'Save listing'}
+          title={isFavourited ? t('card_tooltip_unsave') : t('card_tooltip_save')}
         >
           <span
             className="material-symbols-outlined text-sm"
@@ -83,7 +85,7 @@ const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => 
           </div>
           <div className="text-right flex-shrink-0">
             <span className="block text-lg font-black text-primary font-headline">RM {property.monthlyRent}</span>
-            <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wide">/month</span>
+            <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wide">{t('common_per_month')}</span>
           </div>
         </div>
 
@@ -110,7 +112,7 @@ const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => 
           className="w-full py-2.5 text-center text-sm font-bold text-primary bg-primary/8 hover:bg-primary hover:text-white rounded-xl transition-all duration-200 border border-primary/20 hover:border-primary hover:shadow-rs-blue"
           style={{ background: 'rgba(0, 88, 190, 0.06)' }}
         >
-          View Details
+          {t('card_view')}
         </Link>
       </div>
     </article>

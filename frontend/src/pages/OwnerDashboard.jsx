@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImages, deletePropertyImage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import UnsavedChangesModal from '../components/UnsavedChangesModal';
 import { useLanguage } from '../context/LanguageContext';
 
 /* ── Status badge helper ── */
@@ -35,12 +37,29 @@ const OwnerDashboard = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '',
     monthlyRent: '', roomType: 'Single', propertyType: 'Apartment',
     furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
     imageUrl: ''
   });
+
+  const blocker = useBlocker(
+    ({ nextLocation }) => isDirty && showForm && !uploading
+  );
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty && showForm) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, showForm]);
 
   useEffect(() => {
     if (currentUser?.id) fetchProperties();
@@ -69,6 +88,8 @@ const OwnerDashboard = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setFormErrors(prev => ({ ...prev, [name]: '' }));
+    setIsDirty(true);
   };
 
   const handleImageFileChange = (e) => {
@@ -77,17 +98,20 @@ const OwnerDashboard = () => {
     const previews = files.map(file => ({ file, previewUrl: URL.createObjectURL(file) }));
     setImageFiles(prev => [...prev, ...files]);
     setImagePreviews(prev => [...prev, ...previews]);
+    setIsDirty(true);
   };
 
   const removeNewPreview = (index) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setIsDirty(true);
   };
 
   const handleDeleteExistingImage = async (imageId) => {
     try {
       await deletePropertyImage(imageId);
       setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      setIsDirty(true);
     } catch (err) {
       console.error('Failed to delete image:', err);
     }
@@ -118,18 +142,81 @@ const OwnerDashboard = () => {
 
   const resetForm = () => {
     setFormData({ title: '', description: '', address: '', city: '', state: '', monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending', imageUrl: '' });
+    setFormErrors({});
     setImageFiles([]);
     setImagePreviews([]);
     setExistingImages([]);
     setEditingId(null);
     setEditingWasRejected(false);
     setShowForm(false);
+    setIsDirty(false);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setUploading(true);
+  const handleSubmit = async (e, proceedAfterSave = null) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setFormErrors({});
     setSaveError(null);
+
+    const tempErrors = {};
+    const trimmedTitle = (formData.title || '').trim();
+    const trimmedAddress = (formData.address || '').trim();
+    const trimmedCity = (formData.city || '').trim();
+    const trimmedState = (formData.state || '').trim();
+    const rentVal = formData.monthlyRent !== null && formData.monthlyRent !== undefined ? formData.monthlyRent.toString().trim() : '';
+    const trimmedDesc = (formData.description || '').trim();
+
+    if (!trimmedTitle) {
+      tempErrors.title = t('val_err_required');
+    } else if (trimmedTitle.length > 100) {
+      tempErrors.title = t('val_err_too_long', { max: 100 });
+    }
+
+    if (!trimmedAddress) {
+      tempErrors.address = t('val_err_required');
+    } else if (trimmedAddress.length > 200) {
+      tempErrors.address = t('val_err_too_long', { max: 200 });
+    }
+
+    if (!trimmedCity) {
+      tempErrors.city = t('val_err_required');
+    } else if (trimmedCity.length > 50) {
+      tempErrors.city = t('val_err_too_long', { max: 50 });
+    }
+
+    if (!trimmedState) {
+      tempErrors.state = t('val_err_required');
+    } else if (trimmedState.length > 50) {
+      tempErrors.state = t('val_err_too_long', { max: 50 });
+    }
+
+    if (!rentVal) {
+      tempErrors.monthlyRent = t('val_err_required');
+    } else {
+      const rentNum = Number(rentVal);
+      if (isNaN(rentNum)) {
+        tempErrors.monthlyRent = t('val_err_numeric_only');
+      } else if (rentNum <= 0) {
+        tempErrors.monthlyRent = t('val_err_numeric_positive');
+      } else if (rentNum > 50000) {
+        tempErrors.monthlyRent = t('val_err_max_value', { max: '50000 RM' });
+      }
+    }
+
+    if (!trimmedDesc) {
+      tempErrors.description = t('val_err_required');
+    } else if (trimmedDesc.length > 2000) {
+      tempErrors.description = t('val_err_too_long', { max: 2000 });
+    }
+
+    if (Object.keys(tempErrors).length > 0) {
+      setFormErrors(tempErrors);
+      if (blocker && blocker.state === 'blocked') {
+        blocker.reset();
+      }
+      return;
+    }
+
+    setUploading(true);
 
     try {
       if (editingId) {
@@ -144,11 +231,15 @@ const OwnerDashboard = () => {
             await uploadPropertyImages(editingId, imageFiles);
           } catch (imgErr) {
             console.error('[EditProperty] Image upload failed:', imgErr);
+            setIsDirty(false);
             resetForm();
             await fetchProperties();
             setUploading(false);
             setSaveError('Property saved, but new images failed to upload. Please edit the listing to try uploading again.');
             setTimeout(() => setSaveError(null), 6000);
+            if (proceedAfterSave && typeof proceedAfterSave === 'function') {
+              proceedAfterSave();
+            }
             return;
           }
         }
@@ -164,22 +255,33 @@ const OwnerDashboard = () => {
             }
           } catch (imgErr) {
             console.error('[CreateProperty] Image upload failed:', imgErr);
+            setIsDirty(false);
             resetForm();
             await fetchProperties();
             setUploading(false);
             setSaveError('Property created, but images failed to upload. Please edit the listing to add images.');
             setTimeout(() => setSaveError(null), 6000);
+            if (proceedAfterSave && typeof proceedAfterSave === 'function') {
+              proceedAfterSave();
+            }
             return;
           }
         }
       }
 
+      setIsDirty(false);
       resetForm();
       await fetchProperties();
+      if (proceedAfterSave && typeof proceedAfterSave === 'function') {
+        proceedAfterSave();
+      }
     } catch (error) {
       console.error('[handleSubmit] Failed:', error);
       setSaveError('Failed to save property. Please check your input and try again.');
       setTimeout(() => setSaveError(null), 5000);
+      if (blocker && blocker.state === 'blocked') {
+        blocker.reset();
+      }
     } finally {
       setUploading(false);
     }
@@ -222,10 +324,20 @@ const OwnerDashboard = () => {
         {/* Modals */}
         <ConfirmModal
           isOpen={deleteTarget !== null}
-          title="Delete Property"
-          message="Are you sure you want to delete this property? This action cannot be undone."
+          title={t('owner_delete_title')}
+          message={t('owner_delete_msg')}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
+        />
+
+        <UnsavedChangesModal
+          isOpen={blocker.state === 'blocked'}
+          onSave={() => handleSubmit(null, () => blocker.proceed())}
+          onDiscard={() => {
+            setIsDirty(false);
+            blocker.proceed();
+          }}
+          onCancel={() => blocker.reset()}
         />
 
         {/* ── Property Details Modal ── */}
@@ -267,7 +379,7 @@ const OwnerDashboard = () => {
                 ) : (
                   <div className="w-full h-40 bg-gray-100 rounded-xl flex flex-col items-center justify-center gap-2">
                     <span className="material-symbols-outlined text-4xl text-gray-300">home</span>
-                    <span className="text-xs text-gray-400">No image uploaded</span>
+                    <span className="text-xs text-gray-400">{t('owner_no_photo')}</span>
                   </div>
                 )}
 
@@ -297,7 +409,7 @@ const OwnerDashboard = () => {
                     <div className="flex items-start gap-2">
                       <span className="material-symbols-outlined text-red-500 text-base mt-0.5">error</span>
                       <div>
-                        <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-1">Rejection Reason</p>
+                        <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-1">{t('owner_reject_reason')}</p>
                         <p className="text-sm text-red-700">{selectedProperty.rejectionReason}</p>
                       </div>
                     </div>
@@ -306,7 +418,7 @@ const OwnerDashboard = () => {
 
                 {selectedProperty.description && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Description</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">{t('owner_field_desc')}</p>
                     <p className="text-sm text-on-surface-variant leading-relaxed">{selectedProperty.description}</p>
                   </div>
                 )}
@@ -319,14 +431,14 @@ const OwnerDashboard = () => {
                   className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-xl transition-colors border border-red-200"
                 >
                   <span className="material-symbols-outlined text-sm">delete</span>
-                  Delete
+                  {t('common_delete')}
                 </button>
                 <button
                   onClick={() => { setSelectedProperty(null); startEdit(selectedProperty); }}
                   className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white hover:bg-primary/90 text-xs font-bold rounded-xl transition-colors"
                 >
                   <span className="material-symbols-outlined text-sm">edit</span>
-                  {selectedProperty.approvalStatus === 'Rejected' ? 'Edit & Resubmit' : 'Edit Listing'}
+                  {selectedProperty.approvalStatus === 'Rejected' ? t('owner_edit_resubmit') : t('owner_modal_edit')}
                 </button>
               </div>
             </div>
@@ -349,12 +461,12 @@ const OwnerDashboard = () => {
               <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
                 <div>
                   <h2 className="text-lg font-bold text-on-surface font-headline">
-                    {editingId ? (editingWasRejected ? 'Edit & Resubmit' : 'Edit Listing') : 'New Property Listing'}
+                    {editingId ? (editingWasRejected ? t('owner_edit_resubmit') : t('owner_modal_edit')) : t('owner_modal_new')}
                   </h2>
                   {editingWasRejected && (
                     <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
                       <span className="material-symbols-outlined text-xs">info</span>
-                      Saving will resubmit for admin approval.
+                      {t('owner_modal_resubmit_note')}
                     </p>
                   )}
                 </div>
@@ -369,39 +481,63 @@ const OwnerDashboard = () => {
                   {/* Left column */}
                   <div className="space-y-4">
                     {[
-                      { label: 'Property Title', name: 'title', placeholder: 'e.g. Cozy Room near UiTM' },
-                      { label: 'Street Address', name: 'address', placeholder: 'Street address' },
+                      { label: t('owner_field_title'), name: 'title', placeholder: 'e.g. Cozy Room near UiTM' },
+                      { label: t('owner_field_address'), name: 'address', placeholder: 'Street address' },
                     ].map(field => (
                       <div key={field.name}>
                         <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{field.label}</label>
-                        <input required name={field.name} value={formData[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className="rs-input text-sm" />
+                        <input name={field.name} value={formData[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className="rs-input text-sm" />
+                        {formErrors[field.name] && (
+                          <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">error</span>
+                            {formErrors[field.name]}
+                          </p>
+                        )}
                       </div>
                     ))}
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">City</label>
-                        <input required name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="rs-input text-sm" />
+                        <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_city')}</label>
+                        <input name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="rs-input text-sm" />
+                        {formErrors.city && (
+                          <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">error</span>
+                            {formErrors.city}
+                          </p>
+                        )}
                       </div>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">State</label>
-                        <input required name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="rs-input text-sm" />
+                        <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_state')}</label>
+                        <input name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="rs-input text-sm" />
+                        {formErrors.state && (
+                          <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">error</span>
+                            {formErrors.state}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Monthly Rent (RM)</label>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_rent')}</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-on-surface-variant">RM</span>
-                        <input type="number" required name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="e.g. 450" className="rs-input text-sm pl-10" style={{ paddingLeft: '40px' }} />
+                        <input type="number" name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="e.g. 450" className="rs-input text-sm pl-10" style={{ paddingLeft: '40px' }} />
                       </div>
+                      {formErrors.monthlyRent && (
+                        <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          {formErrors.monthlyRent}
+                        </p>
+                      )}
                     </div>
 
                     {/* Image Upload */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
                         <span className="material-symbols-outlined text-[11px] align-middle mr-1">photo_library</span>
-                        Property Images
+                        {t('owner_field_images')}
                       </label>
                       <input
                         type="file"
@@ -410,13 +546,13 @@ const OwnerDashboard = () => {
                         onChange={handleImageFileChange}
                         className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
                       />
-                      <p className="text-[11px] text-on-surface-variant mt-1">JPG, PNG, or WebP. Max 5MB each.</p>
+                      <p className="text-[11px] text-on-surface-variant mt-1">{t('owner_images_hint')}</p>
                     </div>
 
                     {/* Existing images */}
                     {existingImages.length > 0 && (
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Current Images</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">{t('owner_existing_images')}</p>
                         <div className="grid grid-cols-3 gap-2">
                           {existingImages.map((img, idx) => (
                             <div key={img.id ?? `legacy-${idx}`} className="relative group">
@@ -426,7 +562,7 @@ const OwnerDashboard = () => {
                                   <span className="material-symbols-outlined text-[11px]">close</span>
                                 </button>
                               )}
-                              {idx === 0 && <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1 rounded">Cover</span>}
+                              {idx === 0 && <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1 rounded">{t('common_cover')}</span>}
                             </div>
                           ))}
                         </div>
@@ -436,7 +572,7 @@ const OwnerDashboard = () => {
                     {/* New previews */}
                     {imagePreviews.length > 0 && (
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">New Images to Upload</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">{t('owner_new_images')}</p>
                         <div className="grid grid-cols-3 gap-2">
                           {imagePreviews.map((item, idx) => (
                             <div key={idx} className="relative group">
@@ -454,9 +590,9 @@ const OwnerDashboard = () => {
                   {/* Right column */}
                   <div className="space-y-4">
                     {[
-                      { label: 'Property Type', name: 'propertyType', options: ['Apartment', 'Terrace', 'Condo'] },
-                      { label: 'Room Type', name: 'roomType', options: ['Single', 'Master', 'Middle'] },
-                      { label: 'Furnished Status', name: 'furnishedStatus', options: ['Fully Furnished', 'Partially Furnished', 'Unfurnished'] },
+                      { label: t('owner_field_type'), name: 'propertyType', options: ['Apartment', 'Terrace', 'Condo'] },
+                      { label: t('owner_field_room'), name: 'roomType', options: ['Single', 'Master', 'Middle'] },
+                      { label: t('owner_field_furnish'), name: 'furnishedStatus', options: ['Fully Furnished', 'Partially Furnished', 'Unfurnished'] },
                     ].map(field => (
                       <div key={field.name}>
                         <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{field.label}</label>
@@ -470,9 +606,8 @@ const OwnerDashboard = () => {
                     ))}
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Description</label>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_desc')}</label>
                       <textarea
-                        required
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
@@ -481,6 +616,12 @@ const OwnerDashboard = () => {
                         className="rs-input text-sm resize-none"
                         style={{ resize: 'none' }}
                       />
+                      {formErrors.description && (
+                        <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          {formErrors.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </form>
@@ -551,12 +692,12 @@ const OwnerDashboard = () => {
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: t('owner_stat_total'),    value: properties.length, color: 'text-on-surface',   accent: 'border-gray-200',   icon: 'home_work',    iconBg: 'bg-gray-100',    iconColor: 'text-on-surface-variant' },
-            { label: t('owner_stat_approved'), value: approvedCount,     color: 'text-emerald-600', accent: 'border-emerald-200', icon: 'check_circle', iconBg: 'bg-emerald-50',  iconColor: 'text-emerald-500', bg: '#f0fdf4' },
-            { label: t('owner_stat_pending'),  value: pendingCount,      color: 'text-amber-600',   accent: 'border-amber-200',  icon: 'schedule',     iconBg: 'bg-amber-50',    iconColor: 'text-amber-500',  bg: '#fffbeb' },
-            { label: t('owner_stat_rejected'), value: rejectedCount,     color: 'text-red-500',     accent: 'border-red-200',    icon: 'cancel',       iconBg: 'bg-red-50',      iconColor: 'text-red-500',    bg: '#fef2f2' },
+            { label: t('owner_stat_total'),    value: properties.length, color: 'text-on-surface',   bgClass: 'bg-white',        borderClass: 'border-gray-200',    icon: 'home_work',    iconBg: 'bg-gray-100',    iconColor: 'text-on-surface-variant' },
+            { label: t('owner_stat_approved'), value: approvedCount,     color: 'text-emerald-600', bgClass: 'bg-emerald-50',   borderClass: 'border-emerald-200', icon: 'check_circle', iconBg: 'bg-emerald-50',  iconColor: 'text-emerald-500' },
+            { label: t('owner_stat_pending'),  value: pendingCount,      color: 'text-amber-600',   bgClass: 'bg-amber-50',     borderClass: 'border-amber-200',   icon: 'schedule',     iconBg: 'bg-amber-50',    iconColor: 'text-amber-500' },
+            { label: t('owner_stat_rejected'), value: rejectedCount,     color: 'text-red-500',     bgClass: 'bg-red-50',       borderClass: 'border-red-200',     icon: 'cancel',       iconBg: 'bg-red-50',      iconColor: 'text-red-500' },
           ].map((stat, i) => (
-            <div key={i} className="bg-white rounded-2xl border p-5 shadow-rs-sm" style={{ borderColor: stat.accent?.replace('border-', '') || '#e5e7eb', background: stat.bg || '#ffffff' }}>
+            <div key={i} className={`rounded-2xl border p-5 shadow-rs-sm ${stat.bgClass} ${stat.borderClass}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">{stat.label}</p>
@@ -576,21 +717,21 @@ const OwnerDashboard = () => {
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
               <span className="material-symbols-outlined text-primary text-2xl">home_work</span>
             </div>
-            <h3 className="font-bold text-on-surface text-lg mb-1">No listings yet</h3>
-            <p className="text-on-surface-variant text-sm mb-5">Start by creating your first property listing.</p>
+            <h3 className="font-bold text-on-surface text-lg mb-1">{t('owner_no_listings_title')}</h3>
+            <p className="text-on-surface-variant text-sm mb-5">{t('owner_no_listings_sub')}</p>
             <button
               onClick={() => setShowForm(true)}
               className="rs-btn-primary text-sm py-2.5 px-6"
             >
               <span className="material-symbols-outlined text-base">add</span>
-              Create First Listing
+              {t('owner_first_listing')}
             </button>
           </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-on-surface">My Listings</h2>
-              <span className="text-sm text-on-surface-variant">{properties.length} total</span>
+              <h2 className="font-bold text-on-surface">{t('owner_title')}</h2>
+              <span className="text-sm text-on-surface-variant">{t('owner_listings_total', { count: properties.length })}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -612,7 +753,7 @@ const OwnerDashboard = () => {
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-50">
                           <span className="material-symbols-outlined text-4xl text-gray-300">home</span>
-                          <span className="text-xs text-gray-400">No photo</span>
+                          <span className="text-xs text-gray-400">{t('owner_no_photo')}</span>
                         </div>
                       )}
 
@@ -643,7 +784,7 @@ const OwnerDashboard = () => {
                       {/* Rejection reason */}
                       {p.approvalStatus === 'Rejected' && p.rejectionReason && (
                         <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-0.5">Rejection Reason</p>
+                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-0.5">{t('owner_reject_reason')}</p>
                           <p className="text-xs text-red-700 line-clamp-2">{p.rejectionReason}</p>
                         </div>
                       )}
@@ -654,14 +795,14 @@ const OwnerDashboard = () => {
                           onClick={() => setSelectedProperty(p)}
                           className="flex-1 py-2 text-xs font-bold text-on-surface-variant bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
                         >
-                          View
+                          {t('owner_view')}
                         </button>
                         <button
                           onClick={() => startEdit(p)}
                           className="flex-1 py-2 text-xs font-bold text-primary bg-primary/8 hover:bg-primary/15 rounded-xl transition-colors"
                           style={{ background: 'rgba(0,88,190,0.06)' }}
                         >
-                          {p.approvalStatus === 'Rejected' ? 'Edit & Resubmit' : 'Edit'}
+                          {p.approvalStatus === 'Rejected' ? t('owner_edit_resubmit') : t('owner_edit')}
                         </button>
                         <button
                           onClick={() => setDeleteTarget(p.id)}
@@ -686,8 +827,8 @@ const OwnerDashboard = () => {
                     <span className="material-symbols-outlined text-primary text-2xl">add</span>
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-on-surface text-sm group-hover:text-primary transition-colors">Add New Listing</p>
-                    <p className="text-xs text-on-surface-variant mt-1">List your next property</p>
+                    <p className="font-bold text-on-surface text-sm group-hover:text-primary transition-colors">{t('owner_add_listing')}</p>
+                    <p className="text-xs text-on-surface-variant mt-1">{t('owner_add_listing_sub')}</p>
                   </div>
                 </button>
               )}

@@ -115,6 +115,12 @@ public class UserService {
             user.setMatricNumber(updatedUser.getMatricNumber());
             user.setUitmEmail(updatedUser.getUitmEmail());
 
+            // Persist profile image URL (nullable — null means no change from client)
+            System.out.println("BACKEND: Received profileImageUrl = " + updatedUser.getProfileImageUrl());
+            if (updatedUser.getProfileImageUrl() != null) {
+                user.setProfileImageUrl(updatedUser.getProfileImageUrl());
+            }
+
             updateVerificationStatus(user);
 
             return userRepository.save(user);

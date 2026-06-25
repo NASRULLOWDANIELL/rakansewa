@@ -25,8 +25,10 @@ import java.util.UUID;
 public class FileUploadController {
 
     private static final String UPLOAD_DIR = "uploads/property-images";
+    private static final String PROFILE_UPLOAD_DIR = "uploads/profile-images";
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".webp");
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB (property images)
+    private static final long MAX_PROFILE_SIZE = 2 * 1024 * 1024; // 2 MB (profile images)
 
     private final PropertyRepository propertyRepository;
     private final PropertyImageRepository propertyImageRepository;
@@ -160,6 +162,56 @@ public class FileUploadController {
 
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(Map.of("message", "Failed to upload images."));
+        }
+    }
+
+    // ── Profile image upload endpoint ─────────────────────────────────────────
+    @PostMapping("/profile-image")
+    public ResponseEntity<?> uploadProfileImage(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "No file selected."));
+            }
+
+            // Validate image content type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Only image files (JPG, PNG, WebP) are allowed."));
+            }
+
+            // Validate extension
+            String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+            boolean validExt = ALLOWED_EXTENSIONS.stream().anyMatch(originalFilename::endsWith);
+            if (!validExt) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid file type. Allowed: JPG, PNG, WebP."));
+            }
+
+            // Enforce 2 MB limit for profile images
+            if (file.getSize() > MAX_PROFILE_SIZE) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Profile image must be under 2 MB."));
+            }
+
+            // Create uploads/profile-images directory if absent
+            Path uploadPath = Paths.get(PROFILE_UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Generate unique filename
+            String extension = originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".jpg";
+            String newFilename = UUID.randomUUID().toString().substring(0, 12) + extension;
+
+            // Save file
+            Path filePath = uploadPath.resolve(newFilename);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            String imageUrl = "/" + PROFILE_UPLOAD_DIR + "/" + newFilename;
+            return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Failed to upload profile image."));
         }
     }
 }

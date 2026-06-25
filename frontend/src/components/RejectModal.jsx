@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 const PRESET_REASONS = [
-  'Missing property image',
-  'Incomplete property information',
-  'Invalid rental details',
-  'Duplicate listing',
+  { key: 'reject_preset_image', defaultLabel: 'Missing property image' },
+  { key: 'reject_preset_info', defaultLabel: 'Incomplete property information' },
+  { key: 'reject_preset_rental', defaultLabel: 'Invalid rental details' },
+  { key: 'reject_preset_dupe', defaultLabel: 'Duplicate listing' },
 ];
 
 const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
+  const { t } = useLanguage();
   const [selectedPreset, setSelectedPreset] = useState('');
   const [customReason, setCustomReason] = useState('');
 
@@ -15,7 +17,7 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
 
   const finalReason = selectedPreset === '__custom__'
     ? customReason.trim()
-    : selectedPreset;
+    : t(selectedPreset);
 
   const canSubmit = finalReason.length > 0;
 
@@ -45,19 +47,19 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
             <span className="material-symbols-outlined text-error text-2xl">block</span>
           </div>
           <div>
-            <h3 className="text-xl font-bold font-headline text-on-surface">Reject Property</h3>
+            <h3 className="text-xl font-bold font-headline text-on-surface">{t('reject_title')}</h3>
             <p className="text-sm text-on-surface-variant">{propertyTitle}</p>
           </div>
         </div>
 
         {/* Preset reasons */}
-        <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-3">Select a reason</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-3">{t('reject_reason_select')}</p>
         <div className="space-y-2 mb-4">
           {PRESET_REASONS.map((reason) => (
             <label
-              key={reason}
+              key={reason.key}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer border transition-all ${
-                selectedPreset === reason
+                selectedPreset === reason.key
                   ? 'bg-error/10 border-error/30 text-on-surface'
                   : 'bg-surface-container-low border-transparent hover:bg-surface-container-high text-on-surface-variant'
               }`}
@@ -65,12 +67,12 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
               <input
                 type="radio"
                 name="reject-reason"
-                value={reason}
-                checked={selectedPreset === reason}
-                onChange={() => setSelectedPreset(reason)}
+                value={reason.key}
+                checked={selectedPreset === reason.key}
+                onChange={() => setSelectedPreset(reason.key)}
                 className="accent-error w-4 h-4"
               />
-              <span className="text-sm font-medium">{reason}</span>
+              <span className="text-sm font-medium">{t(reason.key)}</span>
             </label>
           ))}
 
@@ -90,7 +92,7 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
               onChange={() => setSelectedPreset('__custom__')}
               className="accent-error w-4 h-4"
             />
-            <span className="text-sm font-medium">Other reason...</span>
+            <span className="text-sm font-medium">{t('reject_custom')}</span>
           </label>
         </div>
 
@@ -99,7 +101,7 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
           <textarea
             value={customReason}
             onChange={(e) => setCustomReason(e.target.value)}
-            placeholder="Enter your rejection reason..."
+            placeholder={t('reject_placeholder')}
             rows={3}
             className="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant/50 mb-4 focus:outline-none focus:ring-2 focus:ring-error/30 border border-surface-container-high"
           />
@@ -111,7 +113,7 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
             onClick={handleCancel}
             className="px-6 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-full font-bold transition-all"
           >
-            Cancel
+            {t('common_cancel')}
           </button>
           <button
             onClick={handleConfirm}
@@ -122,7 +124,7 @@ const RejectModal = ({ isOpen, propertyTitle, onConfirm, onCancel }) => {
                 : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed shadow-none'
             }`}
           >
-            Confirm Rejection
+            {t('reject_confirm')}
           </button>
         </div>
       </div>

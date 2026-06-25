@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { DarkModeProvider } from './context/DarkModeContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -35,47 +35,61 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+function AppLayout() {
+  return (
+    <div className="app-container">
+      <Navbar />
+      <main className="main-content">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/properties', element: <PropertiesPage /> },
+      { path: '/properties/:id', element: <PropertyDetailsPage /> },
+      { path: '/housemates', element: <HousematesPage /> },
+      { path: '/about', element: <AboutPage /> },
+      { path: '/feedback', element: <FeedbackPage /> },
+      {
+        path: '/profile',
+        element: <ProtectedRoute><ProfilePage /></ProtectedRoute>
+      },
+      {
+        path: '/profile/housemate',
+        element: <ProtectedRoute><ManageHousemateProfilePage /></ProtectedRoute>
+      },
+      {
+        path: '/owner/*',
+        element: <ProtectedRoute allowedRoles={['Owner']}><OwnerDashboard /></ProtectedRoute>
+      },
+      {
+        path: '/admin/*',
+        element: <ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>
+      },
+      {
+        path: '*',
+        element: <Navigate to="/" replace />
+      }
+    ]
+  }
+]);
+
 function App() {
   return (
     <DarkModeProvider>
-    <LanguageProvider>
-    <Router>
-      <div className="app-container">
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            
-            <Route path="/" element={<HomePage />} />
-            <Route path="/properties" element={<PropertiesPage />} />
-            <Route path="/properties/:id" element={<PropertyDetailsPage />} />
-            <Route path="/housemates" element={<HousematesPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/feedback" element={<FeedbackPage />} />
-
-            <Route path="/profile" element={
-              <ProtectedRoute><ProfilePage /></ProtectedRoute>
-            } />
-
-            <Route path="/profile/housemate" element={
-              <ProtectedRoute><ManageHousemateProfilePage /></ProtectedRoute>
-            } />
-
-            <Route path="/owner/*" element={
-              <ProtectedRoute allowedRoles={['Owner']}><OwnerDashboard /></ProtectedRoute>
-            } />
-            
-            <Route path="/admin/*" element={
-              <ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>
-            } />
-          </Routes>
-        </main>
-      </div>
-    </Router>
-    </LanguageProvider>
+      <LanguageProvider>
+        <RouterProvider router={router} />
+      </LanguageProvider>
     </DarkModeProvider>
   );
 }

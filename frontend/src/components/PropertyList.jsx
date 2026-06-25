@@ -1,10 +1,13 @@
 import PropertyCard from './PropertyCard';
+import { useLanguage } from '../context/LanguageContext';
 
 const PropertyList = ({ properties, favouritedIds = new Set(), onToggleFavourite }) => {
+  const { t } = useLanguage();
+
   if (!properties || properties.length === 0) {
     return (
       <div className="text-center py-20 text-on-surface-variant font-medium text-lg">
-        No properties available yet. Please check back later.
+        {t('prop_no_properties_avail')}
       </div>
     );
   }
