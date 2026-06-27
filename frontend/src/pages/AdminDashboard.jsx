@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProperties, approveProperty, rejectProperty, getAllUsers, getAllFeedbacks, resolveFeedback } from '../services/api';
+import { getProperties, approveProperty, rejectProperty, getAllUsers, getAllFeedbacks, resolveFeedback, getPropertyUpdates } from '../services/api';
 import RejectModal from '../components/RejectModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -8,6 +8,7 @@ const AdminDashboard = () => {
    const [properties, setProperties] = useState([]);
    const [users, setUsers] = useState([]);
    const [feedbacks, setFeedbacks] = useState([]);
+   const [propertyUpdates, setPropertyUpdates] = useState([]);
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState('properties');
    const [rejectTarget, setRejectTarget] = useState(null);
@@ -19,10 +20,16 @@ const AdminDashboard = () => {
 
    const fetchData = async () => {
       try {
-         const [props, usrs, fdks] = await Promise.all([getProperties(), getAllUsers(), getAllFeedbacks()]);
+         const [props, usrs, fdks, updates] = await Promise.all([
+            getProperties(),
+            getAllUsers(),
+            getAllFeedbacks(),
+            getPropertyUpdates()
+         ]);
          setProperties(props || []);
          setUsers(usrs || []);
          setFeedbacks(fdks || []);
+         setPropertyUpdates(updates || []);
       } catch (err) {
          console.error(err);
       } finally {
@@ -72,9 +79,16 @@ const AdminDashboard = () => {
    if (loading) return <div className="text-center py-32 text-on-surface">{t('common_loading')}</div>;
 
    const pendingApprovals = properties.filter(p => p.approvalStatus === 'Pending');
+   const updatedProperties = propertyUpdates;
    const approvedCount = properties.filter(p => p.approvalStatus === 'Approved').length;
    const rejectedCount = properties.filter(p => p.approvalStatus === 'Rejected').length;
    const unresolvedFeedbacks = feedbacks.filter(f => !f.isResolved).length;
+
+   const formatDateTime = (dateStr) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+   };
 
    const resolveImageSrc = (url) => {
       if (!url) return null;
@@ -83,7 +97,7 @@ const AdminDashboard = () => {
    };
 
    return (
-      <div className="pt-24 pb-20 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
+      <div className="pt-24 pb-20 px-6 md:px-10 lg:px-16 w-full space-y-8">
          <RejectModal
             isOpen={rejectTarget !== null}
             propertyTitle={rejectTarget?.title || ''}
@@ -99,19 +113,19 @@ const AdminDashboard = () => {
 
          {/* Stats row */}
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-primary shadow-rs-sm">
+            <div className="bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-2xl p-5 shadow-rs-sm transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-blue cursor-default">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_users')}</p>
-               <p className="text-3xl font-extrabold text-on-surface">{users.length}</p>
+               <p className="text-3xl font-extrabold text-blue-600 dark:text-blue-400">{users.length}</p>
             </div>
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-tertiary shadow-rs-sm">
+            <div className="bg-purple-50/70 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-900/50 rounded-2xl p-5 shadow-rs-sm transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-purple cursor-default">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_listings')}</p>
-               <p className="text-3xl font-extrabold text-on-surface">{properties.length}</p>
+               <p className="text-3xl font-extrabold text-purple-600 dark:text-purple-400">{properties.length}</p>
             </div>
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-orange-400 shadow-rs-sm">
+            <div className="bg-amber-50/70 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-5 shadow-rs-sm transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-amber cursor-default">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_pending')}</p>
-               <p className="text-3xl font-extrabold text-orange-500">{pendingApprovals.length}</p>
+               <p className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">{pendingApprovals.length}</p>
             </div>
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-red-400 shadow-rs-sm">
+            <div className="bg-red-50/70 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-2xl p-5 shadow-rs-sm transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-red cursor-default">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_feedback')}</p>
                <p className="text-3xl font-extrabold text-red-500">{unresolvedFeedbacks}</p>
             </div>
@@ -121,6 +135,7 @@ const AdminDashboard = () => {
          <div className="flex gap-1 border-b border-outline-variant/20 overflow-x-auto scrollbar-none whitespace-nowrap">
             {[
                { key: 'properties', label: t('admin_tab_listings'), icon: 'home_work' },
+               { key: 'updated_properties', label: 'Updated Listings', icon: 'update', badge: updatedProperties.length },
                { key: 'users', label: t('admin_tab_users'), icon: 'people' },
                { key: 'feedbacks', label: t('admin_tab_feedback'), icon: 'feedback', badge: unresolvedFeedbacks },
             ].map(tab => (
@@ -276,6 +291,137 @@ const AdminDashboard = () => {
                      </table>
                      </div>
                   </div>
+               </div>
+            </div>
+         )}
+
+         {/* Updated Properties tab */}
+         {activeTab === 'updated_properties' && (
+            <div className="space-y-8">
+               <div>
+                  <h2 className="text-lg font-bold font-headline mb-4 flex items-center gap-2">
+                     <span className="material-symbols-outlined text-primary">update</span>
+                     Updated Listings
+                     <span className="ml-1 px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">{updatedProperties.length}</span>
+                  </h2>
+                  {updatedProperties.length === 0 ? (
+                     <div className="bg-green-50 border border-green-200 rounded-lg p-5 flex items-center gap-3 text-green-700">
+                        <span className="material-symbols-outlined">check_circle</span>
+                        <span className="font-medium text-sm">No recently updated listings.</span>
+                     </div>
+                  ) : (
+                     <div className="bg-white rounded-xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                           <table className="w-full text-left text-sm min-w-[650px] md:min-w-0">
+                              <thead className="bg-surface-container-low border-b border-outline-variant/20">
+                                 <tr>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Property</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden md:table-cell">Location</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Date & Time Changed</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Before Changes</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">After Changes</th>
+                                 </tr>
+                              </thead>
+                              <tbody className="divide-y divide-outline-variant/10">
+                                 {updatedProperties.map(p => (
+                                    <tr key={p.id} className="hover:bg-surface-container-lowest transition-colors">
+                                       <td className="px-6 py-4">
+                                          <div className="flex items-center gap-3">
+                                             {(p.images?.[0]?.imageUrl || p.imageUrl) ? (
+                                                <img
+                                                   src={resolveImageSrc(p.images?.[0]?.imageUrl || p.imageUrl)}
+                                                   alt={p.title}
+                                                   className="w-12 h-12 object-cover rounded-lg border border-outline-variant/20 flex-shrink-0"
+                                                   onError={(e) => { e.target.style.display = 'none'; }}
+                                                />
+                                             ) : (
+                                                <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center flex-shrink-0">
+                                                   <span className="material-symbols-outlined text-on-surface-variant/40">home</span>
+                                                </div>
+                                             )}
+                                             <div className="min-w-0">
+                                                <p className="font-bold text-on-surface truncate max-w-[200px]">{p.title}</p>
+                                                <p className="text-xs text-on-surface-variant truncate max-w-[200px] mt-0.5 line-clamp-1">{p.description}</p>
+                                             </div>
+                                          </div>
+                                       </td>
+                                       <td className="px-6 py-4 text-on-surface-variant hidden md:table-cell">
+                                          <div className="flex items-center gap-1">
+                                             <span className="material-symbols-outlined text-[14px]">location_on</span>
+                                             {p.city}, {p.state}
+                                          </div>
+                                       </td>
+                                       <td className="px-6 py-4 text-on-surface-variant">
+                                          <div className="flex items-center gap-1.5">
+                                             <span className="material-symbols-outlined text-[14px] text-primary">event_repeat</span>
+                                             {formatDateTime(p.updatedAt)}
+                                          </div>
+                                       </td>
+                                       <td className="px-6 py-4">
+                                          <div className="flex flex-col gap-1.5 max-w-[200px]">
+                                             {p.changeLog ? (
+                                                p.changeLog.split(';').map((change, idx) => {
+                                                   const parts = change.trim().split(':');
+                                                   if (parts.length >= 2) {
+                                                      const fieldName = parts[0].trim();
+                                                      const rest = parts.slice(1).join(':').trim();
+                                                      const restParts = rest.split('→');
+                                                      if (restParts.length === 2) {
+                                                         return (
+                                                            <div key={idx} className="bg-surface-container/60 dark:bg-slate-800/60 border border-outline-variant/10 rounded-lg p-2 flex flex-col gap-0.5 text-[10px] leading-tight">
+                                                               <span className="font-bold text-[9px] uppercase tracking-wider text-primary block mb-0.5">{fieldName}</span>
+                                                               <span className="line-through opacity-60">{restParts[0].trim()}</span>
+                                                            </div>
+                                                         );
+                                                      }
+                                                   }
+                                                   return (
+                                                      <span key={idx} className="bg-primary/5 text-primary border border-primary/10 rounded px-1.5 py-0.5 text-[10px] font-semibold block leading-tight">
+                                                         {change.trim()}
+                                                      </span>
+                                                   );
+                                                })
+                                             ) : (
+                                                <span className="text-xs text-on-surface-variant italic">No details.</span>
+                                             )}
+                                          </div>
+                                       </td>
+                                       <td className="px-6 py-4">
+                                          <div className="flex flex-col gap-1.5 max-w-[200px]">
+                                             {p.changeLog ? (
+                                                p.changeLog.split(';').map((change, idx) => {
+                                                   const parts = change.trim().split(':');
+                                                   if (parts.length >= 2) {
+                                                      const fieldName = parts[0].trim();
+                                                      const rest = parts.slice(1).join(':').trim();
+                                                      const restParts = rest.split('→');
+                                                      if (restParts.length === 2) {
+                                                         return (
+                                                            <div key={idx} className="bg-surface-container/60 dark:bg-slate-800/60 border border-outline-variant/10 rounded-lg p-2 flex flex-col gap-0.5 text-[10px] leading-tight">
+                                                               <span className="font-bold text-[9px] uppercase tracking-wider text-primary block mb-0.5">{fieldName}</span>
+                                                               <span className="font-bold text-emerald-600 dark:text-emerald-400">{restParts[1].trim()}</span>
+                                                            </div>
+                                                         );
+                                                      }
+                                                   }
+                                                   return (
+                                                      <span key={idx} className="bg-primary/5 text-primary border border-primary/10 rounded px-1.5 py-0.5 text-[10px] font-semibold block leading-tight">
+                                                         {change.trim()}
+                                                      </span>
+                                                   );
+                                                })
+                                             ) : (
+                                                <span className="text-xs text-on-surface-variant italic">No details.</span>
+                                             )}
+                                          </div>
+                                       </td>
+                                    </tr>
+                                 ))}
+                              </tbody>
+                           </table>
+                        </div>
+                     </div>
+                  )}
                </div>
             </div>
          )}

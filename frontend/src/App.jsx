@@ -4,6 +4,7 @@ import { DarkModeProvider } from './context/DarkModeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import ScrollToTopButton from './components/ScrollToTopButton';
+import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import PropertiesPage from './pages/PropertiesPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
@@ -38,11 +39,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function AppLayout() {
   return (
-    <div className="app-container">
+    <div className="app-container flex flex-col min-h-screen">
       <Navbar />
-      <main className="main-content">
+      <main className="main-content flex-grow">
         <Outlet />
       </main>
+      <Footer />
       <ScrollToTopButton />
     </div>
   );

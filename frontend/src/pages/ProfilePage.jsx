@@ -309,7 +309,7 @@ const ProfilePage = () => {
   const adminPending = adminProperties.filter(p => p.approvalStatus === 'Pending').length;
 
   return (
-    <div className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-[1200px] mx-auto space-y-6">
+    <div className="pt-28 pb-20 px-6 md:px-10 lg:px-16 w-full mx-auto space-y-6">
 
       {/* ── Global Alerts ── */}
       {showGoogleWelcome && (
@@ -355,107 +355,114 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* ── SECTION 1: Profile Header Card ── */}
-      <div className="bg-white border border-outline-variant/20 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-5">
+      {/* ── SECTION 1: Profile Header Card (Full-width Banner) ── */}
+      <div className="bg-white bg-gradient-to-l from-blue-100/70 via-white to-white dark:from-blue-900/35 dark:via-[#111827] dark:to-[#111827] border border-outline-variant/20 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6">
 
-        {/* ── Avatar with upload ── */}
-        <div className="relative flex-shrink-0">
-          {/* Hidden file input */}
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleAvatarChange}
-            disabled={!isEditing}
-          />
+            {/* ── Avatar with upload ── */}
+            <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+              {/* Hidden file input */}
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+                disabled={!isEditing}
+              />
 
-          {/* Avatar circle */}
-          <div
-            className={`w-20 h-20 rounded-full overflow-hidden shadow-md flex-shrink-0 relative ${isEditing ? 'cursor-pointer group' : ''}`}
-            onClick={() => isEditing && avatarInputRef.current?.click()}
-            title={isEditing ? 'Click to change profile photo' : ''}
-          >
-            {avatarPreview
-              ? (
-                <img
-                  src={avatarPreview.startsWith('/uploads')
-                    ? `http://localhost:8080${avatarPreview}`
-                    : avatarPreview}
-                  alt={currentUser.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-primary-fixed flex items-center justify-center text-3xl text-on-primary-fixed font-black uppercase">
-                  {currentUser.name.charAt(0)}
-                </div>
-              )
-            }
+              {/* Avatar circle */}
+              <div
+                className={`w-20 h-20 rounded-full overflow-hidden shadow-md flex-shrink-0 relative ${isEditing ? 'cursor-pointer group' : ''}`}
+                onClick={() => isEditing && avatarInputRef.current?.click()}
+                title={isEditing ? 'Click to change profile photo' : ''}
+              >
+                {avatarPreview
+                  ? (
+                    <img
+                      src={avatarPreview.startsWith('/uploads')
+                        ? `http://localhost:8080${avatarPreview}`
+                        : avatarPreview}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-primary-fixed flex items-center justify-center text-3xl text-on-primary-fixed font-black uppercase">
+                      {currentUser.name.charAt(0)}
+                    </div>
+                  )
+                }
 
-            {/* Edit overlay (edit mode only) */}
-            {isEditing && (
-              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                {avatarUploading ? (
-                  <span className="material-symbols-outlined text-white text-xl animate-spin">progress_activity</span>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
-                    <span className="text-white text-[9px] font-bold mt-0.5">CHANGE</span>
-                  </>
+                {/* Edit overlay (edit mode only) */}
+                {isEditing && (
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                    {avatarUploading ? (
+                      <span className="material-symbols-outlined text-white text-xl animate-spin">progress_activity</span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                        <span className="text-white text-[9px] font-bold mt-0.5">CHANGE</span>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* Avatar error */}
-          {avatarError && (
-            <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-red-500 font-medium">{avatarError}</p>
-          )}
-        </div>
-
-        {/* Name + details */}
-        <div className="flex-1 text-center sm:text-left min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-            <h1 className="text-xl font-extrabold font-headline text-on-surface truncate">{currentUser.name}</h1>
-            <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 mt-1 sm:mt-0">
-              <span className="inline-block px-2.5 py-0.5 bg-secondary-container text-on-secondary-container text-[11px] font-bold rounded-full uppercase tracking-wider">
-                {currentUser.role === 'Owner' ? t('common_owner') : currentUser.role === 'Admin' ? t('nav_admin') : t('common_student')}
-              </span>
-              {currentUser.isListedAsHousemate && (
-                <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-[12px]">groups</span>
-                  {t('profile_role_housemate')}
-                </span>
-              )}
-              {isStudent && (
-                currentUser.isStudentVerified ? (
-                  <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-green-100 text-green-700 text-[11px] font-bold rounded-full uppercase tracking-wider">
-                    <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                    {t('profile_role_verified_student')}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] font-bold rounded-full uppercase tracking-wider">
-                    <span className="material-symbols-outlined text-[12px]">info</span>
-                    {t('profile_role_not_verified')}
-                  </span>
-                )
+              {/* Avatar error */}
+              {avatarError && (
+                <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-red-500 font-medium">{avatarError}</p>
               )}
             </div>
+
+            {/* Name + details */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <h1 className="text-xl font-extrabold font-headline text-on-surface truncate">{currentUser.name}</h1>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 mt-1 sm:mt-0">
+                  <span className="inline-block px-2.5 py-0.5 bg-secondary-container text-on-secondary-container text-[11px] font-bold rounded-full uppercase tracking-wider">
+                    {currentUser.role === 'Owner' ? t('common_owner') : currentUser.role === 'Admin' ? t('nav_admin') : t('common_student')}
+                  </span>
+                  {currentUser.isListedAsHousemate && (
+                    <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-[12px]">groups</span>
+                      {t('profile_role_housemate')}
+                    </span>
+                  )}
+                  {isStudent && (
+                    currentUser.isStudentVerified ? (
+                      <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-green-100 text-green-700 text-[11px] font-bold rounded-full uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                        {t('profile_role_verified_student')}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-[11px] font-bold rounded-full uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[12px]">info</span>
+                        {t('profile_role_not_verified')}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+              <p className="text-on-surface-variant text-sm truncate mt-1">{currentUser.email}</p>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                  disabled={avatarUploading}
+                >
+                  <span className="material-symbols-outlined text-[13px]">photo_camera</span>
+                  {avatarPreview ? 'Change photo' : 'Add profile photo'}
+                </button>
+              )}
           </div>
-          <p className="text-on-surface-variant text-sm truncate mt-1">{currentUser.email}</p>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={() => avatarInputRef.current?.click()}
-              className="mt-2 inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
-              disabled={avatarUploading}
-            >
-              <span className="material-symbols-outlined text-[13px]">photo_camera</span>
-              {avatarPreview ? 'Change photo' : 'Add profile photo'}
-            </button>
-          )}
-        </div>
-      </div>
+
+      </div> {/* End SECTION 1 */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        
+        {/* Left Column: Account Info (40% width) */}
+        <div className="lg:col-span-2 space-y-6">
+
 
       {/* ── SECTION 2: Account Information Card ── */}
       <div className="bg-white border border-outline-variant/20 rounded-xl p-6 shadow-sm">
@@ -497,8 +504,8 @@ const ProfilePage = () => {
         </div>
 
         {isEditing ? (
-          // ── EDIT MODE: existing form layout unchanged ──
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          // ── EDIT MODE: 2-column layout for sidebar ──
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_fullname')}</label>
               <input type="text" name="name" value={formData.name} onChange={handleChange}
@@ -545,7 +552,7 @@ const ProfilePage = () => {
                     </p>
                   )}
                 </div>
-                <div className="md:col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-1.5">{t('profile_label_uitm_email')}</label>
                   <input type="email" name="uitmEmail" value={formData.uitmEmail} onChange={handleChange} placeholder={t('profile_label_uitm_email_placeholder')}
                     className="w-full px-3 py-2 bg-surface-container-lowest rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none text-on-surface border border-outline-variant/20" />
@@ -559,9 +566,8 @@ const ProfilePage = () => {
                 </div>
               </>
             )}
-
             {/* Contact Privacy Settings (Edit Mode) */}
-            <div className="md:col-span-3 border-t border-surface-container-low pt-5 mt-2">
+            <div className="sm:col-span-2 border-t border-surface-container-low pt-5 mt-2">
               <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider mb-4 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-primary text-base">security</span>
                 {t('profile_label_contact_settings')}
@@ -720,6 +726,10 @@ const ProfilePage = () => {
           </div>
         )}
       </div>
+        </div> {/* End Left Column */}
+
+        {/* Right Column: Detailed Profiles & Summaries (60% width) */}
+        <div className="lg:col-span-3 space-y-6">
 
       {/* ── SECTION 3: Housemate Profile Card (Student only) ── */}
       {isStudent && (
@@ -739,54 +749,60 @@ const ProfilePage = () => {
           </div>
 
           {currentUser.isListedAsHousemate ? (
-            <div className="space-y-6">
-              {/* Top Row: Listing Status, Budget, Sleep Pattern, Total Lifestyles */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('pref_section_visibility')}</span>
-                  <span className="inline-flex items-center gap-1 mt-1.5 text-sm font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
-                    {t('profile_status_visible')}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('profile_label_budget')}</span>
-                  <span className="text-sm font-bold text-on-surface block mt-1.5">
-                    {currentUser.budget ? `RM ${currentUser.budget}` : '—'}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('profile_label_sleep')}</span>
-                  <span className="text-sm font-bold text-on-surface block mt-1.5">
-                    {currentUser.sleepSchedule ? t(currentUser.sleepSchedule) : '—'}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider">{t('profile_label_lifestyles')}</span>
-                  <span className="text-sm font-bold text-on-surface block mt-1.5">
-                    {displayLifestyles.length > 0 ? t('profile_lifestyles_tags', { count: displayLifestyles.length }) : '—'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Middle Row: Lifestyle Tags */}
-              {displayLifestyles.length > 0 && (
-                <div className="pt-4 border-t border-surface-container-low">
-                  <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-2.5">{t('profile_label_lifestyle_tags_section')}</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {displayLifestyles.map(tag => (
-                      <span key={tag} className="px-2.5 py-1 bg-primary/5 text-primary text-xs font-semibold rounded-lg border border-primary/10">
-                        {t(tag)}
-                      </span>
-                    ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Left Side: General Profile Details & Lifestyle Tags */}
+              <div className="space-y-6">
+                
+                {/* Vertical key-value layout */}
+                <div className="flex flex-col gap-3.5 w-full">
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800/40">
+                    <span className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">{t('pref_section_visibility')}</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                      {t('profile_status_visible')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800/40">
+                    <span className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">{t('profile_label_budget')}</span>
+                    <span className="text-sm font-bold text-on-surface">
+                      {currentUser.budget ? `RM ${currentUser.budget}` : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800/40">
+                    <span className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">{t('profile_label_sleep')}</span>
+                    <span className="text-sm font-bold text-on-surface">
+                      {currentUser.sleepSchedule ? t(currentUser.sleepSchedule) : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">{t('profile_label_lifestyles')}</span>
+                    <span className="text-sm font-bold text-on-surface">
+                      {displayLifestyles.length > 0 ? t('profile_lifestyles_tags', { count: displayLifestyles.length }) : '—'}
+                    </span>
                   </div>
                 </div>
-              )}
 
-              {/* Bottom Row: Matching Priorities */}
-              <div className="pt-4 border-t border-surface-container-low">
-                <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-3">{t('profile_label_priorities_section')}</span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Lifestyle Tags */}
+                {displayLifestyles.length > 0 && (
+                  <div className="pt-4 border-t border-surface-container-low">
+                    <span className="block text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-2.5">{t('profile_label_lifestyle_tags_section')}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {displayLifestyles.map(tag => (
+                        <span key={tag} className="px-2.5 py-1 bg-primary/5 text-primary text-xs font-semibold rounded-lg border border-primary/10">
+                          {t(tag)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Right Side: Matching Priorities (Vertical stack) */}
+              <div className="space-y-4 md:border-l md:border-surface-container-low md:pl-8">
+                <span className="block text-xs text-on-surface-variant font-bold uppercase tracking-wider mb-1">{t('profile_label_priorities_section')}</span>
+                <div className="flex flex-col gap-3">
                   {(() => {
                     const p1 = currentUser.priority1 || DEFAULT_PRIORITIES[0];
                     const p2 = currentUser.priority2 || DEFAULT_PRIORITIES[1];
@@ -807,6 +823,7 @@ const ProfilePage = () => {
                   })()}
                 </div>
               </div>
+
             </div>
           ) : (
             <div className="text-center py-8">
@@ -973,6 +990,9 @@ const ProfilePage = () => {
           )}
         </div>
       )}
+
+        </div> {/* End Right Column */}
+      </div> {/* End Grid */}
 
       <UnsavedChangesModal
         isOpen={blocker.state === 'blocked'}

@@ -22,6 +22,15 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const PRESET_AMENITIES = [
+  'High-speed WiFi',
+  'Washing Machine',
+  'Air Conditioning',
+  'Refrigerator',
+  'Microwave',
+  '24/7 Security'
+];
+
 const OwnerDashboard = () => {
   const { currentUser, isUitmVerified } = useAuth();
   const { t } = useLanguage();
@@ -39,11 +48,13 @@ const OwnerDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [customAmenityInput, setCustomAmenityInput] = useState('');
   const [formData, setFormData] = useState({
     title: '', description: '', address: '', city: '', state: '',
     monthlyRent: '', roomType: 'Single', propertyType: 'Apartment',
     furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
-    imageUrl: '', latitude: null, longitude: null
+    imageUrl: '', latitude: null, longitude: null, amenities: ''
   });
 
   const blocker = useBlocker(
@@ -240,6 +251,30 @@ const OwnerDashboard = () => {
     setIsDirty(true);
   };
 
+  const handleTogglePresetAmenity = (amenity) => {
+    setIsDirty(true);
+    setSelectedAmenities(prev => 
+      prev.includes(amenity)
+        ? prev.filter(a => a !== amenity)
+        : [...prev, amenity]
+    );
+  };
+
+  const handleAddCustomAmenity = () => {
+    const val = customAmenityInput.trim();
+    if (!val) return;
+    setIsDirty(true);
+    if (!selectedAmenities.includes(val)) {
+      setSelectedAmenities(prev => [...prev, val]);
+    }
+    setCustomAmenityInput('');
+  };
+
+  const handleRemoveAmenity = (amenity) => {
+    setIsDirty(true);
+    setSelectedAmenities(prev => prev.filter(a => a !== amenity));
+  };
+
   const handleImageFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -279,8 +314,15 @@ const OwnerDashboard = () => {
       availabilityStatus: property.availabilityStatus || 'Pending',
       imageUrl: property.imageUrl || '',
       latitude: property.latitude || null,
-      longitude: property.longitude || null
+      longitude: property.longitude || null,
+      amenities: property.amenities || ''
     });
+    if (property.amenities) {
+      setSelectedAmenities(property.amenities.split(',').map(a => a.trim()).filter(Boolean));
+    } else {
+      setSelectedAmenities([]);
+    }
+    setCustomAmenityInput('');
     setImageFiles([]);
     setImagePreviews([]);
     const imgs = property.images?.length > 0 ? property.images : (property.imageUrl ? [{ id: null, imageUrl: property.imageUrl }] : []);
@@ -291,7 +333,9 @@ const OwnerDashboard = () => {
   };
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', address: '', city: '', state: '', monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending', imageUrl: '', latitude: null, longitude: null });
+    setFormData({ title: '', description: '', address: '', city: '', state: '', monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending', imageUrl: '', latitude: null, longitude: null, amenities: '' });
+    setSelectedAmenities([]);
+    setCustomAmenityInput('');
     setFormErrors({});
     setImageFiles([]);
     setImagePreviews([]);
@@ -371,7 +415,7 @@ const OwnerDashboard = () => {
     try {
       if (editingId) {
         const coverUrl = existingImages.find(img => img.id !== null)?.imageUrl || formData.imageUrl || '';
-        const payload = { ...formData, imageUrl: coverUrl, monthlyRent: parseFloat(formData.monthlyRent), ownerId: currentUser.id };
+        const payload = { ...formData, amenities: selectedAmenities.join(', '), imageUrl: coverUrl, monthlyRent: parseFloat(formData.monthlyRent), ownerId: currentUser.id };
 
         if (editingWasRejected) await resubmitProperty(editingId, payload);
         else await updateProperty(editingId, payload);
@@ -394,7 +438,7 @@ const OwnerDashboard = () => {
           }
         }
       } else {
-        const payload = { ...formData, imageUrl: '', monthlyRent: parseFloat(formData.monthlyRent), ownerId: currentUser.id, availabilityStatus: 'Pending' };
+        const payload = { ...formData, amenities: selectedAmenities.join(', '), imageUrl: '', monthlyRent: parseFloat(formData.monthlyRent), ownerId: currentUser.id, availabilityStatus: 'Pending' };
         const created = await createProperty(payload);
 
         if (imageFiles.length > 0) {
@@ -469,7 +513,7 @@ const OwnerDashboard = () => {
 
   return (
     <div className="rs-page pb-20">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      <div className="w-full px-6 md:px-10 lg:px-16 py-8">
 
         {/* Modals */}
         <ConfirmModal
@@ -826,6 +870,82 @@ const OwnerDashboard = () => {
                       </div>
                     ))}
 
+                    {/* Amenities Selection */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">star</span>
+                        Amenities
+                      </label>
+
+                      {/* Preset checkboxes */}
+                      <p className="text-[10px] font-bold text-on-surface-variant mb-1.5 uppercase tracking-wide">Select Presets</p>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {PRESET_AMENITIES.map(amenity => {
+                          const isSelected = selectedAmenities.includes(amenity);
+                          return (
+                            <button
+                              key={amenity}
+                              type="button"
+                              onClick={() => handleTogglePresetAmenity(amenity)}
+                              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                                isSelected
+                                  ? 'bg-primary/10 text-primary border-primary font-bold'
+                                  : 'bg-white text-on-surface-variant border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              {amenity}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom amenities */}
+                      <p className="text-[10px] font-bold text-on-surface-variant mb-1.5 uppercase tracking-wide">Add Custom Amenities</p>
+                      <div className="flex gap-2 mb-3">
+                        <input
+                          type="text"
+                          value={customAmenityInput}
+                          onChange={(e) => setCustomAmenityInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomAmenity();
+                            }
+                          }}
+                          placeholder="e.g. Balcony, Swimming Pool..."
+                          className="rs-input text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomAmenity}
+                          className="px-4 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primary/95 transition-all whitespace-nowrap"
+                        >
+                          + Add
+                        </button>
+                      </div>
+
+                      {/* Selected Amenities Pills */}
+                      {selectedAmenities.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 p-3 bg-gray-50 rounded-xl border border-gray-150">
+                          {selectedAmenities.map(amenity => (
+                            <span 
+                              key={amenity}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[11px] font-semibold text-on-surface"
+                            >
+                              {amenity}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAmenity(amenity)}
+                                className="w-3.5 h-3.5 bg-gray-100 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all ml-1"
+                              >
+                                <span className="material-symbols-outlined text-[10px]">close</span>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_desc')}</label>
                       <textarea
@@ -913,12 +1033,12 @@ const OwnerDashboard = () => {
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: t('owner_stat_total'),    value: properties.length, color: 'text-on-surface',   bgClass: 'bg-white',        borderClass: 'border-gray-200',    icon: 'home_work',    iconBg: 'bg-gray-100',    iconColor: 'text-on-surface-variant' },
-            { label: t('owner_stat_approved'), value: approvedCount,     color: 'text-emerald-600', bgClass: 'bg-emerald-50',   borderClass: 'border-emerald-200', icon: 'check_circle', iconBg: 'bg-emerald-50',  iconColor: 'text-emerald-500' },
-            { label: t('owner_stat_pending'),  value: pendingCount,      color: 'text-amber-600',   bgClass: 'bg-amber-50',     borderClass: 'border-amber-200',   icon: 'schedule',     iconBg: 'bg-amber-50',    iconColor: 'text-amber-500' },
-            { label: t('owner_stat_rejected'), value: rejectedCount,     color: 'text-red-500',     bgClass: 'bg-red-50',       borderClass: 'border-red-200',     icon: 'cancel',       iconBg: 'bg-red-50',      iconColor: 'text-red-500' },
+            { label: t('owner_stat_total'),    value: properties.length, color: 'text-on-surface',   bgClass: 'bg-white',        borderClass: 'border-gray-200',    glowClass: 'hover-glow-blue',    icon: 'home_work',    iconBg: 'bg-gray-100',    iconColor: 'text-on-surface-variant' },
+            { label: t('owner_stat_approved'), value: approvedCount,     color: 'text-emerald-600', bgClass: 'bg-emerald-50',   borderClass: 'border-emerald-200', glowClass: 'hover-glow-emerald', icon: 'check_circle', iconBg: 'bg-emerald-50',  iconColor: 'text-emerald-500' },
+            { label: t('owner_stat_pending'),  value: pendingCount,      color: 'text-amber-600',   bgClass: 'bg-amber-50',     borderClass: 'border-amber-200',   glowClass: 'hover-glow-amber',   icon: 'schedule',     iconBg: 'bg-amber-50',    iconColor: 'text-amber-500' },
+            { label: t('owner_stat_rejected'), value: rejectedCount,     color: 'text-red-500',     bgClass: 'bg-red-50',       borderClass: 'border-red-200',     glowClass: 'hover-glow-red',     icon: 'cancel',       iconBg: 'bg-red-50',      iconColor: 'text-red-500' },
           ].map((stat, i) => (
-            <div key={i} className={`rounded-2xl border p-5 shadow-rs-sm ${stat.bgClass} ${stat.borderClass}`}>
+            <div key={i} className={`rounded-2xl border p-5 shadow-rs-sm transition-all duration-300 group cursor-default ${stat.bgClass} ${stat.borderClass} ${stat.glowClass}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">{stat.label}</p>
@@ -955,7 +1075,7 @@ const OwnerDashboard = () => {
               <span className="text-sm text-on-surface-variant">{t('owner_listings_total', { count: properties.length })}</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {properties.map(p => {
                 const coverImg = p.images?.[0]?.imageUrl || p.imageUrl;
                 const resolvedImg = coverImg ? resolveImageSrc(coverImg) : null;

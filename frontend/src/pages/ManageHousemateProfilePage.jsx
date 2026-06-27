@@ -246,7 +246,7 @@ const ManageHousemateProfilePage = () => {
 
   return (
     <div className="rs-page pb-20">
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+      <div className="w-full px-6 md:px-10 lg:px-16 py-8">
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-on-surface-variant mb-6">
@@ -275,7 +275,7 @@ const ManageHousemateProfilePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
           {/* ── RIGHT COLUMN: Live Preview Card ── */}
-          <div className="lg:col-span-1 lg:order-2 space-y-4">
+          <div className="lg:col-span-1 lg:order-2 space-y-4 lg:pt-[76px]">
 
             {/* Live Profile Preview Card */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-rs-md overflow-hidden">
@@ -284,8 +284,18 @@ const ManageHousemateProfilePage = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">{t('pref_live_preview')}</p>
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-black border border-white/30">
-                      {currentUser.name.charAt(0)}
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-black border border-white/30">
+                      {currentUser.profileImageUrl ? (
+                        <img
+                          src={currentUser.profileImageUrl.startsWith('/uploads')
+                            ? `http://localhost:8080${currentUser.profileImageUrl}`
+                            : currentUser.profileImageUrl}
+                          alt={currentUser.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        currentUser.name.charAt(0)
+                      )}
                     </div>
                   </div>
                   {form.isListedAsHousemate ? (
@@ -303,7 +313,7 @@ const ManageHousemateProfilePage = () => {
 
               {/* Card body */}
               <div className="px-5 -mt-4 pb-5">
-                <div className="bg-white rounded-xl border border-gray-100 shadow-rs-sm px-4 py-3 mb-4">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-rs-sm px-4 pt-8 pb-3 mb-4">
                   <h3 className="font-bold text-on-surface text-base font-headline">{currentUser.name}</h3>
                   <p className="text-xs text-on-surface-variant">{currentUser.email}</p>
                   <div className="flex flex-wrap gap-1 mt-2">

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { getProperties, getUserFavourites, toggleFavourite } from '../services/api';
 import PropertyList from '../components/PropertyList';
 import { useAuth } from '../context/AuthContext';
@@ -23,8 +24,8 @@ const CardSkeleton = () => (
   </div>
 );
 
-/* ── Top horizontal filter bar ── */
-const TopFilterBar = ({
+/* ── Unified search and filter pill bar ── */
+const FilterPillBar = ({
   filters,
   setFilters,
   availableStates,
@@ -34,6 +35,7 @@ const TopFilterBar = ({
   onReset,
   activeFilterCount,
   t,
+  showFavouritesToggle,
 }) => {
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -79,66 +81,94 @@ const TopFilterBar = ({
   };
 
   return (
-    <div className="sticky top-16 z-40 bg-white/95 dark:bg-[#0b0f17]/95 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800/80 shadow-rs-sm">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3.5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          
-          {/* Left side: Search & Category Chips */}
-          <div className="flex flex-wrap items-center gap-3 flex-grow">
-            
-            {/* Search Pill */}
-            <div className="relative w-full sm:w-60">
-              <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-on-surface-variant/60 pointer-events-none">search</span>
-              <input
-                type="text"
-                name="search"
-                placeholder={t('pfilter_search_placeholder')}
-                value={filters.search}
-                onChange={handleChange}
-                className="rs-pill rs-pill-inactive w-full pl-10 pr-4 text-xs font-semibold"
-                style={{ paddingLeft: '36px', height: '36px' }}
-              />
-            </div>
+    <div className="space-y-4 mb-10">
+      
+      {/* 1. Full-width Search Bar (pill-shaped) */}
+      <div className="relative w-full">
+        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg text-on-surface-variant/60 pointer-events-none">search</span>
+        <input
+          type="text"
+          name="search"
+          placeholder={t('pfilter_search_placeholder')}
+          value={filters.search}
+          onChange={handleChange}
+          className="w-full pl-12 pr-4 text-sm font-semibold rounded-2xl border border-gray-150/40 dark:border-gray-800/80 bg-white dark:bg-[#111827]/40 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-rs-sm"
+          style={{ height: '48px' }}
+        />
+      </div>
 
-            {/* Horizontal Category Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-              {[
-                { id: 'all', label: t('filter_all_properties') },
-                { id: 'landed', label: t('filter_landed_house') },
-                { id: 'apartment', label: t('filter_apartment') },
-                { id: 'room', label: t('filter_private_room') }
-              ].map(chip => {
-                const active = isCategoryActive(chip.id);
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => handleCategoryClick(chip.id)}
-                    className={`rs-pill whitespace-nowrap text-xs font-bold transition-all px-4 py-2 ${
-                      active ? 'rs-pill-active' : 'rs-pill-inactive'
-                    }`}
-                    style={{ height: '36px' }}
-                  >
-                    {chip.label}
-                  </button>
-                );
-              })}
-            </div>
+      {/* 2. Filter Pill container */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-white dark:bg-[#111827]/40 rounded-2xl border border-gray-150/40 dark:border-gray-800/80 p-4 shadow-rs-sm">
+        
+        <div className="flex items-center gap-2 text-on-surface-variant flex-shrink-0">
+          <span className="material-symbols-outlined text-lg text-primary">filter_alt</span>
+          <span className="text-sm font-black">{t('filter_title')}:</span>
+        </div>
 
+          {/* Left side: Category Chips */}
+          <div className="flex-grow flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {[
+              { id: 'all', label: t('filter_all_properties') },
+              { id: 'landed', label: t('filter_landed_house') },
+              { id: 'apartment', label: t('filter_apartment') },
+              { id: 'room', label: t('filter_private_room') }
+            ].map(chip => {
+              const active = isCategoryActive(chip.id);
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => handleCategoryClick(chip.id)}
+                  className={`rs-pill whitespace-nowrap text-sm font-extrabold transition-all px-5 py-2.5 ${
+                    active ? 'rs-pill-active' : 'rs-pill-inactive'
+                  }`}
+                  style={{ height: '42px' }}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Right side: Price Filter & More Filters */}
+          {/* Vertical Divider (md screen only) */}
+          <div className="hidden md:block w-px h-8 bg-gray-200 dark:bg-gray-800" />
+
+          {/* Right side: Favourites, Price & More Filters */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
+
+            {/* Favourites Toggle */}
+            {showFavouritesToggle && (
+              <button
+                type="button"
+                onClick={() => setFilters(prev => ({ ...prev, onlyFavourites: !prev.onlyFavourites }))}
+                className={`rs-pill flex items-center gap-1.5 text-sm font-extrabold transition-all ${
+                  filters.onlyFavourites
+                    ? 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/20 dark:border-rose-900/30'
+                    : 'rs-pill-inactive'
+                }`}
+                style={{ height: '42px' }}
+              >
+                <span
+                  className="material-symbols-outlined text-base"
+                  style={filters.onlyFavourites ? { fontVariationSettings: "'FILL' 1", color: '#e11d48' } : {}}
+                >
+                  favorite
+                </span>
+                <span className={filters.onlyFavourites ? 'text-rose-600 dark:text-rose-400 font-extrabold' : ''}>
+                  {t('prop_filter_favourites')}
+                </span>
+              </button>
+            )}
             
             {/* Price Dropdown */}
             <div className="relative" ref={priceRef}>
               <button
                 type="button"
                 onClick={() => { setShowPriceDropdown(!showPriceDropdown); setShowMoreFilters(false); }}
-                className={`rs-pill flex items-center gap-1.5 text-xs font-bold ${
+                className={`rs-pill flex items-center gap-1.5 text-sm font-extrabold ${
                   filters.minPrice || filters.maxPrice ? 'rs-pill-active' : 'rs-pill-inactive'
                 }`}
-                style={{ height: '36px' }}
+                style={{ height: '42px' }}
               >
                 <span>
                   {filters.minPrice || filters.maxPrice
@@ -201,14 +231,14 @@ const TopFilterBar = ({
               <button
                 type="button"
                 onClick={() => { setShowMoreFilters(!showMoreFilters); setShowPriceDropdown(false); }}
-                className={`rs-pill flex items-center gap-1.5 text-xs font-bold ${
+                className={`rs-pill flex items-center gap-1.5 text-sm font-extrabold ${
                   filters.state || filters.furnishedStatus || (filters.roomType && filters.roomType !== 'Single')
                     ? 'rs-pill-active'
                     : 'rs-pill-inactive'
                 }`}
-                style={{ height: '36px' }}
+                style={{ height: '42px' }}
               >
-                <span className="material-symbols-outlined text-sm">filter_list</span>
+                <span className="material-symbols-outlined text-base">filter_list</span>
                 <span>{t('filter_more_filters')}</span>
                 {(filters.state || filters.furnishedStatus || (filters.roomType && filters.roomType !== 'Single')) && (
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -294,11 +324,122 @@ const TopFilterBar = ({
 
                 </div>
               )}
-            </div>
-
           </div>
-
         </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── Recommended properties carousel based on student budget ── */
+const RecommendedCarousel = ({ properties, t }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsPerSlide = 2;
+
+  // Group properties into slides of up to 2 items
+  const slides = useMemo(() => {
+    const res = [];
+    for (let i = 0; i < properties.length; i += itemsPerSlide) {
+      res.push(properties.slice(i, i + itemsPerSlide));
+    }
+    return res;
+  }, [properties]);
+
+  const maxIndex = slides.length - 1;
+
+  if (properties.length === 0) return null;
+
+  const handlePrev = () => {
+    setCurrentIndex(prev => Math.max(0, prev - 1));
+  };
+  const handleNext = () => {
+    setCurrentIndex(prev => Math.min(maxIndex, prev + 1));
+  };
+
+  return (
+    <div className="mb-10 relative group/carousel">
+      {/* Title */}
+      <div className="mb-6">
+        <h2 className="text-4xl font-black tracking-tight text-on-surface font-headline flex items-center gap-2 mb-1">
+          <span className="material-symbols-outlined text-primary text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+          {t('prop_recommended_budget')}
+        </h2>
+        <p className="text-base text-on-surface-variant font-medium">
+          {t('prop_recommended_budget_sub')}
+        </p>
+      </div>
+      
+      {/* Carousel Outer Wrapper */}
+      <div className="relative px-1">
+        
+        {/* Left Control */}
+        {maxIndex > 0 && currentIndex > 0 && (
+          <button
+            onClick={handlePrev}
+            className="absolute -left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all shadow-lg z-20 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-xl">chevron_left</span>
+          </button>
+        )}
+
+        {/* Right Control */}
+        {maxIndex > 0 && currentIndex < maxIndex && (
+          <button
+            onClick={handleNext}
+            className="absolute -right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all shadow-lg z-20 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-xl">chevron_right</span>
+          </button>
+        )}
+
+        {/* Slider Window */}
+        <div className="overflow-hidden rounded-2xl">
+          <div
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          >
+            {slides.map((slideItems, slideIdx) => (
+              <div key={slideIdx} className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-2 gap-4 px-0.5 py-0.5">
+                {slideItems.map(property => (
+                  <Link
+                    key={property.id}
+                    to={`/properties/${property.id}`}
+                    className="relative h-68 md:h-80 rounded-2xl overflow-hidden shadow-rs-sm hover:shadow-rs-md group flex flex-col"
+                  >
+                    {/* Background Image */}
+                    <img
+                      src={property.imageUrl && property.imageUrl.startsWith('/uploads') ? `http://localhost:8080${property.imageUrl}` : (property.imageUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=70')}
+                      alt={property.title}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10 flex flex-col justify-end p-5 z-10">
+                      <div>
+                        <span className="text-[9px] font-black text-white bg-primary px-2 py-0.5 rounded uppercase tracking-widest inline-block mb-2">
+                          {t('prop_recommended_badge')}
+                        </span>
+                        <h4 className="font-extrabold text-white text-base md:text-lg line-clamp-1 leading-snug">{property.title}</h4>
+                        <p className="text-xs text-white/80 mt-0.5">{property.city}, {property.state}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
+                        <span className="text-base font-black text-white">
+                          RM {property.monthlyRent}
+                          <span className="text-xs font-normal opacity-80">/mo</span>
+                        </span>
+                        <span className="text-[10px] font-extrabold text-green-400 bg-green-950/40 px-2.5 py-0.5 rounded border border-green-800/40 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          {t('card_available')}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -315,7 +456,8 @@ const PropertiesPage = () => {
     propertyType: '',
     furnishedStatus: '',
     minPrice: '',
-    maxPrice: ''
+    maxPrice: '',
+    onlyFavourites: false
   };
 
   const [allProperties, setAllProperties] = useState([]);
@@ -381,39 +523,58 @@ const PropertiesPage = () => {
       if (filters.furnishedStatus && property.furnishedStatus !== filters.furnishedStatus) return false;
       if (filters.minPrice && property.monthlyRent < parseFloat(filters.minPrice)) return false;
       if (filters.maxPrice && property.monthlyRent > parseFloat(filters.maxPrice)) return false;
+      if (filters.onlyFavourites && !favouritedIds.has(property.id)) return false;
       return true;
     });
-  }, [allProperties, filters]);
+  }, [allProperties, filters, favouritedIds]);
+
+  const budgetRecommended = useMemo(() => {
+    if (!allProperties || allProperties.length === 0) return [];
+    const targetBudget = currentUser?.budget || 500;
+    const available = allProperties.filter(p => p.approvalStatus === 'Approved' && p.availabilityStatus === 'Available');
+    return available
+      .map(p => ({ ...p, diff: Math.abs(p.monthlyRent - targetBudget) }))
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 6);
+  }, [allProperties, currentUser?.budget]);
+
 
   const availableStates = [...new Set(allProperties.map(p => p.state).filter(Boolean))];
   const availableRoomTypes = [...new Set(allProperties.map(p => p.roomType).filter(Boolean))];
   const availablePropertyTypes = [...new Set(allProperties.map(p => p.propertyType).filter(Boolean))];
   const availableFurnished = [...new Set(allProperties.map(p => p.furnishedStatus).filter(Boolean))];
 
-  const activeFilterCount = [filters.state, filters.roomType, filters.propertyType, filters.furnishedStatus, filters.minPrice, filters.maxPrice, filters.search].filter(Boolean).length;
+  const activeFilterCount = [filters.state, filters.roomType, filters.propertyType, filters.furnishedStatus, filters.minPrice, filters.maxPrice, filters.search, filters.onlyFavourites].filter(Boolean).length;
 
   return (
     <div className="rs-page pb-20">
 
-      {/* ── Top Filter Bar ── */}
-      <TopFilterBar
-        filters={filters}
-        setFilters={setFilters}
-        availableStates={availableStates}
-        availableRoomTypes={availableRoomTypes}
-        availablePropertyTypes={availablePropertyTypes}
-        availableFurnished={availableFurnished}
-        onReset={() => setFilters(initialFilters)}
-        activeFilterCount={activeFilterCount}
-        t={t}
-      />
+      <div className="w-full px-6 md:px-10 lg:px-16 py-8">
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        {/* Recommended Properties Carousel */}
+        {!loading && budgetRecommended.length > 0 && (
+          <RecommendedCarousel properties={budgetRecommended} t={t} />
+        )}
+
+        {/* Unified Filter Pill Bar */}
+        <FilterPillBar
+          filters={filters}
+          setFilters={setFilters}
+          availableStates={availableStates}
+          availableRoomTypes={availableRoomTypes}
+          availablePropertyTypes={availablePropertyTypes}
+          availableFurnished={availableFurnished}
+          onReset={() => setFilters(initialFilters)}
+          activeFilterCount={activeFilterCount}
+          t={t}
+          showFavouritesToggle={!!currentUser}
+        />
 
         {/* Page Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-on-surface font-headline mb-1">
+            <h1 className="text-3xl font-black tracking-tight text-on-surface font-headline mb-1 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>apartment</span>
               {t('prop_title')}
             </h1>
             <p className="text-on-surface-variant text-sm">
@@ -432,7 +593,7 @@ const PropertiesPage = () => {
         {/* Full-width Content */}
         {loading ? (
           /* Skeleton Grid */
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
             {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
         ) : error ? (

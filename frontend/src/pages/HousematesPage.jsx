@@ -430,8 +430,8 @@ const HousematesPage = () => {
   if (authLoading) {
     return (
       <div className="rs-page pb-20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="w-full px-6 md:px-10 lg:px-16 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="skeleton h-28 w-full" />
@@ -450,7 +450,7 @@ const HousematesPage = () => {
 
   return (
     <div className="rs-page pb-20">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      <div className="w-full px-6 md:px-10 lg:px-16 py-8">
 
         {/* ── Page Header ── */}
         <div className="mb-8">
@@ -469,26 +469,18 @@ const HousematesPage = () => {
 
         {/* ── Stats Strip (logged-in users) ── */}
         {currentUser && currentUser.id !== 999 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm text-center transition-all duration-300 group hover-glow-blue cursor-default">
               <span className="text-3xl font-black text-on-surface">{filteredHousemates.length}</span>
               <p className="text-xs text-on-surface-variant font-medium mt-0.5">{t('hm_stats_total')}</p>
             </div>
-            <div className="bg-white rounded-2xl border border-emerald-200 p-4 shadow-rs-sm text-center" style={{ background: '#f0fdf4' }}>
+            <div className="bg-white rounded-2xl border border-emerald-200 p-4 shadow-rs-sm text-center transition-all duration-300 group hover-glow-emerald cursor-default" style={{ background: '#f0fdf4' }}>
               <span className="text-3xl font-black text-emerald-600">{greatMatches}</span>
               <p className="text-xs text-emerald-600/70 font-medium mt-0.5">{t('hm_stats_great')} (75%+)</p>
             </div>
-            <div className="bg-white rounded-2xl border border-blue-200 p-4 shadow-rs-sm text-center" style={{ background: '#eff6ff' }}>
+            <div className="bg-white rounded-2xl border border-blue-200 p-4 shadow-rs-sm text-center transition-all duration-300 group hover-glow-blue cursor-default" style={{ background: '#eff6ff' }}>
               <span className="text-3xl font-black text-blue-600">{goodMatches}</span>
               <p className="text-xs text-blue-600/70 font-medium mt-0.5">{t('hm_stats_good')} (50%+)</p>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm text-center">
-              <div className="flex items-center justify-center gap-1 mb-0.5">
-                {priorities.slice(0, 3).map((p, i) => (
-                  <span key={i} className="material-symbols-outlined text-primary text-sm" title={p}>{PRIORITY_ICONS[p] || 'star'}</span>
-                ))}
-              </div>
-            <p className="text-xs text-on-surface-variant font-medium">{t('hm_priorities')}</p>
             </div>
           </div>
         )}
@@ -600,7 +592,7 @@ const HousematesPage = () => {
         {/* ── Content ── */}
         {loading ? (
           /* Skeleton */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="skeleton h-28 w-full" />
@@ -663,7 +655,7 @@ const HousematesPage = () => {
                 {t('prop_results', { count: filteredHousemates.length })}
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
               {filteredHousemates.map(hm => (
                 <MatchCard
                   key={hm.id}

@@ -5,7 +5,7 @@ const AboutPage = () => {
   const { t } = useLanguage();
 
   return (
-    <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto">
+    <div className="pt-24 pb-20 px-6 md:px-10 lg:px-16 w-full mx-auto">
       {/* Page header */}
       <div className="mb-8 pb-4 border-b border-outline-variant/20">
         <h1 className="text-3xl font-extrabold font-headline tracking-tight text-on-surface">

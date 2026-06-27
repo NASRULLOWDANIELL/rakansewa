@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,6 +10,7 @@ const FEATURES = [
     icon: 'verified',
     iconBg: 'bg-blue-50',
     iconColor: 'text-primary',
+    glowClass: 'hover-glow-blue',
     titleKey: 'feat_title_listings',
     descKey: 'feat_desc_listings',
   },
@@ -17,6 +18,7 @@ const FEATURES = [
     icon: 'map',
     iconBg: 'bg-teal-50',
     iconColor: 'text-teal-600',
+    glowClass: 'hover-glow-teal',
     titleKey: 'feat_title_distance',
     descKey: 'feat_desc_distance',
   },
@@ -24,6 +26,7 @@ const FEATURES = [
     icon: 'diversity_3',
     iconBg: 'bg-purple-50',
     iconColor: 'text-purple-600',
+    glowClass: 'hover-glow-purple',
     titleKey: 'feat_title_matching',
     descKey: 'feat_desc_matching',
   },
@@ -31,6 +34,7 @@ const FEATURES = [
     icon: 'shield_person',
     iconBg: 'bg-emerald-50',
     iconColor: 'text-emerald-600',
+    glowClass: 'hover-glow-emerald',
     titleKey: 'feat_title_trust',
     descKey: 'feat_desc_trust',
   },
@@ -38,9 +42,9 @@ const FEATURES = [
 
 /* ── How It Works steps ── */
 const HOW_IT_WORKS = [
-  { step: '01', icon: 'person_add', titleKey: 'hiw_step1_title', descKey: 'hiw_step1_desc' },
-  { step: '02', icon: 'tune', titleKey: 'hiw_step2_title', descKey: 'hiw_step2_desc' },
-  { step: '03', icon: 'chat_bubble', titleKey: 'hiw_step3_title', descKey: 'hiw_step3_desc' },
+  { step: '01', icon: 'person_add', iconBg: 'bg-blue-50', iconColor: 'text-primary', glowClass: 'hover-glow-blue', titleKey: 'hiw_step1_title', descKey: 'hiw_step1_desc' },
+  { step: '02', icon: 'tune', iconBg: 'bg-teal-50', iconColor: 'text-teal-600', glowClass: 'hover-glow-teal', titleKey: 'hiw_step2_title', descKey: 'hiw_step2_desc' },
+  { step: '03', icon: 'chat_bubble', iconBg: 'bg-purple-50', iconColor: 'text-purple-600', glowClass: 'hover-glow-purple', titleKey: 'hiw_step3_title', descKey: 'hiw_step3_desc' },
 ];
 
 /* ── Student CTA Card ── */
@@ -298,7 +302,7 @@ const HomePage = () => {
                 <div className="flex flex-col gap-6 items-center lg:items-end w-full max-w-[360px]">
                   
                   {/* Card 1: Active Listings */}
-                  <div className="bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:-translate-x-14 md:-translate-x-8">
+                  <div className="bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:-translate-x-14 md:-translate-x-8 group hover-glow-blue">
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-primary">
                       <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>home_work</span>
                     </div>
@@ -317,7 +321,7 @@ const HomePage = () => {
                   </div>
 
                   {/* Card 2: Students Matched */}
-                  <div className="bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:translate-x-6 md:translate-x-4">
+                  <div className="bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:translate-x-6 md:translate-x-4 group hover-glow-emerald">
                     <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0 text-emerald-600">
                       <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
                     </div>
@@ -336,7 +340,7 @@ const HomePage = () => {
                   </div>
 
                   {/* Card 3: 100% Verified */}
-                  <div className="relative bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:-translate-x-10 md:-translate-x-6">
+                  <div className="relative bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:-translate-x-10 md:-translate-x-6 group hover-glow-blue">
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-primary">
                       <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
                     </div>
@@ -378,14 +382,14 @@ const HomePage = () => {
           {HOW_IT_WORKS.map((step, i) => (
             <div
               key={i}
-              className="relative bg-white rounded-2xl border border-gray-100 p-7 shadow-rs-sm hover:shadow-rs-md transition-all duration-300 group"
+              className={`relative bg-white rounded-2xl border border-gray-100 p-7 shadow-rs-sm transition-all duration-300 group ${step.glowClass}`}
             >
               {i < HOW_IT_WORKS.length - 1 && (
                 <div className="hidden md:block absolute top-10 -right-3 w-6 h-0.5 bg-gray-200 z-10" />
               )}
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-primary/10 group-hover:bg-primary group-hover:shadow-rs-blue rounded-xl flex items-center justify-center transition-all duration-300">
-                  <span className="material-symbols-outlined text-primary group-hover:text-white text-xl transition-colors" style={{ fontVariationSettings: "'FILL' 1" }}>{step.icon}</span>
+                <div className={`flex-shrink-0 w-12 h-12 ${step.iconBg} rounded-xl flex items-center justify-center`}>
+                  <span className={`material-symbols-outlined ${step.iconColor} text-xl`} style={{ fontVariationSettings: "'FILL' 1" }}>{step.icon}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 block">{step.step}</span>
@@ -413,7 +417,7 @@ const HomePage = () => {
             {FEATURES.map((f, i) => (
               <div
                 key={i}
-                className="group bg-white/60 dark:bg-[#111827]/60 backdrop-blur-sm hover:bg-white dark:hover:bg-[#111827] border border-gray-150/40 dark:border-gray-800/80 p-7 rounded-2xl transition-all duration-300 hover:shadow-rs-md text-center cursor-default"
+                className={`group bg-white/60 dark:bg-[#111827]/60 backdrop-blur-sm hover:bg-white dark:hover:bg-[#111827] border border-gray-150/40 dark:border-gray-800/80 p-7 rounded-2xl transition-all duration-300 text-center cursor-default ${f.glowClass}`}
               >
                 <div className={`w-14 h-14 mx-auto ${f.iconBg} group-hover:scale-110 transition-transform duration-300 rounded-2xl flex items-center justify-center mb-5`}>
                   <span className={`material-symbols-outlined text-2xl ${f.iconColor}`} style={{ fontVariationSettings: "'FILL' 1" }}>{f.icon}</span>
@@ -439,27 +443,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ─────────────────────────────
-          FOOTER STRIP
-          ───────────────────────────── */}
-      <footer className="border-t border-gray-100 bg-white py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-on-surface-variant">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>home_work</span>
-            </div>
-            <span className="font-bold text-on-surface font-headline">Rakan<span className="text-primary">Sewa</span></span>
-          </div>
-          <p className="text-xs text-on-surface-variant text-center">
-            A student housing &amp; housemate matching platform for UiTM Jasin. &copy; {new Date().getFullYear()}
-          </p>
-          <div className="flex items-center gap-4">
-            <Link to="/about" className="text-xs hover:text-primary transition-colors font-medium">About</Link>
-            <Link to="/properties" className="text-xs hover:text-primary transition-colors font-medium">Listings</Link>
-            <Link to="/housemates" className="text-xs hover:text-primary transition-colors font-medium">Matches</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

@@ -64,6 +64,23 @@ const AMENITY_ICONS = {
   security: { icon: 'security', label: '24/7 Security' },
 };
 
+const resolveAmenityIcon = (name) => {
+  const lower = name.toLowerCase();
+  if (lower.includes('wifi') || lower.includes('internet')) return 'wifi';
+  if (lower.includes('wash') || lower.includes('laundry')) return 'local_laundry_service';
+  if (lower.includes('air cond') || lower.includes('ac')) return 'ac_unit';
+  if (lower.includes('fridge') || lower.includes('refriger')) return 'kitchen';
+  if (lower.includes('microwave') || lower.includes('oven')) return 'microwave';
+  if (lower.includes('security') || lower.includes('guard')) return 'security';
+  if (lower.includes('pool') || lower.includes('swimming')) return 'pool';
+  if (lower.includes('gym') || lower.includes('fit')) return 'fitness_center';
+  if (lower.includes('park') || lower.includes('garage')) return 'local_parking';
+  if (lower.includes('bath') || lower.includes('toilet')) return 'bathtub';
+  if (lower.includes('balcony') || lower.includes('yard')) return 'deck';
+  if (lower.includes('cook') || lower.includes('stove') || lower.includes('kitchen')) return 'cooking';
+  return 'done_all';
+};
+
 const PropertyDetailsPage = () => {
   const { id } = useParams();
   const { currentUser, isUitmVerified } = useAuth();
@@ -75,7 +92,9 @@ const PropertyDetailsPage = () => {
   const [distance, setDistance] = useState(null);
   const [distanceStatus, setDistanceStatus] = useState('calculating...');
   const [showVerifyWarning, setShowVerifyWarning] = useState(false);
-  const [activeImg, setActiveImg] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxImgIndex, setLightboxImgIndex] = useState(0);
+  const [galleryIdx, setGalleryIdx] = useState(0);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -152,6 +171,46 @@ const PropertyDetailsPage = () => {
     return url;
   };
 
+  const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80`;
+  const allImages = useMemo(() => {
+    if (!property) return [];
+    if (property.images?.length > 0) return property.images.map(img => resolveImageSrc(img.imageUrl));
+    if (property.imageUrl) return [resolveImageSrc(property.imageUrl)];
+    return [];
+  }, [property]);
+
+  const propertyAmenities = useMemo(() => {
+    if (!property || !property.amenities) return [];
+    return property.amenities.split(',').map(a => a.trim()).filter(Boolean);
+  }, [property]);
+
+  const prevLightboxImg = () => {
+    setLightboxImgIndex(prev => (prev === 0 ? allImages.length - 1 : prev - 1));
+  };
+  const nextLightboxImg = () => {
+    setLightboxImgIndex(prev => (prev === allImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevSlide = (e) => {
+    e.stopPropagation();
+    setGalleryIdx(prev => (prev === 0 ? allImages.length - 1 : prev - 1));
+  };
+  const nextSlide = (e) => {
+    e.stopPropagation();
+    setGalleryIdx(prev => (prev === allImages.length - 1 ? 0 : prev + 1));
+  };
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') prevLightboxImg();
+      if (e.key === 'ArrowRight') nextLightboxImg();
+      if (e.key === 'Escape') setIsLightboxOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, lightboxImgIndex, allImages]);
+
   if (loading) return (
     <div className="rs-page flex items-center justify-center min-h-screen">
       <div className="text-center">
@@ -171,14 +230,7 @@ const PropertyDetailsPage = () => {
     </div>
   );
 
-  const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80`;
-  const allImages = (() => {
-    if (property.images?.length > 0) return property.images.map(img => resolveImageSrc(img.imageUrl));
-    if (property.imageUrl) return [resolveImageSrc(property.imageUrl)];
-    return [];
-  })();
 
-  const mainImage = allImages[activeImg] || placeholderImage;
   const whatsappNumber = '60123456789';
   const whatsappMessage = encodeURIComponent(`Hi, I'm interested in your property: ${property.title} in ${property.city}. Is it still available?`);
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
@@ -189,7 +241,7 @@ const PropertyDetailsPage = () => {
 
   return (
     <div className="rs-page pb-16">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="w-full px-6 md:px-10 lg:px-16">
 
         {/* Back + Share Bar */}
         <div className="py-5 flex items-center justify-between">
@@ -203,72 +255,170 @@ const PropertyDetailsPage = () => {
         </div>
 
         {/* ── Gallery ── */}
-        <div className="mb-8">
-          <div className="grid grid-cols-12 gap-3 h-[260px] md:h-[420px] rounded-2xl overflow-hidden">
-            {/* Main large image */}
-            <div className="col-span-12 md:col-span-8 relative group cursor-pointer overflow-hidden">
-              <img
-                src={mainImage}
-                alt={property.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-
-              {/* Status badge */}
-              <div className="absolute top-4 left-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold shadow-sm ${isAvailable ? 'bg-emerald-500 text-white' : 'bg-gray-800/80 text-white'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
-                  {property.availabilityStatus}
-                </span>
-              </div>
-
-              {/* Photo count */}
-              {allImages.length > 1 && (
-                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                  <span className="material-symbols-outlined text-sm">photo_library</span>
-                  {allImages.length} photos
+        <div className="mb-8 relative group/gallery select-none">
+          <div 
+            className="relative h-[300px] md:h-[480px] rounded-2xl overflow-hidden cursor-pointer shadow-rs-md bg-black"
+            onClick={() => { setLightboxImgIndex(galleryIdx); setIsLightboxOpen(true); }}
+          >
+            {/* Sliding wrapper */}
+            <div 
+              className="flex h-full transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${galleryIdx * 100}%)` }}
+            >
+              {allImages.length > 0 ? (
+                allImages.map((img, i) => (
+                  <div key={i} className="w-full h-full flex-shrink-0 relative">
+                    <img
+                      src={img}
+                      alt={`${property.title} - Photo ${i + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.01]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                  </div>
+                ))
+              ) : (
+                <div className="w-full h-full relative">
+                  <img
+                    src={placeholderImage}
+                    alt={property.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                 </div>
               )}
             </div>
 
-            {/* Side images */}
-            <div className="hidden md:flex md:col-span-4 flex-col gap-3">
-              {[allImages[1], allImages[2]].map((img, i) => (
-                <div
-                  key={i}
-                  className="flex-1 relative overflow-hidden group cursor-pointer rounded-lg"
-                  onClick={() => img && setActiveImg(i + 1)}
-                >
-                  {img ? (
-                    <img src={img} alt={`Property photo ${i + 2}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-3xl text-gray-300">photo</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+            {/* Status badge */}
+            <div className="absolute top-4 left-4 z-20">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold shadow-sm ${isAvailable ? 'bg-emerald-500 text-white' : 'bg-gray-800/80 text-white'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
+                {property.availabilityStatus}
+              </span>
+            </div>
+
+            {/* Prev Arrow Control */}
+            {allImages.length > 1 && (
+              <button
+                onClick={prevSlide}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all opacity-0 group-hover/gallery:opacity-100 focus:outline-none z-20"
+                aria-label="Previous image"
+              >
+                <span className="material-symbols-outlined text-2xl">chevron_left</span>
+              </button>
+            )}
+
+            {/* Next Arrow Control */}
+            {allImages.length > 1 && (
+              <button
+                onClick={nextSlide}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all opacity-0 group-hover/gallery:opacity-100 focus:outline-none z-20"
+                aria-label="Next image"
+              >
+                <span className="material-symbols-outlined text-2xl">chevron_right</span>
+              </button>
+            )}
+
+            {/* Dot Indicators */}
+            {allImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-black/25 backdrop-blur-xs px-3 py-1.5 rounded-full">
+                {allImages.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setGalleryIdx(i); }}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      galleryIdx === i 
+                        ? 'bg-emerald-400 scale-125' 
+                        : 'bg-white/50 hover:bg-white/80'
+                    }`}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Photo count / Zoom indicator */}
+            <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-black/80 transition-colors z-20">
+              <span className="material-symbols-outlined text-sm">zoom_in</span>
+              <span>{allImages.length || 1} {allImages.length === 1 ? 'photo' : 'photos'}</span>
             </div>
           </div>
-
-          {/* Thumbnail strip (if > 3 images) */}
-          {allImages.length > 3 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-              {allImages.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImg(i)}
-                  className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImg === i ? 'border-primary shadow-rs-blue scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                >
-                  <img src={img} alt={`thumb ${i}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
+        {/* ── Lightbox Modal ── */}
+        {isLightboxOpen && allImages.length > 0 && (
+          <div 
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 md:p-8 animate-fade-in"
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            {/* Top Bar: Count & Close */}
+            <div className="w-full flex items-center justify-between text-white z-50">
+              <span className="text-sm font-semibold select-none">
+                {lightboxImgIndex + 1} / {allImages.length}
+              </span>
+              <button 
+                onClick={() => setIsLightboxOpen(false)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors focus:outline-none"
+                aria-label="Close lightbox"
+              >
+                <span className="material-symbols-outlined text-2xl">close</span>
+              </button>
+            </div>
+
+            {/* Main Image Slider View */}
+            <div className="flex-1 flex items-center justify-center relative select-none">
+              
+              {/* Prev Arrow */}
+              {allImages.length > 1 && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); prevLightboxImg(); }}
+                  className="absolute left-2 md:left-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-50 focus:outline-none"
+                  aria-label="Previous photo"
+                >
+                  <span className="material-symbols-outlined text-3xl">chevron_left</span>
+                </button>
+              )}
+
+              {/* Image Display */}
+              <img 
+                src={allImages[lightboxImgIndex]}
+                alt={`Property photo ${lightboxImgIndex + 1}`}
+                className="max-h-[70vh] md:max-h-[75vh] max-w-full rounded-lg object-contain shadow-2xl animate-scale-in"
+                onClick={(e) => e.stopPropagation()}
+              />
+
+              {/* Next Arrow */}
+              {allImages.length > 1 && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); nextLightboxImg(); }}
+                  className="absolute right-2 md:right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-50 focus:outline-none"
+                  aria-label="Next photo"
+                >
+                  <span className="material-symbols-outlined text-3xl">chevron_right</span>
+                </button>
+              )}
+            </div>
+
+            {/* Bottom Thumbnails Navigation */}
+            {allImages.length > 1 && (
+              <div className="w-full flex justify-center gap-2 overflow-x-auto no-scrollbar py-2 z-50" onClick={(e) => e.stopPropagation()}>
+                {allImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setLightboxImgIndex(i)}
+                    className={`w-14 h-10 md:w-20 md:h-14 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
+                      lightboxImgIndex === i ? 'border-primary scale-105 opacity-100' : 'border-transparent opacity-40 hover:opacity-75'
+                    }`}
+                  >
+                    <img src={img} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Two Column Layout ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
           {/* ── Left Column ── */}
           <div className="lg:col-span-2 space-y-8">
@@ -327,14 +477,20 @@ const PropertyDetailsPage = () => {
                 <span className="material-symbols-outlined text-primary text-base">star</span>
                 Amenities
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {Object.values(AMENITY_ICONS).map(({ icon, label }) => (
-                  <div key={label} className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl">
-                    <span className="material-symbols-outlined text-primary text-base">{icon}</span>
-                    <span className="text-sm font-medium text-on-surface">{label}</span>
-                  </div>
-                ))}
-              </div>
+              {propertyAmenities.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {propertyAmenities.map(amenity => (
+                    <div key={amenity} className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl">
+                      <span className="material-symbols-outlined text-primary text-base">
+                        {resolveAmenityIcon(amenity)}
+                      </span>
+                      <span className="text-sm font-medium text-on-surface">{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-on-surface-variant italic">No amenities specified. Please contact the owner to verify available amenities.</p>
+              )}
               <p className="text-xs text-on-surface-variant mt-3 italic">Verify with owner for exact amenity availability.</p>
             </div>
 

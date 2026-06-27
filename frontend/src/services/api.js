@@ -168,4 +168,10 @@ export const uploadProfileImage = async (file) => {
   return response.data; // returns { imageUrl: string }
 };
 
+// Get all historical property updates
+export const getPropertyUpdates = async () => {
+  const response = await api.get('/properties/updates');
+  return response.data;
+};
+
 export default api;

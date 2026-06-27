@@ -802,10 +802,11 @@
   border-color: var(--rs-border-strong);
 }
 
-.dark .rs-pill-inactive:hover {
-  border-color: var(--rs-accent);
-  color: var(--rs-accent);
-  background: var(--rs-accent-soft);
+.dark .rs-pill-inactive:not([disabled]):hover {
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+  background: var(--rs-surface-2) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.5) !important;
 }
 
 /* ── Progress bar track ── */
@@ -819,15 +820,46 @@
   border-color: var(--rs-border-strong);
 }
 
-.dark .rs-btn-ghost:hover {
-  background: var(--rs-surface-2);
-  color: var(--rs-accent);
+.dark .rs-btn-ghost:not([disabled]):hover {
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+  background: var(--rs-surface-2) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.5) !important;
 }
 
 /* ── Secondary button ── */
 .dark .rs-btn-secondary {
   background: var(--rs-surface);
   border-color: var(--rs-accent);
+}
+
+.dark .rs-btn-secondary:not([disabled]):hover {
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+  background: var(--rs-surface-2) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* ── Glow hover effects for other dark buttons ── */
+.dark button.bg-gray-100:not([disabled]):hover,
+.dark button.bg-gray-800:not([disabled]):hover,
+.dark button.bg-gray-900:not([disabled]):hover,
+.dark button.bg-slate-800:not([disabled]):hover,
+.dark button.bg-slate-900:not([disabled]):hover,
+.dark button.bg-zinc-800:not([disabled]):hover,
+.dark button.bg-zinc-900:not([disabled]):hover,
+.dark .hover\:bg-gray-100:not([disabled]):hover,
+.dark .hover\:bg-gray-200:not([disabled]):hover,
+.dark .border-gray-200:not([disabled]):hover,
+.dark .border-gray-300:not([disabled]):hover,
+.dark a.border-gray-200:not([disabled]):hover,
+.dark a.border-gray-300:not([disabled]):hover,
+.dark button.border-gray-200:not([disabled]):hover,
+.dark button.border-gray-300:not([disabled]):hover {
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+  background: var(--rs-surface-2) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.5) !important;
 }
 
 /* ── Skeleton loading ── */
@@ -901,26 +933,62 @@
 
 .dark .bg-emerald-50 {
   background-color: rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+.dark .group:hover .bg-emerald-50 {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
 }
 
 .dark .bg-red-50 {
   background-color: rgba(239, 68, 68, 0.12) !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+.dark .group:hover .bg-red-50 {
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
 }
 
 .dark .bg-amber-50 {
   background-color: rgba(245, 158, 11, 0.12) !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+.dark .group:hover .bg-amber-50 {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
 }
 
 .dark .bg-blue-50 {
   background-color: rgba(77, 142, 247, 0.12) !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+.dark .group:hover .bg-blue-50 {
+  box-shadow: 0 0 12px rgba(77, 142, 247, 0.25) !important;
+  border-color: rgba(77, 142, 247, 0.25) !important;
 }
 
 .dark .bg-purple-50 {
   background-color: rgba(139, 92, 246, 0.12) !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+.dark .group:hover .bg-purple-50 {
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.25) !important;
+  border-color: rgba(139, 92, 246, 0.25) !important;
 }
 
 .dark .bg-teal-50 {
   background-color: rgba(20, 184, 166, 0.12) !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+.dark .group:hover .bg-teal-50 {
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.25) !important;
+  border-color: rgba(20, 184, 166, 0.25) !important;
 }
 
 .dark .bg-blue-50\/50 {
@@ -1340,26 +1408,160 @@ html.light .glass {
 /* ── Colored icon bg chips (HomePage features) ── */
 html.light .bg-blue-50 {
   background-color: #eff6ff !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+html.light .group:hover .bg-blue-50 {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
 }
 
 html.light .bg-teal-50 {
   background-color: #f0fdfa !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+html.light .group:hover .bg-teal-50 {
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.15) !important;
+  border-color: rgba(20, 184, 166, 0.15) !important;
 }
 
 html.light .bg-purple-50 {
   background-color: #faf5ff !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+html.light .group:hover .bg-purple-50 {
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.15) !important;
+  border-color: rgba(139, 92, 246, 0.15) !important;
 }
 
 html.light .bg-emerald-50 {
   background-color: #ecfdf5 !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+html.light .group:hover .bg-emerald-50 {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.15) !important;
 }
 
 html.light .bg-red-50 {
   background-color: #fef2f2 !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+html.light .group:hover .bg-red-50 {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.15) !important;
 }
 
 html.light .bg-amber-50 {
   background-color: #fffbeb !important;
+  border: 1.5px solid transparent !important;
+  transition: all 0.3s ease;
+}
+html.light .group:hover .bg-amber-50 {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+/* ── Card Glow Themes (Light Mode) ── */
+html.light .hover-glow-blue {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.light .hover-glow-blue:hover {
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15) !important;
+}
+
+html.light .hover-glow-teal {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.light .hover-glow-teal:hover {
+  border-color: rgba(20, 184, 166, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.15) !important;
+}
+
+html.light .hover-glow-purple {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.light .hover-glow-purple:hover {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15) !important;
+}
+
+html.light .hover-glow-emerald {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.light .hover-glow-emerald:hover {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.15) !important;
+}
+
+html.light .hover-glow-red {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.light .hover-glow-red:hover {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15) !important;
+}
+
+html.light .hover-glow-amber {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+html.light .hover-glow-amber:hover {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* ── Card Glow Themes (Dark Mode) ── */
+.dark .hover-glow-blue {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.dark .hover-glow-blue:hover {
+  border-color: rgba(77, 142, 247, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(77, 142, 247, 0.25) !important;
+}
+
+.dark .hover-glow-teal {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.dark .hover-glow-teal:hover {
+  border-color: rgba(20, 184, 166, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.25) !important;
+}
+
+.dark .hover-glow-purple {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.dark .hover-glow-purple:hover {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25) !important;
+}
+
+.dark .hover-glow-emerald {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.dark .hover-glow-emerald:hover {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25) !important;
+}
+
+.dark .hover-glow-red {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.dark .hover-glow-red:hover {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25) !important;
+}
+
+.dark .hover-glow-amber {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.dark .hover-glow-amber:hover {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25) !important;
 }
 
 /* ── Scrollbar light mode ── */
@@ -1388,4 +1590,18 @@ html.light .rs-btn-ghost:hover {
   background: var(--rs-surface-2);
   border-color: var(--rs-accent);
   color: var(--rs-accent);
+}
+
+/* ── Footer Background & Border Match Navbar ── */
+html.light footer {
+  background: rgba(246, 247, 251, 0.88) !important;
+  border-top: 1px solid var(--rs-border) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+}
+
+.dark footer {
+  background: rgba(11, 15, 23, 0.92) !important;
+  border-top: 1px solid var(--rs-border) !important;
+  backdrop-filter: blur(24px) saturate(120%) !important;
 }
