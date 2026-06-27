@@ -66,7 +66,16 @@ public class Property {
     @Column(columnDefinition = "TEXT")
     private String rejectionReason; // reason provided by admin when rejecting
 
+    @Column(columnDefinition = "TEXT")
+    private String amenities; // comma-separated amenities list
+
     // Multiple images — one-to-many relationship with PropertyImage
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<PropertyImage> images = new ArrayList<>();
+
+    @Column
+    private java.time.LocalDateTime updatedAt; // timestamp of last update/edit after approval
+
+    @Column(columnDefinition = "TEXT")
+    private String changeLog; // records description of modified attributes
 }

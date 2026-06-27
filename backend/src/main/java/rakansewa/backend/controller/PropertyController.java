@@ -3,6 +3,7 @@ package rakansewa.backend.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rakansewa.backend.model.Property;
+import rakansewa.backend.model.PropertyUpdate;
 import rakansewa.backend.service.PropertyService;
 
 import java.util.List;
@@ -89,5 +90,12 @@ public class PropertyController {
     public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
         propertyService.deleteProperty(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // GET /properties/updates — Get all historical updates
+    @GetMapping("/updates")
+    public ResponseEntity<List<PropertyUpdate>> getAllPropertyUpdates() {
+        List<PropertyUpdate> updates = propertyService.getAllPropertyUpdates();
+        return ResponseEntity.ok(updates);
     }
 }
