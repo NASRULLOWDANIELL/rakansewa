@@ -43,12 +43,160 @@ const OwnerDashboard = () => {
     title: '', description: '', address: '', city: '', state: '',
     monthlyRent: '', roomType: 'Single', propertyType: 'Apartment',
     furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending',
-    imageUrl: ''
+    imageUrl: '', latitude: null, longitude: null
   });
 
   const blocker = useBlocker(
     ({ nextLocation }) => isDirty && showForm && !uploading
   );
+
+  /* ── Address Autocomplete & Leaflet Map States ── */
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState(null);
+
+  const handleAddressTyping = (value) => {
+    if (typingTimeout) clearTimeout(typingTimeout);
+
+    if (!value || value.trim().length <= 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setTypingTimeout(setTimeout(async () => {
+      setSuggestionsLoading(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5&addressdetails=1&countrycodes=my`);
+        const data = await res.json();
+        setSuggestions(data || []);
+        setShowSuggestions(true);
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 600));
+  };
+
+  const handleSelectSuggestion = (sug) => {
+    const lat = parseFloat(sug.lat);
+    const lon = parseFloat(sug.lon);
+    const city = sug.address.city || sug.address.town || sug.address.municipality || sug.address.suburb || '';
+    const state = sug.address.state || '';
+
+    setFormData(prev => ({
+      ...prev,
+      address: sug.display_name,
+      city: city || prev.city,
+      state: state || prev.state,
+      latitude: lat,
+      longitude: lon
+    }));
+
+    setSuggestions([]);
+    setShowSuggestions(false);
+
+    // Update Map
+    if (window.ownerMap && window.ownerMarker) {
+      window.ownerMap.setView([lat, lon], 15);
+      window.ownerMarker.setLatLng([lat, lon]);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSuggestions(false);
+    };
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  /* ── Interactive Leaflet Map Effect ── */
+  useEffect(() => {
+    if (!showForm) return;
+
+    const timer = setTimeout(() => {
+      const mapContainer = document.getElementById('owner-property-map');
+      if (!mapContainer) return;
+
+      if (window.ownerMap) {
+        window.ownerMap.remove();
+        window.ownerMap = null;
+      }
+
+      // Default to UiTM Jasin (2.2646, 102.2786)
+      const lat = formData.latitude || 2.2646;
+      const lon = formData.longitude || 102.2786;
+
+      const map = window.L.map('owner-property-map').setView([lat, lon], 13);
+      window.ownerMap = map;
+
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Custom marker icon to prevent broken assets path on dynamic loads
+      const defaultIcon = window.L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      const marker = window.L.marker([lat, lon], { icon: defaultIcon, draggable: true }).addTo(map);
+      window.ownerMarker = marker;
+
+      const updateCoords = async (newLat, newLon) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: parseFloat(newLat.toFixed(6)),
+          longitude: parseFloat(newLon.toFixed(6))
+        }));
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${newLat}&lon=${newLon}&format=json&addressdetails=1`);
+          const data = await res.json();
+          if (data && data.address) {
+            const city = data.address.city || data.address.town || data.address.municipality || data.address.suburb || '';
+            const state = data.address.state || '';
+
+            setFormData(prev => ({
+              ...prev,
+              address: data.display_name || prev.address,
+              city: city || prev.city,
+              state: state || prev.state
+            }));
+          }
+        } catch (err) {
+          console.error('Reverse geocoding failed:', err);
+        }
+      };
+
+      marker.on('dragend', () => {
+        const position = marker.getLatLng();
+        updateCoords(position.lat, position.lng);
+      });
+
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        updateCoords(e.latlng.lat, e.latlng.lng);
+      });
+
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      if (window.ownerMap) {
+        window.ownerMap.remove();
+        window.ownerMap = null;
+      }
+    };
+  }, [showForm]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -129,7 +277,9 @@ const OwnerDashboard = () => {
       propertyType: property.propertyType || 'Apartment',
       furnishedStatus: property.furnishedStatus || 'Fully Furnished',
       availabilityStatus: property.availabilityStatus || 'Pending',
-      imageUrl: property.imageUrl || ''
+      imageUrl: property.imageUrl || '',
+      latitude: property.latitude || null,
+      longitude: property.longitude || null
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -141,7 +291,7 @@ const OwnerDashboard = () => {
   };
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', address: '', city: '', state: '', monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending', imageUrl: '' });
+    setFormData({ title: '', description: '', address: '', city: '', state: '', monthlyRent: '', roomType: 'Single', propertyType: 'Apartment', furnishedStatus: 'Fully Furnished', availabilityStatus: 'Pending', imageUrl: '', latitude: null, longitude: null });
     setFormErrors({});
     setImageFiles([]);
     setImagePreviews([]);
@@ -480,21 +630,92 @@ const OwnerDashboard = () => {
                 <form onSubmit={handleSubmit} id="propertyForm" className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Left column */}
                   <div className="space-y-4">
-                    {[
-                      { label: t('owner_field_title'), name: 'title', placeholder: 'e.g. Cozy Room near UiTM' },
-                      { label: t('owner_field_address'), name: 'address', placeholder: 'Street address' },
-                    ].map(field => (
-                      <div key={field.name}>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{field.label}</label>
-                        <input name={field.name} value={formData[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className="rs-input text-sm" />
-                        {formErrors[field.name] && (
-                          <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm">error</span>
-                            {formErrors[field.name]}
-                          </p>
+                    {/* Property Title */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_title')}</label>
+                      <input 
+                        name="title" 
+                        value={formData.title} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g. Cozy Room near UiTM" 
+                        className="rs-input text-sm" 
+                      />
+                      {formErrors.title && (
+                        <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          {formErrors.title}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Street Address with Nominatim Autocomplete */}
+                    <div className="relative">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_address')}</label>
+                      <div className="relative">
+                        <input 
+                          name="address" 
+                          value={formData.address} 
+                          onChange={(e) => {
+                            handleInputChange(e);
+                            handleAddressTyping(e.target.value);
+                          }} 
+                          onFocus={() => {
+                            if (formData.address.trim().length > 3) setShowSuggestions(true);
+                          }}
+                          placeholder="Street address" 
+                          className="rs-input text-sm pr-10" 
+                        />
+                        {suggestionsLoading && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          </div>
                         )}
                       </div>
-                    ))}
+                      {formErrors.address && (
+                        <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          {formErrors.address}
+                        </p>
+                      )}
+
+                      {/* Suggestions Dropdown */}
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div 
+                          className="absolute z-[9999] left-0 right-0 mt-1 bg-white dark:bg-[#121824] border border-gray-200 dark:border-gray-800 rounded-xl shadow-rs-md max-h-52 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 animate-scale-in"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {suggestions.map((sug, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => handleSelectSuggestion(sug)}
+                              className="w-full text-left px-4 py-2.5 text-[11px] text-on-surface hover:bg-primary/5 hover:text-primary transition-colors block leading-tight font-medium"
+                            >
+                              {sug.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Interactive Leaflet Map */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">map</span>
+                        Map Location (Click or Drag Marker)
+                      </label>
+                      <div 
+                        id="owner-property-map" 
+                        className="w-full h-44 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-rs-sm z-10"
+                        style={{ minHeight: '176px' }}
+                      />
+                      {formData.latitude && formData.longitude && (
+                        <p className="text-[10px] text-primary font-bold mt-1.5 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">my_location</span>
+                          Coordinates: {formData.latitude}, {formData.longitude}
+                        </p>
+                      )}
+                    </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>

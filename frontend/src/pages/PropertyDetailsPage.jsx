@@ -106,8 +106,31 @@ const PropertyDetailsPage = () => {
 
   useEffect(() => {
     if (!property) return;
-    if (!property.latitude || !property.longitude) { setDistanceStatus('Location unavailable'); return; }
-    const dist = calculateDistance(2.2646, 102.2786, property.latitude, property.longitude);
+    
+    let lat = property.latitude;
+    let lon = property.longitude;
+
+    if (!lat || !lon) {
+      const cityLower = (property.city || '').toLowerCase().trim();
+      const stateLower = (property.state || '').toLowerCase().trim();
+
+      if (cityLower.includes('jasin')) {
+        lat = 2.3101;
+        lon = 102.4316;
+      } else if (cityLower.includes('seri kembangan')) {
+        lat = 3.0249;
+        lon = 101.7051;
+      } else if (cityLower.includes('melaka') || cityLower.includes('malacca') || stateLower.includes('melaka') || stateLower.includes('malacca')) {
+        lat = 2.1896;
+        lon = 102.2501;
+      } else {
+        // General fallback coordinate for Jasin campus area if city is unknown
+        lat = 2.3101;
+        lon = 102.4316;
+      }
+    }
+
+    const dist = calculateDistance(2.2646, 102.2786, lat, lon);
     setDistance(dist.toFixed(1));
     setDistanceStatus('');
   }, [property]);

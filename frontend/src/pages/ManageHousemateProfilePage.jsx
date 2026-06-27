@@ -204,6 +204,8 @@ const ManageHousemateProfilePage = () => {
         priority1: form.priority1,
         priority2: form.priority2,
         priority3: form.priority3,
+        allowContact: currentUser.allowContact,
+        showWhatsapp: currentUser.showWhatsapp,
       });
 
       if (savedUser) {

@@ -58,6 +58,8 @@ public class PropertyService {
         existing.setAvailabilityStatus(updatedProperty.getAvailabilityStatus());
         existing.setOwnerId(updatedProperty.getOwnerId());
         existing.setImageUrl(updatedProperty.getImageUrl());
+        existing.setLatitude(updatedProperty.getLatitude());
+        existing.setLongitude(updatedProperty.getLongitude());
 
         // Preserve approvalStatus and rejectionReason from the incoming payload
         if (updatedProperty.getApprovalStatus() != null) {
@@ -103,6 +105,8 @@ public class PropertyService {
         existing.setFurnishedStatus(updatedProperty.getFurnishedStatus());
         existing.setOwnerId(updatedProperty.getOwnerId());
         existing.setImageUrl(updatedProperty.getImageUrl());
+        existing.setLatitude(updatedProperty.getLatitude());
+        existing.setLongitude(updatedProperty.getLongitude());
 
         // Reset approval state
         existing.setApprovalStatus("Pending");
@@ -112,7 +116,8 @@ public class PropertyService {
         return propertyRepository.save(existing);
     }
 
-    // Delete a property by ID (images cascade-deleted via JPA; explicit delete for safety)
+    // Delete a property by ID (images cascade-deleted via JPA; explicit delete for
+    // safety)
     @Transactional
     public void deleteProperty(Long id) {
         Property existing = getPropertyById(id); // throws if not found

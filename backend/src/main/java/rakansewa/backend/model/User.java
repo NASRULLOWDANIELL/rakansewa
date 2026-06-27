@@ -45,6 +45,12 @@ public class User {
     @Column
     private String phoneNumber;
 
+    @Column(columnDefinition = "boolean default false")
+    private Boolean allowContact = false;
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean showWhatsapp = false;
+
     @Column
     private String matricNumber;
 

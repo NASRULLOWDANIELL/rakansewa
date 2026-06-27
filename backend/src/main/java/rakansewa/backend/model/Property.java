@@ -9,7 +9,7 @@ import java.util.List;
 @Entity
 @Table(name = "properties")
 @Data
-@EqualsAndHashCode(exclude = "images")   // prevents circular hashCode: Property → images → PropertyImage → Property
+@EqualsAndHashCode(exclude = "images") // prevents circular hashCode: Property → images → PropertyImage → Property
 @NoArgsConstructor
 @AllArgsConstructor
 public class Property {
@@ -37,10 +37,10 @@ public class Property {
     private Double monthlyRent;
 
     @Column(nullable = false)
-    private String roomType;        // e.g. "Single", "Master", "Middle"
+    private String roomType; // e.g. "Single", "Master", "Middle"
 
     @Column(nullable = false)
-    private String propertyType;    // e.g. "Apartment", "Terrace", "Condo"
+    private String propertyType; // e.g. "Apartment", "Terrace", "Condo"
 
     @Column(nullable = false)
     private String furnishedStatus; // e.g. "Fully Furnished", "Partially", "Unfurnished"
@@ -53,8 +53,6 @@ public class Property {
 
     @Column(columnDefinition = "TEXT")
     private String imageUrl;
-
-
 
     @Column
     private Double latitude;

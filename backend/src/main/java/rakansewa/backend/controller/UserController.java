@@ -33,6 +33,11 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
+        for (User user : users) {
+            if (user.getAllowContact() == null || !user.getAllowContact()) {
+                user.setPhoneNumber(null);
+            }
+        }
         return ResponseEntity.ok(users);
     }
 

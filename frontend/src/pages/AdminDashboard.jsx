@@ -83,7 +83,7 @@ const AdminDashboard = () => {
    };
 
    return (
-      <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto space-y-8">
+      <div className="pt-24 pb-20 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
          <RejectModal
             isOpen={rejectTarget !== null}
             propertyTitle={rejectTarget?.title || ''}
@@ -98,27 +98,27 @@ const AdminDashboard = () => {
          </div>
 
          {/* Stats row */}
-         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-primary">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-primary shadow-rs-sm">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_users')}</p>
                <p className="text-3xl font-extrabold text-on-surface">{users.length}</p>
             </div>
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-tertiary">
+            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-tertiary shadow-rs-sm">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_listings')}</p>
                <p className="text-3xl font-extrabold text-on-surface">{properties.length}</p>
             </div>
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-orange-400">
+            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-orange-400 shadow-rs-sm">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_pending')}</p>
                <p className="text-3xl font-extrabold text-orange-500">{pendingApprovals.length}</p>
             </div>
-            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-red-400">
+            <div className="bg-white border border-outline-variant/20 rounded-lg p-5 border-l-4 border-l-red-400 shadow-rs-sm">
                <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{t('admin_stat_feedback')}</p>
                <p className="text-3xl font-extrabold text-red-500">{unresolvedFeedbacks}</p>
             </div>
          </div>
 
          {/* Tab navigation */}
-         <div className="flex gap-1 border-b border-outline-variant/20">
+         <div className="flex gap-1 border-b border-outline-variant/20 overflow-x-auto scrollbar-none whitespace-nowrap">
             {[
                { key: 'properties', label: t('admin_tab_listings'), icon: 'home_work' },
                { key: 'users', label: t('admin_tab_users'), icon: 'people' },
@@ -159,7 +159,8 @@ const AdminDashboard = () => {
                      </div>
                   ) : (
                      <div className="bg-white rounded-xl border border-outline-variant/20 overflow-hidden shadow-sm">
-                        <table className="w-full text-left text-sm">
+                        <div className="overflow-x-auto">
+                           <table className="w-full text-left text-sm min-w-[650px] md:min-w-0">
                            <thead className="bg-surface-container-low border-b border-outline-variant/20">
                               <tr>
                                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_property')}</th>
@@ -227,6 +228,7 @@ const AdminDashboard = () => {
                               ))}
                            </tbody>
                         </table>
+                        </div>
                      </div>
                   )}
                </div>
@@ -239,7 +241,8 @@ const AdminDashboard = () => {
                      <span className="ml-1 text-on-surface-variant font-normal text-sm">({properties.length})</span>
                   </h2>
                   <div className="bg-white rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden text-sm">
-                     <table className="w-full text-left">
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-left min-w-[600px] md:min-w-0">
                         <thead className="bg-surface-container-low text-on-surface-variant text-xs font-bold tracking-widest border-b border-outline-variant/20">
                            <tr>
                               <th className="px-6 py-4 uppercase">{t('admin_table_property')}</th>
@@ -271,6 +274,7 @@ const AdminDashboard = () => {
                            ))}
                         </tbody>
                      </table>
+                     </div>
                   </div>
                </div>
             </div>
@@ -285,7 +289,8 @@ const AdminDashboard = () => {
                   <span className="ml-1 text-on-surface-variant font-normal text-sm">({users.length})</span>
                </h2>
                <div className="bg-white rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden text-sm">
-                  <table className="w-full text-left">
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-left min-w-[500px] md:min-w-0">
                      <thead className="bg-surface-container-low text-on-surface-variant text-xs font-bold tracking-widest border-b border-outline-variant/20 uppercase">
                         <tr>
                            <th className="px-6 py-4">{t('admin_table_name')}</th>
@@ -314,6 +319,7 @@ const AdminDashboard = () => {
                         ))}
                      </tbody>
                   </table>
+                  </div>
                </div>
             </div>
          )}

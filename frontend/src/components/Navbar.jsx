@@ -160,11 +160,10 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
             ? 'bg-white/90 backdrop-blur-2xl shadow-rs-sm border-b border-gray-100/80'
             : 'bg-white/70 backdrop-blur-xl'
-        }`}
+          }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2">
@@ -188,11 +187,10 @@ const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-3.5 py-2 rounded-full text-sm transition-all duration-200 whitespace-nowrap ${
-                    isActive(link.path)
+                  className={`px-3.5 py-2 rounded-full text-sm transition-all duration-200 whitespace-nowrap ${isActive(link.path)
                       ? 'bg-primary/10 text-primary font-bold'
                       : 'text-on-surface-variant hover:text-on-surface hover:bg-gray-100 font-medium'
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </Link>
@@ -221,9 +219,8 @@ const Navbar = () => {
 
                 {/* Sliding Flag Knob */}
                 <div
-                  className={`absolute top-0.5 left-0.5 w-[26px] h-[26px] bg-white rounded-full shadow-md overflow-hidden flex items-center justify-center transition-all duration-300 ease-out z-10 transform ${
-                    lang === 'en' ? 'translate-x-[34px]' : 'translate-x-0'
-                  }`}
+                  className={`absolute top-0.5 left-0.5 w-[26px] h-[26px] bg-white rounded-full shadow-md overflow-hidden flex items-center justify-center transition-all duration-300 ease-out z-10 transform ${lang === 'en' ? 'translate-x-[34px]' : 'translate-x-0'
+                    }`}
                 >
                   <img
                     src={lang === 'en' ? 'https://flagcdn.com/w40/gb.png' : 'https://flagcdn.com/w40/my.png'}
@@ -396,11 +393,10 @@ const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                    isActive(link.path)
+                  className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-all ${isActive(link.path)
                       ? 'bg-primary/10 text-primary font-bold'
                       : 'text-on-surface-variant hover:bg-gray-50 hover:text-on-surface'
-                  }`}
+                    }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
@@ -437,9 +433,8 @@ const Navbar = () => {
 
                   {/* Sliding Flag Knob */}
                   <div
-                    className={`absolute top-0.5 left-0.5 w-[26px] h-[26px] bg-white rounded-full shadow-md overflow-hidden flex items-center justify-center transition-all duration-300 ease-out z-10 transform ${
-                      lang === 'en' ? 'translate-x-[34px]' : 'translate-x-0'
-                    }`}
+                    className={`absolute top-0.5 left-0.5 w-[26px] h-[26px] bg-white rounded-full shadow-md overflow-hidden flex items-center justify-center transition-all duration-300 ease-out z-10 transform ${lang === 'en' ? 'translate-x-[34px]' : 'translate-x-0'
+                      }`}
                   >
                     <img
                       src={lang === 'en' ? 'https://flagcdn.com/w40/gb.png' : 'https://flagcdn.com/w40/my.png'}

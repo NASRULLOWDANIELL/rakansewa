@@ -97,11 +97,11 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                 "user", newUser,
                 "isNewUser", true,
-                "message", "Google account created successfully. Please complete your profile."
+                "message", "Google account registered successfully. Please complete your profile."
             ));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
-                "message", "Failed to create account: " + e.getMessage()
+                "message", "Failed to register account: " + e.getMessage()
             ));
         }
     }

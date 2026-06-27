@@ -36,12 +36,17 @@ const TopFilterBar = ({
   t,
 }) => {
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const priceRef = useRef(null);
+  const moreRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (priceRef.current && !priceRef.current.contains(event.target)) {
         setShowPriceDropdown(false);
+      }
+      if (moreRef.current && !moreRef.current.contains(event.target)) {
+        setShowMoreFilters(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -53,199 +58,246 @@ const TopFilterBar = ({
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleCategoryClick = (category) => {
+    if (category === 'all') {
+      setFilters(prev => ({ ...prev, propertyType: '', roomType: '' }));
+    } else if (category === 'landed') {
+      setFilters(prev => ({ ...prev, propertyType: 'Terrace', roomType: '' }));
+    } else if (category === 'apartment') {
+      setFilters(prev => ({ ...prev, propertyType: 'Apartment', roomType: '' }));
+    } else if (category === 'room') {
+      setFilters(prev => ({ ...prev, propertyType: '', roomType: 'Single' }));
+    }
+  };
+
+  const isCategoryActive = (category) => {
+    if (category === 'all') return !filters.propertyType && !filters.roomType;
+    if (category === 'landed') return filters.propertyType === 'Terrace';
+    if (category === 'apartment') return filters.propertyType === 'Apartment';
+    if (category === 'room') return filters.roomType === 'Single';
+    return false;
+  };
+
   return (
     <div className="sticky top-16 z-40 bg-white/95 dark:bg-[#0b0f17]/95 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800/80 shadow-rs-sm">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3">
-        <div className="flex flex-wrap items-center gap-2.5">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3.5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          {/* Left side: Search & Category Chips */}
+          <div className="flex flex-wrap items-center gap-3 flex-grow">
+            
+            {/* Search Pill */}
+            <div className="relative w-full sm:w-60">
+              <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-on-surface-variant/60 pointer-events-none">search</span>
+              <input
+                type="text"
+                name="search"
+                placeholder={t('pfilter_search_placeholder')}
+                value={filters.search}
+                onChange={handleChange}
+                className="rs-pill rs-pill-inactive w-full pl-10 pr-4 text-xs font-semibold"
+                style={{ paddingLeft: '36px', height: '36px' }}
+              />
+            </div>
 
-          {/* Search bar styled as a pill */}
-          <div className="relative flex-shrink-0 w-56">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-on-surface-variant/60 pointer-events-none">search</span>
-            <input
-              type="text"
-              name="search"
-              placeholder={t('pfilter_search_placeholder')}
-              value={filters.search}
-              onChange={handleChange}
-              className="rs-pill rs-pill-inactive w-full pl-10 pr-4 text-xs font-semibold"
-              style={{ paddingLeft: '36px', height: '36px' }}
-            />
+            {/* Horizontal Category Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {[
+                { id: 'all', label: t('filter_all_properties') },
+                { id: 'landed', label: t('filter_landed_house') },
+                { id: 'apartment', label: t('filter_apartment') },
+                { id: 'room', label: t('filter_private_room') }
+              ].map(chip => {
+                const active = isCategoryActive(chip.id);
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => handleCategoryClick(chip.id)}
+                    className={`rs-pill whitespace-nowrap text-xs font-bold transition-all px-4 py-2 ${
+                      active ? 'rs-pill-active' : 'rs-pill-inactive'
+                    }`}
+                    style={{ height: '36px' }}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
+            </div>
+
           </div>
 
-          {/* Location Dropdown Pill */}
-          {availableStates.length > 0 && (
-            <div className="relative flex-shrink-0">
-              <select
-                name="state"
-                value={filters.state}
-                onChange={handleChange}
-                className={`rs-pill appearance-none pr-8 text-xs cursor-pointer font-semibold ${
-                  filters.state ? 'rs-pill-active' : 'rs-pill-inactive'
-                }`}
-                style={{ height: '36px', paddingRight: '28px' }}
-              >
-                <option value="">{t('filter_location')}</option>
-                {availableStates.map(state => (
-                  <option key={state} value={state}>{t(state)}</option>
-                ))}
-              </select>
-              <span className={`material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none font-bold ${
-                filters.state ? 'text-white' : 'text-on-surface-variant'
-              }`}>expand_more</span>
-            </div>
-          )}
-
-          {/* Property Type Dropdown Pill */}
-          {availablePropertyTypes.length > 0 && (
-            <div className="relative flex-shrink-0">
-              <select
-                name="propertyType"
-                value={filters.propertyType}
-                onChange={handleChange}
-                className={`rs-pill appearance-none pr-8 text-xs cursor-pointer font-semibold ${
-                  filters.propertyType ? 'rs-pill-active' : 'rs-pill-inactive'
-                }`}
-                style={{ height: '36px', paddingRight: '28px' }}
-              >
-                <option value="">{t('filter_type')}</option>
-                {availablePropertyTypes.map(type => (
-                  <option key={type} value={type}>{t(type)}</option>
-                ))}
-              </select>
-              <span className={`material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none font-bold ${
-                filters.propertyType ? 'text-white' : 'text-on-surface-variant'
-              }`}>expand_more</span>
-            </div>
-          )}
-
-          {/* Room Type Dropdown Pill */}
-          {availableRoomTypes.length > 0 && (
-            <div className="relative flex-shrink-0">
-              <select
-                name="roomType"
-                value={filters.roomType}
-                onChange={handleChange}
-                className={`rs-pill appearance-none pr-8 text-xs cursor-pointer font-semibold ${
-                  filters.roomType ? 'rs-pill-active' : 'rs-pill-inactive'
-                }`}
-                style={{ height: '36px', paddingRight: '28px' }}
-              >
-                <option value="">{t('filter_room')}</option>
-                {availableRoomTypes.map(type => (
-                  <option key={type} value={type}>{t(type)}</option>
-                ))}
-              </select>
-              <span className={`material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none font-bold ${
-                filters.roomType ? 'text-white' : 'text-on-surface-variant'
-              }`}>expand_more</span>
-            </div>
-          )}
-
-          {/* Furnishing Dropdown Pill */}
-          {availableFurnished.length > 0 && (
-            <div className="relative flex-shrink-0">
-              <select
-                name="furnishedStatus"
-                value={filters.furnishedStatus}
-                onChange={handleChange}
-                className={`rs-pill appearance-none pr-8 text-xs cursor-pointer font-semibold ${
-                  filters.furnishedStatus ? 'rs-pill-active' : 'rs-pill-inactive'
-                }`}
-                style={{ height: '36px', paddingRight: '28px' }}
-              >
-                <option value="">{t('pfilter_furnishing')}</option>
-                {availableFurnished.map(status => (
-                  <option key={status} value={status}>{t(status)}</option>
-                ))}
-              </select>
-              <span className={`material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none font-bold ${
-                filters.furnishedStatus ? 'text-white' : 'text-on-surface-variant'
-              }`}>expand_more</span>
-            </div>
-          )}
-
-          {/* Price Range Popover Pill */}
-          <div className="relative flex-shrink-0" ref={priceRef}>
-            <button
-              type="button"
-              onClick={() => setShowPriceDropdown(!showPriceDropdown)}
-              className={`rs-pill flex items-center gap-1.5 text-xs font-semibold ${
-                filters.minPrice || filters.maxPrice ? 'rs-pill-active' : 'rs-pill-inactive'
-              }`}
-              style={{ height: '36px' }}
-            >
-              <span>
-                {filters.minPrice || filters.maxPrice
-                  ? `Price: RM${filters.minPrice || 0} - ${filters.maxPrice ? 'RM' + filters.maxPrice : 'Max'}`
-                  : t('filter_price')}
-              </span>
-              <span className="material-symbols-outlined text-xs">expand_more</span>
-            </button>
-
-            {showPriceDropdown && (
-              <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-[#111827] border border-gray-100 dark:border-gray-800/80 rounded-2xl shadow-rs-lg p-4 z-50 animate-slide-down">
-                <h4 className="font-bold text-xs text-on-surface mb-2">{t('filter_price')}</h4>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant">RM</span>
-                    <input
-                      type="number"
-                      name="minPrice"
-                      value={filters.minPrice}
-                      onChange={handleChange}
-                      placeholder={t('filter_min')}
-                      className="rs-input pl-8 text-xs h-9 py-0 w-full"
-                      style={{ paddingLeft: '32px', height: '36px' }}
-                    />
-                  </div>
-                  <span className="text-xs text-on-surface-variant font-medium">–</span>
-                  <div className="relative flex-1">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant">RM</span>
-                    <input
-                      type="number"
-                      name="maxPrice"
-                      value={filters.maxPrice}
-                      onChange={handleChange}
-                      placeholder={t('filter_max')}
-                      className="rs-input pl-8 text-xs h-9 py-0 w-full"
-                      style={{ paddingLeft: '32px', height: '36px' }}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-50">
-                  <button
-                    onClick={() => setFilters(prev => ({ ...prev, minPrice: '', maxPrice: '' }))}
-                    className="text-[10px] font-bold text-on-surface-variant hover:text-red-500 transition-colors"
-                  >
-                    {t('filter_clear')}
-                  </button>
-                  <button
-                    onClick={() => setShowPriceDropdown(false)}
-                    className="px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    {t('filter_apply')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Active filters badge + clear */}
-          {activeFilterCount > 0 && (
-            <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
-                <span className="material-symbols-outlined text-[11px]">filter_list</span>
-                {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'}
-              </span>
+          {/* Right side: Price Filter & More Filters */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            
+            {/* Price Dropdown */}
+            <div className="relative" ref={priceRef}>
               <button
-                onClick={onReset}
-                className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-0.5"
+                type="button"
+                onClick={() => { setShowPriceDropdown(!showPriceDropdown); setShowMoreFilters(false); }}
+                className={`rs-pill flex items-center gap-1.5 text-xs font-bold ${
+                  filters.minPrice || filters.maxPrice ? 'rs-pill-active' : 'rs-pill-inactive'
+                }`}
+                style={{ height: '36px' }}
               >
-                <span className="material-symbols-outlined text-[14px]">close</span>
-                {t('filter_clear')}
+                <span>
+                  {filters.minPrice || filters.maxPrice
+                    ? `RM${filters.minPrice || 0} - ${filters.maxPrice ? 'RM' + filters.maxPrice : 'Max'}`
+                    : t('filter_price')}
+                </span>
+                <span className="material-symbols-outlined text-xs">expand_more</span>
               </button>
+
+              {showPriceDropdown && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#111827] border border-gray-150/40 dark:border-gray-800/80 rounded-2xl shadow-rs-lg p-4 z-50 animate-slide-down">
+                  <h4 className="font-bold text-xs text-on-surface mb-2">{t('filter_price')}</h4>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant">RM</span>
+                      <input
+                        type="number"
+                        name="minPrice"
+                        value={filters.minPrice}
+                        onChange={handleChange}
+                        placeholder={t('filter_min')}
+                        className="rs-input text-xs h-9 py-0 w-full"
+                        style={{ paddingLeft: '28px', height: '36px' }}
+                      />
+                    </div>
+                    <span className="text-xs text-on-surface-variant font-medium">–</span>
+                    <div className="relative flex-1">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-on-surface-variant">RM</span>
+                      <input
+                        type="number"
+                        name="maxPrice"
+                        value={filters.maxPrice}
+                        onChange={handleChange}
+                        placeholder={t('filter_max')}
+                        className="rs-input text-xs h-9 py-0 w-full"
+                        style={{ paddingLeft: '28px', height: '36px' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-3.5 pt-2 border-t border-gray-100 dark:border-gray-800/60">
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, minPrice: '', maxPrice: '' }))}
+                      className="text-[10px] font-bold text-on-surface-variant hover:text-red-500 transition-colors"
+                    >
+                      {t('filter_clear')}
+                    </button>
+                    <button
+                      onClick={() => setShowPriceDropdown(false)}
+                      className="px-3.5 py-1.5 bg-primary text-white text-[10px] font-black rounded-lg hover:bg-primary/95 transition-colors"
+                    >
+                      {t('filter_apply')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* More Filters Dropdown */}
+            <div className="relative" ref={moreRef}>
+              <button
+                type="button"
+                onClick={() => { setShowMoreFilters(!showMoreFilters); setShowPriceDropdown(false); }}
+                className={`rs-pill flex items-center gap-1.5 text-xs font-bold ${
+                  filters.state || filters.furnishedStatus || (filters.roomType && filters.roomType !== 'Single')
+                    ? 'rs-pill-active'
+                    : 'rs-pill-inactive'
+                }`}
+                style={{ height: '36px' }}
+              >
+                <span className="material-symbols-outlined text-sm">filter_list</span>
+                <span>{t('filter_more_filters')}</span>
+                {(filters.state || filters.furnishedStatus || (filters.roomType && filters.roomType !== 'Single')) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                )}
+              </button>
+
+              {showMoreFilters && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#111827] border border-gray-150/40 dark:border-gray-800/80 rounded-2xl shadow-rs-lg p-4 z-50 animate-slide-down space-y-3.5">
+                  
+                  {/* Location (State) */}
+                  {availableStates.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{t('filter_location')}</label>
+                      <select
+                        name="state"
+                        value={filters.state}
+                        onChange={handleChange}
+                        className="rs-select w-full text-xs font-semibold"
+                        style={{ height: '36px' }}
+                      >
+                        <option value="">{t('filter_all_locations')}</option>
+                        {availableStates.map(state => (
+                          <option key={state} value={state}>{t(state)}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Room Type */}
+                  {availableRoomTypes.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{t('filter_room')}</label>
+                      <select
+                        name="roomType"
+                        value={filters.roomType}
+                        onChange={handleChange}
+                        className="rs-select w-full text-xs font-semibold"
+                        style={{ height: '36px' }}
+                      >
+                        <option value="">{t('filter_all_types')}</option>
+                        {availableRoomTypes.map(type => (
+                          <option key={type} value={type}>{t(type)}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Furnished Status */}
+                  {availableFurnished.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{t('pfilter_furnishing')}</label>
+                      <select
+                        name="furnishedStatus"
+                        value={filters.furnishedStatus}
+                        onChange={handleChange}
+                        className="rs-select w-full text-xs font-semibold"
+                        style={{ height: '36px' }}
+                      >
+                        <option value="">{t('filter_all_types')}</option>
+                        {availableFurnished.map(status => (
+                          <option key={status} value={status}>{t(status)}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-800/60">
+                    <button
+                      onClick={() => {
+                        setFilters(prev => ({ ...prev, state: '', roomType: '', furnishedStatus: '' }));
+                      }}
+                      className="text-[10px] font-bold text-on-surface-variant hover:text-red-500 transition-colors"
+                    >
+                      {t('filter_clear')}
+                    </button>
+                    <button
+                      onClick={() => setShowMoreFilters(false)}
+                      className="px-3.5 py-1.5 bg-primary text-white text-[10px] font-black rounded-lg hover:bg-primary/95 transition-colors"
+                    >
+                      {t('filter_apply')}
+                    </button>
+                  </div>
+
+                </div>
+              )}
+            </div>
+
+          </div>
+
         </div>
       </div>
     </div>

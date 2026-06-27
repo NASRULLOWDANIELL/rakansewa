@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getAllUsers, getMatchesForUser } from '../services/api';
+import { getAllUsers, getMatchesForUser, getProperties } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -100,6 +100,19 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
   const { t } = useLanguage(); // ← MUST be here: MatchCard is its own component
   const sc = getScoreConfig(hm?.matchScore || 0);
   const lifestyles = (hm?.lifestyle || '').split(',').map(s => s.trim()).filter(Boolean);
+  const [showPhone, setShowPhone] = useState(false);
+
+  const getWhatsAppLink = (phone) => {
+    if (!phone) return '#';
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '60' + cleaned.slice(1);
+    } else if (!cleaned.startsWith('60')) {
+      cleaned = '60' + cleaned;
+    }
+    const message = encodeURIComponent(t('match_whatsapp_intro'));
+    return `https://wa.me/${cleaned}?text=${message}`;
+  };
 
   if (!hm) return null; // null-safety guard
 
@@ -232,10 +245,48 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
         <div className="mt-auto pb-5">
           {currentUser ? (
             isUitmVerified() ? (
-              <button className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-all hover:shadow-rs-blue flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-sm">chat</span>
-                {t('detail_contact')}
-              </button>
+              hm.allowContact && hm.phoneNumber ? (
+                hm.showWhatsapp ? (
+                  <a
+                    href={getWhatsAppLink(hm.phoneNumber)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 bg-[#25D366] text-white text-sm font-bold rounded-xl hover:bg-[#1ebe5d] transition-all hover:shadow-lg flex items-center justify-center gap-2 text-center"
+                  >
+                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
+                    {t('match_contact_student')} (WhatsApp)
+                  </a>
+                ) : (
+                  showPhone ? (
+                    <button
+                      disabled
+                      className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 text-center cursor-default"
+                    >
+                      <span className="material-symbols-outlined text-sm">phone</span>
+                      {hm.phoneNumber}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowPhone(true);
+                      }}
+                      className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-all hover:shadow-rs-blue flex items-center justify-center gap-2 text-center"
+                    >
+                      <span className="material-symbols-outlined text-sm">phone</span>
+                      {t('match_contact_student')}
+                    </button>
+                  )
+                )
+              ) : (
+                <button
+                  disabled
+                  className="w-full py-2.5 bg-gray-200 text-gray-700 text-xs font-bold rounded-xl border border-gray-300 flex items-center justify-center gap-2 cursor-not-allowed"
+                  title={t('match_contact_disabled')}
+                >
+                  <span className="material-symbols-outlined text-sm">block</span>
+                  <span className="line-clamp-1">{t('match_contact_disabled')}</span>
+                </button>
+              )
             ) : (
               <button
                 disabled
@@ -269,6 +320,9 @@ const HousematesPage = () => {
   const [backendMatches, setBackendMatches] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [properties, setProperties] = useState([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [contactFilter, setContactFilter] = useState('all');
 
   // Use currentUser?.id as dependency — avoids infinite loop from object reference changes
   const currentUserId = currentUser?.id ?? null;
@@ -280,6 +334,14 @@ const HousematesPage = () => {
     const fetchHousemates = async () => {
       setLoading(true);
       try {
+        // Fetch properties
+        try {
+          const props = await getProperties();
+          setProperties(props || []);
+        } catch (propErr) {
+          console.error('Error fetching properties:', propErr);
+        }
+
         const users = await getAllUsers();
         const listed = (users || []).filter(u => u.isListedAsHousemate === true && u.id !== currentUserId);
         setHousemates(listed);
@@ -331,9 +393,28 @@ const HousematesPage = () => {
   }, [housemates, currentUser, backendMatchMap]);
 
   const filteredHousemates = scoredHousemates.filter(hm => {
-    if (filter === 'all') return true;
-    const lifestyles = (hm.lifestyle || '').split(',').map(s => s.trim());
-    return lifestyles.some(l => l.toLowerCase() === filter.toLowerCase());
+    // 1. Lifestyle Filter
+    let matchesLifestyle = true;
+    if (filter !== 'all') {
+      const lifestyles = (hm.lifestyle || '').split(',').map(s => s.trim());
+      matchesLifestyle = lifestyles.some(l => l.toLowerCase() === filter.toLowerCase());
+    }
+
+    // 2. Property Filter
+    let matchesProperty = true;
+    if (selectedPropertyId) {
+      matchesProperty = hm.linkedProperty && hm.linkedProperty.id === Number(selectedPropertyId);
+    }
+
+    // 3. Contact Filter
+    let matchesContact = true;
+    if (contactFilter === 'shared') {
+      matchesContact = hm.allowContact === true && !!hm.phoneNumber;
+    } else if (contactFilter === 'whatsapp') {
+      matchesContact = hm.allowContact === true && hm.showWhatsapp === true && !!hm.phoneNumber;
+    }
+
+    return matchesLifestyle && matchesProperty && matchesContact;
   });
 
   const priorities = [
@@ -434,6 +515,74 @@ const HousematesPage = () => {
           </div>
         )}
 
+        {/* ── Filters Section (Property & Contact Availability) ── */}
+        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6 bg-white rounded-2xl border border-gray-100 p-4 shadow-rs-sm">
+          <div className="flex items-center gap-2 text-on-surface-variant flex-shrink-0">
+            <span className="material-symbols-outlined text-base text-primary">filter_alt</span>
+            <span className="text-sm font-bold">Filters:</span>
+          </div>
+
+          {/* 1. Linked Property Dropdown */}
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-xs font-semibold text-on-surface-variant flex-shrink-0">{t('hm_filter_property')}</span>
+            <div className="relative flex-1 max-w-sm">
+              <select
+                value={selectedPropertyId}
+                onChange={(e) => setSelectedPropertyId(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-semibold appearance-none cursor-pointer"
+              >
+                <option value="">{t('hm_all_properties')}</option>
+                {properties.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.title} {p.city ? `(${p.city})` : ''}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">home_work</span>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">expand_more</span>
+            </div>
+            {selectedPropertyId && (
+              <button
+                onClick={() => setSelectedPropertyId('')}
+                className="px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center gap-1 self-start sm:self-center"
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Vertical Divider (md screen only) */}
+          <div className="hidden md:block w-px h-8 bg-gray-200" />
+
+          {/* 2. Contact Method Dropdown */}
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-xs font-semibold text-on-surface-variant flex-shrink-0">{t('hm_filter_contact')}</span>
+            <div className="relative flex-1 max-w-sm">
+              <select
+                value={contactFilter}
+                onChange={(e) => setContactFilter(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-semibold appearance-none cursor-pointer"
+              >
+                <option value="all">{t('hm_contact_all')}</option>
+                <option value="shared">{t('hm_contact_shared')}</option>
+                <option value="whatsapp">{t('hm_contact_whatsapp')}</option>
+              </select>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">contact_phone</span>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">expand_more</span>
+            </div>
+            {contactFilter !== 'all' && (
+              <button
+                onClick={() => setContactFilter('all')}
+                className="px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center gap-1 self-start sm:self-center"
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* ── Filter Pills ── */}
         <div className="flex flex-wrap gap-2 mb-8 overflow-x-auto pb-1">
           {FILTER_OPTIONS.map(opt => (
@@ -476,18 +625,36 @@ const HousematesPage = () => {
             </div>
             <h3 className="font-bold text-on-surface text-lg mb-1">{t('prop_no_results_title')}</h3>
             <p className="text-on-surface-variant text-sm max-w-xs mb-5">
-              {filter !== 'all'
-                ? `${t('hm_no_results')}`
-                : t('hm_no_results')}
+              {t('hm_no_results')}
             </p>
-            {filter !== 'all' && (
-              <button
-                onClick={() => setFilter('all')}
-                className="rs-btn-primary text-sm py-2.5 px-6"
-              >
-              {t('hm_filter_all')}
-              </button>
-            )}
+            <div className="flex flex-wrap gap-3 justify-center">
+              {filter !== 'all' && (
+                <button
+                  onClick={() => setFilter('all')}
+                  className="rs-btn-primary text-sm py-2.5 px-6"
+                >
+                  {t('hm_filter_all')}
+                </button>
+              )}
+              {selectedPropertyId && (
+                <button
+                  onClick={() => setSelectedPropertyId('')}
+                  className="px-5 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                  {t('hm_clear_property_filter')}
+                </button>
+              )}
+              {contactFilter !== 'all' && (
+                <button
+                  onClick={() => setContactFilter('all')}
+                  className="px-5 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                  {t('hm_clear_contact_filter')}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <>

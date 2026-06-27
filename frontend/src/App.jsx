@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { DarkModeProvider } from './context/DarkModeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
+import ScrollToTopButton from './components/ScrollToTopButton';
 import HomePage from './pages/HomePage';
 import PropertiesPage from './pages/PropertiesPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
@@ -42,6 +43,7 @@ function AppLayout() {
       <main className="main-content">
         <Outlet />
       </main>
+      <ScrollToTopButton />
     </div>
   );
 }

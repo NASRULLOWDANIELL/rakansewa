@@ -114,6 +114,8 @@ const ProfilePage = () => {
     budget: currentUser?.budget || '',
     lifestyle: currentUser?.lifestyle || '',
     sleepSchedule: currentUser?.sleepSchedule || '',
+    allowContact: currentUser?.allowContact || false,
+    showWhatsapp: currentUser?.showWhatsapp || false,
   });
 
   /* ── Avatar upload state ── */
@@ -557,6 +559,51 @@ const ProfilePage = () => {
                 </div>
               </>
             )}
+
+            {/* Contact Privacy Settings (Edit Mode) */}
+            <div className="md:col-span-3 border-t border-surface-container-low pt-5 mt-2">
+              <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary text-base">security</span>
+                {t('profile_label_contact_settings')}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    name="allowContact"
+                    checked={formData.allowContact}
+                    onChange={handleChange}
+                    className="w-4 h-4 mt-0.5 rounded text-primary focus:ring-primary border-outline-variant/30"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+                      {t('profile_label_allow_contact')}
+                    </span>
+                    <span className="block text-xs text-on-surface-variant mt-0.5">
+                      {t('profile_allow_contact_hint')}
+                    </span>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    name="showWhatsapp"
+                    checked={formData.showWhatsapp}
+                    onChange={handleChange}
+                    className="w-4 h-4 mt-0.5 rounded text-primary focus:ring-primary border-outline-variant/30"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+                      {t('profile_label_show_whatsapp')}
+                    </span>
+                    <span className="block text-xs text-on-surface-variant mt-0.5">
+                      {t('profile_show_whatsapp_hint')}
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
         ) : (
           // ── VIEW MODE: Mini Info Cards ──
@@ -627,6 +674,48 @@ const ProfilePage = () => {
                 </div>
               </>
             )}
+
+            {/* Contact Privacy Settings (View Mode) */}
+            <div className="md:col-span-2 border-t border-surface-container-low pt-5 mt-4">
+              <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary text-base">security</span>
+                {t('profile_label_contact_settings')}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_allow_contact')}</span>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-on-surface mt-0.5">
+                    {currentUser.allowContact ? (
+                      <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 text-xs font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                        {t('pref_active') || 'Enabled'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-on-surface-variant bg-surface-container px-2 py-0.5 rounded border border-outline-variant/20 text-xs font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40"></span>
+                        {t('pref_hidden') || 'Disabled'}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-surface-container-lowest rounded-xl border border-outline-variant/20 flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{t('profile_label_show_whatsapp')}</span>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-on-surface mt-0.5">
+                    {currentUser.showWhatsapp ? (
+                      <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 text-xs font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                        {t('pref_active') || 'Enabled'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-on-surface-variant bg-surface-container px-2 py-0.5 rounded border border-outline-variant/20 text-xs font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40"></span>
+                        {t('pref_hidden') || 'Disabled'}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
 
           </div>
         )}

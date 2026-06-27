@@ -43,6 +43,9 @@ public class UserService {
         // Validate matric number matches UiTM email prefix
         validateMatricEmailMatch(user);
 
+        // Validate phone number format
+        validatePhoneNumber(user);
+
         updateVerificationStatus(user);
 
         // For manual registration: set emailVerified=true by default (no longer using
@@ -99,6 +102,9 @@ public class UserService {
             // Validate matric number matches UiTM email prefix
             validateMatricEmailMatch(updatedUser);
 
+            // Validate phone number format
+            validatePhoneNumber(updatedUser);
+
             user.setName(updatedUser.getName());
             user.setEmail(updatedUser.getEmail());
             user.setRole(updatedUser.getRole());
@@ -112,6 +118,8 @@ public class UserService {
             user.setPriority2(updatedUser.getPriority2());
             user.setPriority3(updatedUser.getPriority3());
             user.setPhoneNumber(updatedUser.getPhoneNumber());
+            user.setAllowContact(updatedUser.getAllowContact());
+            user.setShowWhatsapp(updatedUser.getShowWhatsapp());
             user.setMatricNumber(updatedUser.getMatricNumber());
             user.setUitmEmail(updatedUser.getUitmEmail());
 
@@ -293,6 +301,26 @@ public class UserService {
                 if (currentUserId == null || !existingId.equals(currentUserId)) {
                     throw new RuntimeException("This UiTM email is already used by another account.");
                 }
+            }
+        }
+    }
+
+    /**
+     * Validate phone number contains only digits and matches Malaysian format.
+     */
+    private void validatePhoneNumber(User user) {
+        String phone = user.getPhoneNumber();
+        if (phone != null && !phone.trim().isEmpty()) {
+            // Strip spaces, dashes, brackets, and plus signs
+            String sanitized = phone.replaceAll("[\\s\\-\\(\\)\\+]", "");
+            if (!sanitized.matches("\\d+")) {
+                throw new RuntimeException("Phone number must contain only numbers.");
+            }
+            if (!(sanitized.startsWith("60") || sanitized.startsWith("0"))) {
+                throw new RuntimeException("Phone number must follow Malaysian format (starts with 0 or 60).");
+            }
+            if (sanitized.length() < 9 || sanitized.length() > 12) {
+                throw new RuntimeException("Invalid phone number length.");
             }
         }
     }

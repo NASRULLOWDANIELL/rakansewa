@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -122,7 +122,7 @@ const GuestCtaCard = ({ currentUser, t }) => (
 /* ── Main Page ── */
 const HomePage = () => {
   const { currentUser } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const isStudent = currentUser?.role === 'Student' || currentUser?.role === 'STUDENT';
 
   /* ── Live stats ── */
@@ -221,109 +221,147 @@ const HomePage = () => {
     fetchStats();
   }, []);
 
-  /* ── Format stat number ── */
+  /* â”€â”€ Format stat number â”€â”€ */
   const fmtStat = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k+` : n > 0 ? `${n}+` : '0';
 
   return (
-    <div className="homepage-gradient-bg min-h-screen relative overflow-hidden">
+    <div className="bg-background min-h-screen relative overflow-hidden">
 
       {/* Light Mode ambient glow blobs (hidden in dark mode) */}
-      <div className="absolute top-[5%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-blue-200/35 to-indigo-200/35 blur-[120px] pointer-events-none dark:hidden" />
-      <div className="absolute top-[30%] right-[-10%] w-[550px] h-[550px] rounded-full bg-gradient-to-br from-orange-100/45 to-rose-100/40 blur-[110px] pointer-events-none dark:hidden" />
-      <div className="absolute bottom-[20%] left-[-5%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-purple-100/35 to-fuchsia-100/35 blur-[110px] pointer-events-none dark:hidden" />
-      <div className="absolute bottom-[2%] right-[2%] w-[450px] h-[450px] rounded-full bg-gradient-to-br from-sky-100/45 to-teal-50/40 blur-[100px] pointer-events-none dark:hidden" />
+      <div className="absolute top-[5%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-blue-200/30 to-indigo-200/35 blur-[120px] pointer-events-none dark:hidden" />
+      <div className="absolute top-[35%] right-[-5%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-indigo-200/25 to-blue-200/30 blur-[110px] pointer-events-none dark:hidden" />
+      <div className="absolute bottom-[20%] left-[-5%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-purple-100/30 to-fuchsia-100/30 blur-[110px] pointer-events-none dark:hidden" />
 
-      {/* ─────────────────────────────
-          HERO — Matching-first focus
-          ───────────────────────────── */}
-      <section className="relative overflow-hidden pt-24 pb-20 md:pt-32 md:pb-28">
-        {/* Soft gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-100/30 via-white/10 to-transparent pointer-events-none" />
-        <div className="absolute top-8 right-[8%] w-80 h-80 bg-primary/4 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-[4%] w-60 h-60 bg-blue-100/30 rounded-full blur-3xl pointer-events-none" />
+      {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          HERO â€” Unified 2-Column SaaS Layout
+          â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <section className="relative overflow-hidden pt-24 pb-16 md:pt-32 md:pb-20">
+        
+        <div className="relative max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
+          
+          {/* Outer Box Card with Gradient Background */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#ebf3ff]/90 via-white/85 to-[#e1ecff]/85 dark:from-[#111827]/90 dark:to-[#0f172a]/95 rounded-[32px] border border-blue-100/60 dark:border-slate-800 p-10 md:p-14 lg:p-20 xl:py-24 xl:px-28 shadow-rs-md">
+            
+            {/* Ambient glow inside the card top-right */}
+            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[110px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-indigo-200/20 dark:bg-indigo-900/10 rounded-full blur-[100px] pointer-events-none" />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
+              
+              {/* Left side: Brand copy, CTAs */}
+              <div className="lg:col-span-7 space-y-8 text-left">
+                {/* Platform badge */}
+                <div className="inline-flex items-center gap-2 bg-white/90 dark:bg-[#111827]/80 backdrop-blur-sm border border-primary/20 px-5 py-2.5 rounded-full text-sm font-bold text-primary shadow-rs-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  {t('hero_badge_unified')}
+                </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
+                {/* Headline with custom colored words */}
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-black font-headline leading-[1.12] tracking-tight text-on-surface">
+                  {lang === 'en' ? (
+                    <>
+                      Find your perfect <span className="text-primary">home</span> and <span className="text-primary">roomies</span>.
+                    </>
+                  ) : (
+                    <>
+                      Cari <span className="text-primary">rumah</span> dan <span className="text-primary">rakan serumah</span> ideal anda.
+                    </>
+                  )}
+                </h1>
 
-            {/* Platform badge */}
-            <div className="inline-flex items-center gap-2 bg-white border border-primary/20 px-4 py-2 rounded-full text-xs font-bold text-primary shadow-rs-sm mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              {t('hero_badge')}
-            </div>
+                {/* Description */}
+                <p className="text-base sm:text-lg md:text-xl text-on-surface-variant max-w-2xl leading-relaxed">
+                  {t('hero_sub_unified')}
+                </p>
 
-            {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black font-headline leading-[1.1] tracking-tight text-on-surface mb-6">
-              {t('hero_headline_start')}{' '}
-              <span
-                className="text-transparent bg-clip-text"
-                style={{ backgroundImage: 'linear-gradient(135deg, #0058be 0%, #3b82f6 100%)' }}
-              >
-                {t('hero_headline_accent')}
-              </span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed mb-10">
-              {t('hero_sub')}
-            </p>
-
-            {/* Primary action buttons — matching-first */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
-              <Link
-                to="/housemates"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-primary text-white px-8 py-4 rounded-full font-bold text-sm shadow-rs-blue hover:bg-primary/90 hover:shadow-lg transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
-              >
-                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
-                {t('hero_cta_housemates')}
-              </Link>
-              <Link
-                to="/properties"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-on-surface px-8 py-4 rounded-full font-bold text-sm border border-gray-200 hover:border-primary/30 hover:bg-blue-50/40 hover:text-primary transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-rs-sm"
-              >
-                <span className="material-symbols-outlined text-base">apartment</span>
-                {t('hero_cta_listings')}
-              </Link>
-              {!currentUser && (
-                <Link
-                  to="/register"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-primary px-8 py-4 rounded-full font-bold text-sm border-2 border-primary/30 hover:bg-primary/5 transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
-                >
-                  <span className="material-symbols-outlined text-base">person_add</span>
-                  {t('hero_cta_register')}
-                </Link>
-              )}
-            </div>
-
-            {/* Trust line */}
-            <p className="text-xs text-on-surface-variant flex items-center justify-center gap-1.5">
-              <span className="material-symbols-outlined text-[14px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-              {t('hero_trust')}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────────────────────
-          STATS ROW
-          ───────────────────────────── */}
-      <section className="py-10 px-6 max-w-4xl mx-auto">
-        <div className="bg-white/85 dark:bg-[#111827]/85 backdrop-blur-md rounded-3xl border border-gray-150/40 dark:border-gray-800/80 p-6 md:p-8 shadow-rs-md">
-          <div className="grid grid-cols-3 gap-6 md:gap-12 text-center divide-x divide-gray-100 dark:divide-gray-800">
-            {[
-              { value: fmtStat(stats.listings), label: t('stat_listings'), icon: 'home_work', loading: statsLoading },
-              { value: fmtStat(stats.seekers), label: t('stat_matched'), icon: 'groups', loading: statsLoading },
-              { value: '100%', label: t('stat_verified'), icon: 'verified_user', loading: false },
-            ].map((stat, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 py-2">
-                <span className="material-symbols-outlined text-primary text-lg mb-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>{stat.icon}</span>
-                {stat.loading ? (
-                  <div className="skeleton h-8 w-16 rounded mb-0.5" />
-                ) : (
-                  <span className="text-2xl md:text-3xl font-black text-on-surface font-headline">{stat.value}</span>
-                )}
-                <span className="text-xs text-on-surface-variant font-medium">{stat.label}</span>
+                {/* CTAs */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+                  <Link
+                    to="/properties"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-4 rounded-full font-bold text-base shadow-rs-blue hover:bg-primary/95 transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
+                  >
+                    <span className="material-symbols-outlined text-lg">search</span>
+                    {t('hero_cta_listings')}
+                  </Link>
+                  <Link
+                    to="/housemates"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white dark:bg-[#1e293b] text-on-surface dark:text-white px-8 py-4 rounded-full font-bold text-base border border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-[#1e293b]/80 transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-rs-sm"
+                  >
+                    <span className="material-symbols-outlined text-lg">groups</span>
+                    {t('hero_cta_housemates')}
+                  </Link>
+                </div>
               </div>
-            ))}
+
+              {/* Right side: Staggered stacked stats cards */}
+              <div className="lg:col-span-5 flex flex-col items-center lg:items-end w-full relative">
+                <div className="flex flex-col gap-6 items-center lg:items-end w-full max-w-[360px]">
+                  
+                  {/* Card 1: Active Listings */}
+                  <div className="bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:-translate-x-14 md:-translate-x-8">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-primary">
+                      <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>home_work</span>
+                    </div>
+                    <div>
+                      {statsLoading ? (
+                        <div className="skeleton h-8 w-16 rounded mb-1" />
+                      ) : (
+                        <h4 className="text-3xl font-black text-on-surface font-headline leading-none mb-1">
+                          {fmtStat(stats.listings)}
+                        </h4>
+                      )}
+                      <p className="text-xs sm:text-sm text-on-surface-variant font-semibold">
+                        {t('stat_listings')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Students Matched */}
+                  <div className="bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:translate-x-6 md:translate-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0 text-emerald-600">
+                      <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
+                    </div>
+                    <div>
+                      {statsLoading ? (
+                        <div className="skeleton h-8 w-16 rounded mb-1" />
+                      ) : (
+                        <h4 className="text-3xl font-black text-on-surface font-headline leading-none mb-1">
+                          {fmtStat(stats.seekers)}
+                        </h4>
+                      )}
+                      <p className="text-xs sm:text-sm text-on-surface-variant font-semibold">
+                        {t('stat_matched')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: 100% Verified */}
+                  <div className="relative bg-white dark:bg-[#1e293b] rounded-[24px] border border-gray-150/40 dark:border-slate-800/80 p-6 shadow-rs-md flex items-center gap-5 w-full transition-all duration-300 hover:scale-[1.02] transform hover:-translate-y-1 lg:-translate-x-10 md:-translate-x-6">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-primary">
+                      <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                    </div>
+                    <div>
+                      <h4 className="text-3xl font-black text-on-surface font-headline leading-none mb-1">
+                        100%
+                      </h4>
+                      <p className="text-xs sm:text-sm text-on-surface-variant font-semibold">
+                        {t('stat_verified')}
+                      </p>
+                    </div>
+
+                    {/* Join Now! tag */}
+                    <div className="absolute -top-3.5 -right-3 bg-primary text-white font-headline text-[11px] font-black px-4 py-2 rounded-lg shadow-rs-blue rotate-6 select-none animate-pulse z-10">
+                      {t('cta_join_now')}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
           </div>
+
         </div>
       </section>
 
