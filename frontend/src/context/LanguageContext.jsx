@@ -26,7 +26,7 @@ const STRINGS = {
     nav_sign_out:      'Sign Out',
     nav_notifications: 'Notifications',
     nav_no_notif:      'No notifications yet',
-    footer_copyright:  'A student housing & housemate matching platform for UiTM Jasin. © 2026',
+    footer_copyright:  'A platform to find rental house info, match housemates, and contact owners/housemates for UiTM Jasin. © 2026',
 
     /* ── HomePage ── */
     hero_badge:           "UiTM Jasin's Student Housing & Matching Platform",
@@ -653,7 +653,7 @@ const STRINGS = {
     nav_sign_out:      'Log Keluar',
     nav_notifications: 'Pemberitahuan',
     nav_no_notif:      'Tiada pemberitahuan',
-    footer_copyright:  'Platform penyewaan rumah & padanan rakan serumah untuk UiTM Jasin. © 2026',
+    footer_copyright:  'Platform mencari maklumat rumah sewa, padanan rakan serumah, dan menghubungi pemilik/rakan serumah untuk UiTM Jasin. © 2026',
 
     /* ── HomePage ── */
     hero_badge:           'Platform Perumahan Pelajar UiTM Jasin',
