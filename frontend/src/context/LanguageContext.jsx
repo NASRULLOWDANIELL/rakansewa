@@ -411,6 +411,8 @@ const STRINGS = {
     reg_feat_listings: 'Browse verified property listings',
     reg_feat_matching: 'Match with compatible housemates',
     reg_feat_safety: 'Safe, student-only community',
+    reg_already_have_account: 'Already have an account?',
+    reg_signin_link: 'Sign in here',
 
     /* ── ForgotPassword Page ── */
     forgot_left_title_1: 'Recover your account',
@@ -1013,6 +1015,8 @@ const STRINGS = {
     reg_feat_listings: 'Semak senarai hartanah disahkan',
     reg_feat_matching: 'Padan dengan rakan serumah serasi',
     reg_feat_safety: 'Komuniti selamat, hanya untuk pelajar',
+    reg_already_have_account: 'Sudah mempunyai akaun?',
+    reg_signin_link: 'Log masuk di sini',
 
     /* ── ForgotPassword Page ── */
     forgot_left_title_1: 'Recover your account',

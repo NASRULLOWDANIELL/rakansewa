@@ -408,6 +408,13 @@ const RegisterPage = () => {
               </button>
             </form>
 
+            <p className="text-center text-sm text-on-surface-variant mt-5">
+              {t('reg_already_have_account')}{' '}
+              <Link to="/login" className="text-primary font-bold hover:text-primary/80 transition-colors">
+                {t('reg_signin_link')}
+              </Link>
+            </p>
+
         </div>
       </div>
     </div>
