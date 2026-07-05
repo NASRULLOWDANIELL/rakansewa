@@ -336,6 +336,12 @@ const RecommendedCarousel = ({ properties, t }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const itemsPerSlide = 2;
 
+  const getCoverImage = (property) => {
+    const raw = property.images?.[0]?.imageUrl || property.imageUrl;
+    if (!raw) return 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=70';
+    return raw.startsWith('/uploads') ? `http://localhost:8080${raw}` : raw;
+  };
+
   // Group properties into slides of up to 2 items
   const slides = useMemo(() => {
     const res = [];
@@ -408,7 +414,7 @@ const RecommendedCarousel = ({ properties, t }) => {
                   >
                     {/* Background Image */}
                     <img
-                      src={property.imageUrl && property.imageUrl.startsWith('/uploads') ? `http://localhost:8080${property.imageUrl}` : (property.imageUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=70')}
+                      src={getCoverImage(property)}
                       alt={property.title}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

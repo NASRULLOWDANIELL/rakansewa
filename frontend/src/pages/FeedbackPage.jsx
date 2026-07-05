@@ -375,7 +375,7 @@ const FeedbackPage = () => {
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl shadow-rs-lg w-full max-w-xl border border-outline-variant/20 animate-scale-in"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-rs-lg w-full md:w-[75vw] max-w-6xl border border-outline-variant/20 animate-scale-in"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -449,7 +449,7 @@ const FeedbackPage = () => {
                     value={formData.message}
                     onChange={handleChange}
                     placeholder={t('fb_placeholder_message')}
-                    rows="4"
+                    rows="12"
                     className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
                   ></textarea>
                   {formErrors.message && (

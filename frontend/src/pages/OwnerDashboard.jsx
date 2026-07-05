@@ -647,7 +647,7 @@ const OwnerDashboard = () => {
             onClick={e => { if (e.target === e.currentTarget) resetForm(); }}
           >
             <div
-              className="bg-white rounded-2xl shadow-rs-lg w-full max-w-3xl border border-gray-100 animate-scale-in"
+              className="bg-white rounded-2xl shadow-rs-lg w-full md:w-[75vw] max-w-6xl border border-gray-100 animate-scale-in"
               style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}
             >
@@ -953,7 +953,7 @@ const OwnerDashboard = () => {
                         value={formData.description}
                         onChange={handleInputChange}
                         placeholder="Describe the property — features, nearby amenities, house rules..."
-                        rows="6"
+                        rows="8"
                         className="rs-input text-sm resize-none"
                         style={{ resize: 'none' }}
                       />
