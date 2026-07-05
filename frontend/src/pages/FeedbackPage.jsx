@@ -168,13 +168,13 @@ const FeedbackPage = () => {
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 shadow-sm hover-glow-blue transition-all duration-300">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-primary text-[18px]">rate_review</span>
-              <p className="text-sm font-bold text-primary">Ready to Share Feedback?</p>
+              <p className="text-sm font-bold text-primary">{t('fb_ready_title')}</p>
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
-              Help other students by sharing your house reviews and experiences on RakanSewa.
+              {t('fb_ready_desc')}
             </p>
             <div className="text-[10px] text-on-surface-variant font-medium mb-3 border-t border-outline-variant/15 pt-2">
-              Logged in as: <span className="font-bold text-on-surface">{currentUser.name}</span>
+              {t('fb_logged_in_as')}: <span className="font-bold text-on-surface">{currentUser.name}</span>
             </div>
             <button
               onClick={() => {
@@ -186,7 +186,7 @@ const FeedbackPage = () => {
               className="w-full inline-flex items-center justify-center gap-1.5 bg-primary text-white text-xs font-bold py-2.5 px-4 rounded-lg hover:opacity-90 transition-opacity shadow-rs-blue"
             >
               <span className="material-symbols-outlined text-[14px]">edit_note</span>
-              Write Feedback
+              {t('fb_btn_write')}
             </button>
           </div>
         </div>
@@ -195,32 +195,32 @@ const FeedbackPage = () => {
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-xl font-extrabold font-headline text-on-surface mt-0 pt-0 mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">forum</span>
-            Community Feedback
+            {t('fb_community_title')}
           </h2>
 
           {/* Feedback Statistics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-xl p-4 shadow-sm text-center transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-emerald cursor-default">
                 <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{feedbacks.length}</span>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">Total Feedback</p>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">{t('fb_stat_total')}</p>
               </div>
               <div className="bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-xl p-4 shadow-sm text-center transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-blue cursor-default">
                 <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
                   {feedbacks.filter(f => f.category === 'Comment').length}
                 </span>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">Comments</p>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">{t('fb_stat_comments')}</p>
               </div>
               <div className="bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-xl p-4 shadow-sm text-center transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-purple cursor-default">
                 <span className="text-2xl font-black text-purple-600 dark:text-purple-400">
                   {feedbacks.filter(f => f.category === 'Suggestion').length}
                 </span>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">Suggestions</p>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">{t('fb_stat_suggestions')}</p>
               </div>
               <div className="bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-xl p-4 shadow-sm text-center transition-all duration-300 hover:shadow-rs-lg hover:-translate-y-1 hover-glow-red cursor-default">
                 <span className="text-2xl font-black text-red-500">
                   {feedbacks.filter(f => f.category === 'Report').length}
                 </span>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">Reports</p>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-1">{t('fb_stat_reports')}</p>
               </div>
             </div>
 
@@ -228,7 +228,7 @@ const FeedbackPage = () => {
             <div className="flex flex-wrap gap-2 mb-6 border-b border-outline-variant/10 pb-4">
               {['All', 'Comment', 'Suggestion', 'Report'].map((type) => {
                 const isActive = selectedCategoryFilter === type;
-                const label = type === 'All' ? 'All Feedbacks' : (type + 's');
+                const label = type === 'All' ? t('fb_filter_all') : type === 'Comment' ? t('fb_stat_comments') : type === 'Suggestion' ? t('fb_stat_suggestions') : t('fb_stat_reports');
                 const badgeColor = type === 'Comment' ? 'hover:text-blue-500' : type === 'Suggestion' ? 'hover:text-purple-500' : type === 'Report' ? 'hover:text-red-500' : 'hover:text-primary';
                 return (
                   <button
@@ -255,7 +255,7 @@ const FeedbackPage = () => {
                 return (
                   <div className="text-center py-16 bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-xl">
                     <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">forum</span>
-                    <p className="text-on-surface-variant text-sm">No feedback found for this category.</p>
+                    <p className="text-on-surface-variant text-sm">{t('fb_no_feedback')}</p>
                   </div>
                 );
               }
@@ -264,8 +264,8 @@ const FeedbackPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredFeedbacks.map((f) => {
                     const writer = users.find(u => u.id === f.userId);
-                    const writerName = writer ? writer.name : 'Anonymous Student';
-                    const writerRole = writer ? writer.role : 'Student';
+                    const writerName = writer ? writer.name : t('fb_anon_student');
+                    const writerRole = writer ? (writer.role === 'Student' ? t('reg_role_student') : t('reg_role_owner')) : t('reg_role_student');
                     return (
                       <div
                         key={f.id}
@@ -279,7 +279,7 @@ const FeedbackPage = () => {
                               f.category === 'Suggestion' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
-                              {f.category}
+                              {f.category === 'Comment' ? t('fb_cat_comment') : f.category === 'Suggestion' ? t('fb_cat_suggestion') : t('fb_cat_report')}
                             </span>
                             <span className="text-[9px] text-on-surface-variant font-medium">
                               {new Date(f.createdAt || Date.now()).toLocaleDateString()}
@@ -309,33 +309,33 @@ const FeedbackPage = () => {
           <div className="bg-white dark:bg-slate-800 border border-outline-variant/20 rounded-xl p-8 shadow-sm">
             <h2 className="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history</span>
-              My Feedback History
+              {t('fb_history_title')}
               <span className="text-xs font-normal text-on-surface-variant bg-surface-container rounded-full px-2.5 py-0.5 ml-1">
                 {myFeedbacks.length}
               </span>
             </h2>
 
             {myFeedbacks.length === 0 ? (
-              <p className="text-xs text-on-surface-variant italic text-center py-6">You haven't submitted any feedback yet.</p>
+              <p className="text-xs text-on-surface-variant italic text-center py-6">{t('fb_no_history')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs min-w-[500px] md:min-w-0">
                   <thead className="bg-surface-container-low border-b border-outline-variant/20 text-on-surface-variant uppercase font-bold text-[10px] tracking-wider">
                     <tr>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Subject</th>
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">{t('fb_tbl_category')}</th>
+                      <th className="px-4 py-3">{t('fb_tbl_subject')}</th>
+                      <th className="px-4 py-3">{t('fb_tbl_date')}</th>
+                      <th className="px-4 py-3">{t('fb_tbl_status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant/10">
                     {myFeedbacks.map((f) => {
                       const statusText = f.isResolved
-                        ? (f.category === 'Comment' ? 'Reviewed' : 'Implemented')
-                        : 'Pending';
-                      const statusColor = statusText === 'Pending'
-                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+                        ? (f.category === 'Comment' ? t('fb_status_reviewed') : t('fb_status_implemented'))
+                        : t('fb_status_pending');
+                      const statusColor = f.isResolved
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
                       return (
                         <tr key={f.id} className="hover:bg-surface-container-lowest transition-colors">
                           <td className="px-4 py-3.5">
@@ -344,7 +344,7 @@ const FeedbackPage = () => {
                               f.category === 'Suggestion' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
-                              {f.category}
+                              {f.category === 'Comment' ? t('fb_cat_comment') : f.category === 'Suggestion' ? t('fb_cat_suggestion') : t('fb_cat_report')}
                             </span>
                           </td>
                           <td className="px-4 py-3.5 font-medium text-on-surface">{f.subject}</td>
@@ -382,7 +382,7 @@ const FeedbackPage = () => {
             <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
               <h2 className="text-lg font-bold text-on-surface font-headline flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">rate_review</span>
-                Submit Feedback
+                {t('fb_title')}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -466,7 +466,7 @@ const FeedbackPage = () => {
                     onClick={() => setIsModalOpen(false)}
                     className="px-5 py-2 rounded-lg border border-outline-variant/30 text-on-surface text-xs font-bold hover:bg-surface-container transition-colors"
                   >
-                    Cancel
+                    {t('fb_btn_cancel')}
                   </button>
                   <button
                     type="submit"
@@ -540,8 +540,8 @@ const FeedbackPage = () => {
               {/* Writer Details */}
               {(() => {
                 const writer = users.find(u => u.id === selectedFeedback.userId);
-                const writerName = writer ? writer.name : 'Anonymous Student';
-                const writerRole = writer ? writer.role : 'Student';
+                const writerName = writer ? writer.name : t('fb_anon_student');
+                const writerRole = writer ? (writer.role === 'Student' ? t('reg_role_student') : t('reg_role_owner')) : t('reg_role_student');
                 return (
                   <div className="pt-4 border-t border-outline-variant/10 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-base flex-shrink-0">
@@ -562,7 +562,7 @@ const FeedbackPage = () => {
                 onClick={() => setSelectedFeedback(null)}
                 className="px-6 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:opacity-90 transition-opacity shadow-rs-blue"
               >
-                Done
+                {t('fb_btn_done')}
               </button>
             </div>
           </div>
