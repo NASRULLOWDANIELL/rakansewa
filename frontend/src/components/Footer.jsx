@@ -20,7 +20,7 @@ export default function Footer() {
 
         {/* Center: Copyright */}
         <div className="text-center text-xs text-on-surface-variant/80 dark:text-gray-500 max-w-md leading-relaxed font-medium">
-          A student housing & housemate matching platform for UiTM Jasin. © 2026
+          {t('footer_copyright') || 'A student housing & housemate matching platform for UiTM Jasin. © 2026'}
         </div>
 
         {/* Right: Links */}
