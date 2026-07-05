@@ -5,6 +5,20 @@ import { useLanguage } from '../context/LanguageContext';
 
 const AdminDashboard = () => {
    const { t } = useLanguage();
+   const translateFieldName = (name) => {
+      const map = {
+         title: t('owner_field_title'),
+         address: t('owner_field_address'),
+         city: t('owner_field_city'),
+         state: t('owner_field_state'),
+         monthlyRent: t('owner_field_rent'),
+         propertyType: t('owner_field_type'),
+         roomType: t('owner_field_room'),
+         furnishedStatus: t('owner_field_furnish'),
+         description: t('owner_field_desc')
+      };
+      return map[name] || name;
+   };
    const [properties, setProperties] = useState([]);
    const [users, setUsers] = useState([]);
    const [feedbacks, setFeedbacks] = useState([]);
@@ -135,7 +149,7 @@ const AdminDashboard = () => {
          <div className="flex gap-1 border-b border-outline-variant/20 overflow-x-auto scrollbar-none whitespace-nowrap">
             {[
                { key: 'properties', label: t('admin_tab_listings'), icon: 'home_work' },
-               { key: 'updated_properties', label: 'Updated Listings', icon: 'update', badge: updatedProperties.length },
+               { key: 'updated_properties', label: t('admin_tab_updated'), icon: 'update', badge: updatedProperties.length },
                { key: 'users', label: t('admin_tab_users'), icon: 'people' },
                { key: 'feedbacks', label: t('admin_tab_feedback'), icon: 'feedback', badge: unresolvedFeedbacks },
             ].map(tab => (
@@ -301,13 +315,13 @@ const AdminDashboard = () => {
                <div>
                   <h2 className="text-lg font-bold font-headline mb-4 flex items-center gap-2">
                      <span className="material-symbols-outlined text-primary">update</span>
-                     Updated Listings
+                     {t('admin_tab_updated')}
                      <span className="ml-1 px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">{updatedProperties.length}</span>
                   </h2>
                   {updatedProperties.length === 0 ? (
                      <div className="bg-green-50 border border-green-200 rounded-lg p-5 flex items-center gap-3 text-green-700">
                         <span className="material-symbols-outlined">check_circle</span>
-                        <span className="font-medium text-sm">No recently updated listings.</span>
+                        <span className="font-medium text-sm">{t('admin_no_updated_listings')}</span>
                      </div>
                   ) : (
                      <div className="bg-white rounded-xl border border-outline-variant/20 overflow-hidden shadow-sm">
@@ -315,11 +329,11 @@ const AdminDashboard = () => {
                            <table className="w-full text-left text-sm min-w-[650px] md:min-w-0">
                               <thead className="bg-surface-container-low border-b border-outline-variant/20">
                                  <tr>
-                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Property</th>
-                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden md:table-cell">Location</th>
-                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Date & Time Changed</th>
-                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Before Changes</th>
-                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">After Changes</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_property')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant hidden md:table-cell">{t('admin_table_location')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_changed_at')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_before_changes')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{t('admin_table_after_changes')}</th>
                                  </tr>
                               </thead>
                               <tbody className="divide-y divide-outline-variant/10">
@@ -369,7 +383,7 @@ const AdminDashboard = () => {
                                                       if (restParts.length === 2) {
                                                          return (
                                                             <div key={idx} className="bg-surface-container/60 dark:bg-slate-800/60 border border-outline-variant/10 rounded-lg p-2 flex flex-col gap-0.5 text-[10px] leading-tight">
-                                                               <span className="font-bold text-[9px] uppercase tracking-wider text-primary block mb-0.5">{fieldName}</span>
+                                                               <span className="font-bold text-[9px] uppercase tracking-wider text-primary block mb-0.5">{translateFieldName(fieldName)}</span>
                                                                <span className="line-through opacity-60">{restParts[0].trim()}</span>
                                                             </div>
                                                          );
@@ -382,7 +396,7 @@ const AdminDashboard = () => {
                                                    );
                                                 })
                                              ) : (
-                                                <span className="text-xs text-on-surface-variant italic">No details.</span>
+                                                <span className="text-xs text-on-surface-variant italic">{t('admin_no_details')}</span>
                                              )}
                                           </div>
                                        </td>
@@ -411,7 +425,7 @@ const AdminDashboard = () => {
                                                    );
                                                 })
                                              ) : (
-                                                <span className="text-xs text-on-surface-variant italic">No details.</span>
+                                                <span className="text-xs text-on-surface-variant italic">{t('admin_no_details')}</span>
                                              )}
                                           </div>
                                        </td>
