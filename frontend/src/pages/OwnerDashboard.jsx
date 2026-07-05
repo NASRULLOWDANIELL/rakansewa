@@ -681,7 +681,7 @@ const OwnerDashboard = () => {
                         name="title" 
                         value={formData.title} 
                         onChange={handleInputChange} 
-                        placeholder="e.g. Cozy Room near UiTM" 
+                        placeholder={t('owner_placeholder_title')} 
                         className="rs-input text-sm" 
                       />
                       {formErrors.title && (
@@ -706,7 +706,7 @@ const OwnerDashboard = () => {
                           onFocus={() => {
                             if (formData.address.trim().length > 3) setShowSuggestions(true);
                           }}
-                          placeholder="Street address" 
+                          placeholder={t('owner_placeholder_address')} 
                           className="rs-input text-sm pr-10" 
                         />
                         {suggestionsLoading && (
@@ -746,7 +746,7 @@ const OwnerDashboard = () => {
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[14px]">map</span>
-                        Map Location (Click or Drag Marker)
+                        {t('owner_field_map_title')}
                       </label>
                       <div 
                         id="owner-property-map" 
@@ -764,7 +764,7 @@ const OwnerDashboard = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_city')}</label>
-                        <input name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="rs-input text-sm" />
+                        <input name="city" value={formData.city} onChange={handleInputChange} placeholder={t('owner_placeholder_city')} className="rs-input text-sm" />
                         {formErrors.city && (
                           <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
                             <span className="material-symbols-outlined text-sm">error</span>
@@ -774,7 +774,7 @@ const OwnerDashboard = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_state')}</label>
-                        <input name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="rs-input text-sm" />
+                        <input name="state" value={formData.state} onChange={handleInputChange} placeholder={t('owner_placeholder_state')} className="rs-input text-sm" />
                         {formErrors.state && (
                           <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
                             <span className="material-symbols-outlined text-sm">error</span>
@@ -788,7 +788,7 @@ const OwnerDashboard = () => {
                       <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('owner_field_rent')}</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-on-surface-variant">RM</span>
-                        <input type="number" name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder="e.g. 450" className="rs-input text-sm pl-10" style={{ paddingLeft: '40px' }} />
+                        <input type="number" name="monthlyRent" value={formData.monthlyRent} onChange={handleInputChange} placeholder={t('owner_placeholder_rent')} className="rs-input text-sm pl-10" style={{ paddingLeft: '40px' }} />
                       </div>
                       {formErrors.monthlyRent && (
                         <p className="text-red-500 text-xs mt-1.5 font-medium animate-fade-in flex items-center gap-1">
@@ -874,11 +874,11 @@ const OwnerDashboard = () => {
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[14px]">star</span>
-                        Amenities
+                        {t('owner_amenities_title')}
                       </label>
 
                       {/* Preset checkboxes */}
-                      <p className="text-[10px] font-bold text-on-surface-variant mb-1.5 uppercase tracking-wide">Select Presets</p>
+                      <p className="text-[10px] font-bold text-on-surface-variant mb-1.5 uppercase tracking-wide">{t('owner_select_presets')}</p>
                       <div className="flex flex-wrap gap-2 mb-3">
                         {PRESET_AMENITIES.map(amenity => {
                           const isSelected = selectedAmenities.includes(amenity);
@@ -900,7 +900,7 @@ const OwnerDashboard = () => {
                       </div>
 
                       {/* Custom amenities */}
-                      <p className="text-[10px] font-bold text-on-surface-variant mb-1.5 uppercase tracking-wide">Add Custom Amenities</p>
+                      <p className="text-[10px] font-bold text-on-surface-variant mb-1.5 uppercase tracking-wide">{t('owner_add_custom_amenities')}</p>
                       <div className="flex gap-2 mb-3">
                         <input
                           type="text"
@@ -912,7 +912,7 @@ const OwnerDashboard = () => {
                               handleAddCustomAmenity();
                             }
                           }}
-                          placeholder="e.g. Balcony, Swimming Pool..."
+                          placeholder={t('owner_placeholder_custom_amenity')}
                           className="rs-input text-sm"
                         />
                         <button
@@ -920,7 +920,7 @@ const OwnerDashboard = () => {
                           onClick={handleAddCustomAmenity}
                           className="px-4 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primary/95 transition-all whitespace-nowrap"
                         >
-                          + Add
+                          {t('owner_btn_add_amenity')}
                         </button>
                       </div>
 
@@ -952,7 +952,7 @@ const OwnerDashboard = () => {
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
-                        placeholder="Describe the property — features, nearby amenities, house rules..."
+                        placeholder={t('owner_placeholder_desc')}
                         rows="8"
                         className="rs-input text-sm resize-none"
                         style={{ resize: 'none' }}
