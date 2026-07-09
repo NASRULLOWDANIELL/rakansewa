@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
-import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImages, deletePropertyImage } from '../services/api';
+import { getPropertiesByOwner, deleteProperty, createProperty, updateProperty, resubmitProperty, uploadPropertyImages, deletePropertyImage, API_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 import UnsavedChangesModal from '../components/UnsavedChangesModal';
@@ -494,7 +494,7 @@ const OwnerDashboard = () => {
 
   const resolveImageSrc = (url) => {
     if (!url) return null;
-    if (url.startsWith('/uploads')) return `http://localhost:8080${url}`;
+    if (url.startsWith('/uploads')) return `${API_BASE_URL}${url}`;
     return url;
   };
 

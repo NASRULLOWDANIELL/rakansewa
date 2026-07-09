@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useBlocker } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getApprovedProperties, linkUserToProperty, getPropertiesByOwner, getProperties, getAllUsers, uploadProfileImage } from '../services/api';
+import { getApprovedProperties, linkUserToProperty, getPropertiesByOwner, getProperties, getAllUsers, uploadProfileImage, API_BASE_URL } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import UnsavedChangesModal from '../components/UnsavedChangesModal';
 
@@ -380,7 +380,7 @@ const ProfilePage = () => {
                   ? (
                     <img
                       src={avatarPreview.startsWith('/uploads')
-                        ? `http://localhost:8080${avatarPreview}`
+                        ? `${API_BASE_URL}${avatarPreview}`
                         : avatarPreview}
                       alt={currentUser.name}
                       className="w-full h-full object-cover"

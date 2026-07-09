@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getPropertyById, getAllUsers } from '../services/api';
+import { getPropertyById, getAllUsers, API_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -167,7 +167,7 @@ const PropertyDetailsPage = () => {
 
   const resolveImageSrc = (url) => {
     if (!url) return null;
-    if (url.startsWith('/uploads')) return `http://localhost:8080${url}`;
+    if (url.startsWith('/uploads')) return `${API_BASE_URL}${url}`;
     return url;
   };
 

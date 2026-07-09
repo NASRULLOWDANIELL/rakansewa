@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useBlocker } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import UnsavedChangesModal from '../components/UnsavedChangesModal';
-import { getApprovedProperties, linkUserToProperty } from '../services/api';
+import { getApprovedProperties, linkUserToProperty, API_BASE_URL } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 const LIFESTYLE_OPTIONS = ['Clean', 'Quiet', 'Social', 'Studious', 'Active', 'Flexible'];
@@ -288,7 +288,7 @@ const ManageHousemateProfilePage = () => {
                       {currentUser.profileImageUrl ? (
                         <img
                           src={currentUser.profileImageUrl.startsWith('/uploads')
-                            ? `http://localhost:8080${currentUser.profileImageUrl}`
+                            ? `${API_BASE_URL}${currentUser.profileImageUrl}`
                             : currentUser.profileImageUrl}
                           alt={currentUser.name}
                           className="w-full h-full object-cover"

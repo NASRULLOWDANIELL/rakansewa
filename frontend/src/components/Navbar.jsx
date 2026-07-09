@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getProperties } from '../services/api';
+import { getProperties, API_BASE_URL } from '../services/api';
 
 const Navbar = () => {
   const location = useLocation();
@@ -317,7 +317,7 @@ const Navbar = () => {
                       {currentUser.profileImageUrl ? (
                         <img
                           src={currentUser.profileImageUrl.startsWith('/uploads')
-                            ? `http://localhost:8080${currentUser.profileImageUrl}`
+                            ? `${API_BASE_URL}${currentUser.profileImageUrl}`
                             : currentUser.profileImageUrl}
                           alt={currentUser.name}
                           className="w-7 h-7 rounded-full object-cover shadow-sm ring-1 ring-white/40"

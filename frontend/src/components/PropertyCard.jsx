@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { API_BASE_URL } from '../services/api';
 
 const PropertyCard = ({ property, isFavourited = false, onToggleFavourite }) => {
   const { t } = useLanguage();
   const placeholderImage = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=70`;
   const rawImage = property.images?.[0]?.imageUrl || property.imageUrl || placeholderImage;
-  const displayImage = rawImage.startsWith('/uploads') ? `http://localhost:8080${rawImage}` : rawImage;
+  const displayImage = rawImage.startsWith('/uploads') ? `${API_BASE_URL}${rawImage}` : rawImage;
 
   const handleFavouriteClick = (e) => {
     e.preventDefault();

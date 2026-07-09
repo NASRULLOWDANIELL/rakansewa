@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProperties, approveProperty, rejectProperty, getAllUsers, getAllFeedbacks, resolveFeedback, getPropertyUpdates } from '../services/api';
+import { getProperties, approveProperty, rejectProperty, getAllUsers, getAllFeedbacks, resolveFeedback, getPropertyUpdates, API_BASE_URL } from '../services/api';
 import RejectModal from '../components/RejectModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -106,7 +106,7 @@ const AdminDashboard = () => {
 
    const resolveImageSrc = (url) => {
       if (!url) return null;
-      if (url.startsWith('/uploads')) return `http://localhost:8080${url}`;
+      if (url.startsWith('/uploads')) return `${API_BASE_URL}${url}`;
       return url;
    };
 

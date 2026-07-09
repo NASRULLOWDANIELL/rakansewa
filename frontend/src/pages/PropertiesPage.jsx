@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getProperties, getUserFavourites, toggleFavourite } from '../services/api';
+import { getProperties, getUserFavourites, toggleFavourite, API_BASE_URL } from '../services/api';
 import PropertyList from '../components/PropertyList';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -339,7 +339,7 @@ const RecommendedCarousel = ({ properties, t }) => {
   const getCoverImage = (property) => {
     const raw = property.images?.[0]?.imageUrl || property.imageUrl;
     if (!raw) return 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=70';
-    return raw.startsWith('/uploads') ? `http://localhost:8080${raw}` : raw;
+    return raw.startsWith('/uploads') ? `${API_BASE_URL}${raw}` : raw;
   };
 
   // Group properties into slides of up to 2 items

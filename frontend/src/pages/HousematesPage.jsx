@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getAllUsers, getMatchesForUser, getProperties } from '../services/api';
+import { getAllUsers, getMatchesForUser, getProperties, API_BASE_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -133,7 +133,7 @@ const MatchCard = ({ hm, currentUser, isUitmVerified }) => {
         {hm.profileImageUrl ? (
           <img
             src={hm.profileImageUrl.startsWith('/uploads')
-              ? `http://localhost:8080${hm.profileImageUrl}`
+              ? `${API_BASE_URL}${hm.profileImageUrl}`
               : hm.profileImageUrl}
             alt={hm.name}
             className="w-16 h-16 rounded-2xl object-cover border-2 border-white/40 shadow-lg"
