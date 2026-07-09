@@ -21,6 +21,8 @@ public class WebConfig {
                 registry.addMapping("/**")
                         .allowedOrigins(
                                 "http://localhost:5173",
+                                "https://rakansewa.vercel.app",
+                                "https://rakansewa-f5e4cyu93-nasrullowdaniells-projects.vercel.app",
                                 frontendUrl)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
